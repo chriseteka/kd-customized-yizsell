@@ -24,39 +24,39 @@ import java.util.Set;
 public class Shop {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long shopId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "shop address cannot be null")
     @Size(min = 3, message = "Address must contain at least three characters")
-    @Column(name = "shop-address", nullable = false)
+    @Column(name = "shopAddress", nullable = false)
     private String shopAddress;
 
     @ManyToMany
-    @JoinTable(name = "sellers-in-shop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Set<Seller> sellers = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(name = "returned-sales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
+    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
     private Set<ReturnedStock> returnedSales = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(name = "shop-expenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
+    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
     private Set<Expense> expenses = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(name = "shop-income", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "incomeId"))
+    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "incomeId"))
     private Set<Income> income = new HashSet<>();
 }

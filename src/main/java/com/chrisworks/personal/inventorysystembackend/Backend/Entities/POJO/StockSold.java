@@ -23,40 +23,39 @@ import java.util.Date;
 public class StockSold {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long stockSoldId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Name of stock sold cannot be null")
     @Size(min = 3, message = "stock name should have at least three characters")
-    @Column(name = "stock-name", nullable = false)
+    @Column(name = "stockName", nullable = false)
     private String stockName;
 
     @NotNull(message = "Category of stock sold cannot be null")
     @Size(min = 3, message = "stock category should have at least three characters")
-    @Column(name = "stock-category", nullable = false)
+    @Column(name = "stockCategory", nullable = false)
     private String stockCategory;
 
     @NotNull(message = "stock sold quantity cannot be null")
-    @Column(name = "quantity-sold", nullable = false)
+    @Column(name = "quantitySold", nullable = false)
     private int quantitySold;
 
     @NotNull(message = "price per stock sold cannot be null")
-    @Column(name = "price-per-stock-sold", nullable = false)
+    @Column(name = "pricePerStockSold", nullable = false)
     private BigDecimal pricePerStockSold;
 
-    @NotNull(message = "Seller name cannot be null")
-    @Column(name = "stock-sold-by", nullable = false)
+    @Column(name = "stockSoldBy")
     private String stockSoldBy;
 }

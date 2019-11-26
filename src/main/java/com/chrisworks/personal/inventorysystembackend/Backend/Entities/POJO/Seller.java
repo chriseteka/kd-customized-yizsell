@@ -27,48 +27,48 @@ import java.util.Set;
 public class Seller {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long sellerId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updateDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Seller full name cannot be null")
     @Size(min = 3, message = "Name must contain at least three characters")
-    @Column(name = "seller-full-name", nullable = false)
+    @Column(name = "sellerFullName", nullable = false)
     private String sellerFullName;
 
     @Email(message = "Invalid Email Address Entered", regexp = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$")
-    @Column(name = "seller-email", unique = true)
+    @Column(name = "sellerEmail", unique = true)
     private String sellerEmail;
 
     @NotNull(message = "seller phone number cannot be null")
     @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
-    @Column(name = "seller-phone-number", nullable = false)
+    @Column(name = "sellerPhoneNumber", nullable = false)
     private String sellerPhoneNumber;
 
     @NotNull(message = "Seller password cannot be null")
     @Size(min = 4, message = "Password must contain at least four characters")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @Column(name = "seller-password", nullable = false)
+    @Column(name = "sellerPassword", nullable = false)
     private String sellerPassword;
 
     @NotNull(message = "Seller address cannot be null")
     @Size(min = 3, message = "Seller address must contain at least three characters")
-    @Column(name = "seller-address", nullable = false)
+    @Column(name = "sellerAddress", nullable = false)
     private String sellerAddress;
 
     @ManyToMany
-    @JoinTable(name = "seller-invoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
+    @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
     private Set<Invoice> invoices = new HashSet<>();
 
 }

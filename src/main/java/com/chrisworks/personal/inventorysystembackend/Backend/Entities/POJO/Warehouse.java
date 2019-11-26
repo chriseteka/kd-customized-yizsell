@@ -24,31 +24,31 @@ import java.util.Set;
 public class Warehouse {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long warehouseId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Warehouse address cannot be null")
     @Size(min = 3, message = "Address must contain at least two characters")
-    @Column(name = "warehouse-address", nullable = false)
+    @Column(name = "warehouseAddress", nullable = false)
     private String warehouseAddress;
 
     @ManyToMany
-    @JoinTable(name = "shops-in-warehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Set<Shop> shops = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(name = "stocks-in-warehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
+    @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
     private Set<Stock> stocks = new HashSet<>();
 }

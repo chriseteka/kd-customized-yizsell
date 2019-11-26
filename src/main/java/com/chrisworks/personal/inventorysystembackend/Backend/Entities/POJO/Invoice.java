@@ -25,50 +25,53 @@ import java.util.Set;
 public class Invoice {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long InvoiceId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updateDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Invoice number cannot be null")
-    @Column(name = "invoice-number", nullable = false, unique = true)
+    @Column(name = "invoiceNumber", nullable = false, unique = true)
     private String invoiceNumber;
 
     @NotNull(message = "Payment mode cannot be null")
-    @Column(name = "payment-mode", nullable = false)
+    @Column(name = "paymentMode", nullable = false)
     @Enumerated(EnumType.ORDINAL)
     private PAYMENT_MODE paymentMode;
 
     @NotNull(message = "Invoice total amount cannot be null")
-    @Column(name = "invoice-total-amount", nullable = false)
+    @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal invoiceTotalAmount;
 
-    @Column(name = "amount-paid")
+    @Column(name = "amountPaid")
     private BigDecimal amountPaid;
 
     @Column(name = "debt")
-    private BigDecimal debt = BigDecimal.valueOf(0.0);
+    private BigDecimal debt = BigDecimal.ZERO;
 
     @Column(name = "discount")
-    private BigDecimal discount = BigDecimal.valueOf(0.0);
+    private BigDecimal discount = BigDecimal.ZERO;
 
     @NotNull(message = "Invoice must contain at least one stock to be sold")
     @ManyToMany
-    @JoinTable(name = "stock-sold-in-invoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
+    @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
     private Set<StockSold> stockSold = new HashSet<>();
 
     @NotNull(message = "Invoice must contain a customer detail")
     @OneToOne
-    @JoinTable(name = "customers-invoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
+    @JoinTable(name = "customersInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
+
+    @Column(name = "createdBy")
+    private String createdBy;
 }

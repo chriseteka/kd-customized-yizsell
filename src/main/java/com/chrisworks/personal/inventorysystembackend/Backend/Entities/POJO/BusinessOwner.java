@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import static javax.persistence.GenerationType.IDENTITY;
+import static javax.persistence.GenerationType.AUTO;
 import static javax.persistence.TemporalType.DATE;
 import static javax.persistence.TemporalType.TIME;
 
@@ -28,62 +28,62 @@ import static javax.persistence.TemporalType.TIME;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "business-owners")
+@Table(name = "businessOwners")
 public class BusinessOwner {
 
     @Id
-    @GeneratedValue(strategy = IDENTITY)
+    @GeneratedValue(strategy = AUTO)
     private Long businessOwnerId;
 
     @Temporal(DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updateDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Business name cannot be null")
     @Size(min = 3, message = "Business Name must be at least three characters")
-    @Column(name = "business-name", nullable = false)
+    @Column(name = "businessName", nullable = false)
     private String businessName;
 
     @NotNull(message = "Business owner full name cannot be null")
     @Size(min = 3, message = "Business Owner Full Name must be at least three characters")
-    @Column(name = "business-owner-full-name", nullable = false)
+    @Column(name = "businessOwnerFullName", nullable = false)
     private String businessOwnerFullName;
 
     @NotNull(message = "Email cannot be null")
     @Email(message = "Invalid Email Address Entered", regexp = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$")
-    @Column(name = "business-owner-email", unique = true, nullable = false)
+    @Column(name = "businessOwnerEmail", unique = true, nullable = false)
     private String businessOwnerEmail;
 
     @NotNull(message = "Business owner phone number cannot be null")
     @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
-    @Column(name = "business-owner-phone-number", nullable = false)
+    @Column(name = "businessOwnerPhoneNumber", nullable = false)
     private String businessOwnerPhoneNumber;
 
     @NotNull(message = "Business owner password cannot be null")
     @Size(min = 4, message = "Business Owner Full Name must be at least four characters")
-    @Column(name = "business-owner-password", nullable = false)
+    @Column(name = "businessOwnerPassword", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String businessOwnerPassword;
 
-    @Column(name = "business-total-income", precision = 2)
-    private BigDecimal businessTotalIncome;
+    @Column(name = "businessTotalIncome", precision = 2)
+    private BigDecimal businessTotalIncome = BigDecimal.ZERO;
 
-    @Column(name = "business-total-expenses", precision = 2)
-    private BigDecimal businessTotalExpenses;
+    @Column(name = "businessTotalExpenses", precision = 2)
+    private BigDecimal businessTotalExpenses = BigDecimal.ZERO;
 
-    @Column(name = "business-total-profit", precision = 2)
-    private BigDecimal businessTotalProfit;
+    @Column(name = "businessTotalProfit", precision = 2)
+    private BigDecimal businessTotalProfit = BigDecimal.ZERO;
 
     @ManyToMany
-    @JoinTable(name = "business-owner-warehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Set<Warehouse> warehouses = new HashSet<>();
 
 }

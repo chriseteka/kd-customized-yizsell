@@ -23,24 +23,24 @@ import java.util.Date;
 public class ReturnedStock {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long returnedStockId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updateDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Reason for return cannot be null")
     @Size(min = 3, message = "Reason for return must contain at least three characters")
-    @Column(name = "reason-for-return", nullable = false)
+    @Column(name = "reasonForReturn", nullable = false)
     private String reasonForReturn;
 
     @NotNull(message = "stock name cannot be null")
@@ -49,25 +49,28 @@ public class ReturnedStock {
     private String stockName;
 
     @NotNull(message = "quantity returned cannot be null")
-    @Column(name = "quantity-returned", nullable = false)
+    @Column(name = "quantityReturned", nullable = false)
     private int quantityReturned;
 
     @NotNull(message = "invoice id cannot be null")
     @Size(min = 3, message = "invoice id must contain at least three characters")
-    @Column(name = "invoice-id", nullable = false)
+    @Column(name = "invoiceId", nullable = false)
     private String invoiceId;
 
-    @Column(name = "stock-returned-cost")
+    @Column(name = "stockReturnedCost")
     private BigDecimal stockReturnedCost;
 
     @Column(name = "approved")
     private Boolean approved = false;
 
-    @Column(name = "approved-by")
+    @Column(name = "approvedBy")
     private String approvedBy;
 
     @NotNull(message = "Stock returned must contain a customer detail")
-    @OneToOne
-    @JoinTable(name = "customer-returns", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
+    @ManyToOne
+    @JoinTable(name = "customerReturns", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
+
+    @Column(name = "createdBy")
+    private String createdBy;
 }

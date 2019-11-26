@@ -23,37 +23,40 @@ import java.util.Date;
 public class Expense {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long expenseId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "Expense type cannot be null")
-    @Column(name = "expense-type", nullable = false)
+    @Column(name = "expenseType", nullable = false)
     @Enumerated(EnumType.ORDINAL)
     private EXPENSE_TYPE expenseType;
 
     @NotNull(message = "Expense amount cannot be null")
-    @Column(name = "expense-amount", nullable = false)
+    @Column(name = "expenseAmount", nullable = false)
     private BigDecimal expenseAmount;
 
     @NotNull(message = "Expense description cannot be null")
-    @Column(name = "expense-description", nullable = false)
+    @Column(name = "expenseDescription", nullable = false)
     private String expenseDescription;
+
+    @Column(name = "createdBy")
+    private String createdBy;
 
     @Column(name = "approved")
     private Boolean approved = false;
 
-    @Column(name = "approved-by")
+    @Column(name = "approvedBy")
     private String approvedBy;
 }

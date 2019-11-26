@@ -23,37 +23,40 @@ import java.util.Date;
 public class Income {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long incomeId;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "created-date")
+    @Column(name = "createdDate")
     private Date createdDate = new Date();
 
     @Temporal(TemporalType.TIME)
-    @Column(name = "created-time")
+    @Column(name = "createdTime")
     private Date createdTime = new Date();
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "updated-date")
+    @Column(name = "updateDate")
     private Date updateDate = new Date();
 
     @NotNull(message = "income amount cannot be null")
-    @Column(name = "income-amount", nullable = false)
+    @Column(name = "incomeAmount", nullable = false)
     private BigDecimal incomeAmount;
 
-    @Column(name = "income-reference")
+    @Column(name = "incomeReference")
     private String incomeReference = "Nil";
 
     @NotNull(message = "Income type cannot be null")
-    @Column(name = "income-type", nullable = false)
+    @Column(name = "incomeType", nullable = false)
     @Enumerated(EnumType.ORDINAL)
     private INCOME_TYPE incomeType;
+
+    @Column(name = "createdBy")
+    private String createdBy;
 
     @Column(name = "approved")
     private Boolean approved = false;
 
-    @Column(name = "approved-by")
+    @Column(name = "approvedBy")
     private String approvedBy;
 
 }
