@@ -1,8 +1,12 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services.SellerServiecs.Implementation;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServiecs.SellerServices;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -13,8 +17,29 @@ import org.springframework.stereotype.Service;
 @Service
 public class SellerServiceImpl implements SellerServices {
 
+    private SellerRepository sellerRepository;
+
+    @Autowired
+    public SellerServiceImpl(SellerRepository sellerRepository) {
+        this.sellerRepository = sellerRepository;
+    }
+
     @Override
-    public Seller updateAccount(Long userId, Seller seller) {
-        return null;
+    public Seller updateAccount(Long userId, Seller sellerUpdates) {
+
+        AtomicReference<Seller> updatedSeller = new AtomicReference<>();
+
+        sellerRepository.findById(userId).ifPresent(seller -> {
+
+            seller.setSellerAddress(sellerUpdates.getSellerAddress() != null ?
+                    sellerUpdates.getSellerAddress() : seller.getSellerAddress());
+            seller.setSellerFullName(sellerUpdates.getSellerFullName() != null ?
+                    sellerUpdates.getSellerFullName() : seller.getSellerFullName());
+            seller.setSellerPhoneNumber(sellerUpdates.getSellerPhoneNumber() != null ?
+                    sellerUpdates.getSellerPhoneNumber() : seller.getSellerPhoneNumber());
+            updatedSeller.set(sellerRepository.save(seller));
+        });
+
+        return updatedSeller.get();
     }
 }

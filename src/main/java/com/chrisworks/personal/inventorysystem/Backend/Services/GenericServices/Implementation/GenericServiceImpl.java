@@ -34,15 +34,23 @@ public class GenericServiceImpl implements GenericService {
 
     private StockSoldRepository stockSoldRepository;
 
+    private ExpenseRepository expenseRepository;
+
+    private IncomeRepository incomeRepository;
+
     @Autowired
     public GenericServiceImpl(SupplierRepository supplierRepository, CustomerRepository customerRepository,
                               StockRepository stockRepository, InvoiceRepository invoiceRepository,
-                              ReturnedStockRepository returnedStockRepository) {
+                              ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
+                              ExpenseRepository expenseRepository, IncomeRepository incomeRepository) {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.stockRepository = stockRepository;
         this.invoiceRepository = invoiceRepository;
         this.returnedStockRepository = returnedStockRepository;
+        this.stockSoldRepository = stockSoldRepository;
+        this.expenseRepository = expenseRepository;
+        this.incomeRepository = incomeRepository;
     }
 
     @Override
@@ -245,12 +253,20 @@ public class GenericServiceImpl implements GenericService {
 
     @Override
     public Expense addExpense(Expense expense) {
-        return null;
+
+        expense.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        //If expense was created by admin, then approve it, set approved date and approved by as well
+
+        return expenseRepository.save(expense);
     }
 
     @Override
     public Income addIncome(Income income) {
-        return null;
+
+        income.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        return incomeRepository.save(income);
     }
 
     @Override
