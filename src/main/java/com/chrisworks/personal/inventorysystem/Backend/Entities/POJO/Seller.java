@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -79,6 +81,10 @@ public class Seller {
     @Column(name = "lastLogoutTime")
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
+
+    @JsonIgnore
+    @Column(name = "accountType", updatable = false)
+    private ACCOUNT_TYPE account_type = ACCOUNT_TYPE.SELLER;
 
     @ManyToMany
     @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))

@@ -61,6 +61,17 @@ public class Expense {
     @Column(name = "approved")
     private Boolean approved = false;
 
+    @Temporal(TemporalType.DATE)
+    @Column(name = "approvedDate")
+    private Date approvedDate;
+
     @Column(name = "approvedBy")
     private String approvedBy;
+
+    public Expense(EXPENSE_TYPE expense_type, BigDecimal expenseAmount, String expenseDescription) {
+
+        this.expenseType = expense_type;
+        this.expenseAmount = expenseAmount;
+        this.expenseDescription = expenseDescription;
+    }
 }

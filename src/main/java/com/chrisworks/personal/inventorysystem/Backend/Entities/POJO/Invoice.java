@@ -41,7 +41,7 @@ public class Invoice {
     @Column(name = "updateDate")
     private Date updateDate = new Date();
 
-    @Column(name = "invoiceNumber", nullable = false, unique = true)
+    @Column(name = "invoiceNumber", unique = true)
     private String invoiceNumber;
 
     @NotNull(message = "Payment mode cannot be null")

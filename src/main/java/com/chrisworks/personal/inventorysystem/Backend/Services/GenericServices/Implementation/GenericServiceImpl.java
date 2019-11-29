@@ -1,9 +1,13 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.Implementation;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -89,12 +93,17 @@ public class GenericServiceImpl implements GenericService {
         Set<Supplier> supplierSet = new HashSet<>();
         supplierSet.add(stockSupplier);
 
-        //If stock is added by user with the role as admin, then tag the stock as approved first, set createdBy,
-        // lastRestockBy and approvedBy to admin's name. Else set createdBy and lastRestockBy as seller name.
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            stock.setApproved(true);
+            stock.setApprovedDate(new Date());
+            stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        }
 
         stock.setStockPurchasedFrom(supplierSet);
         stock.setLastRestockPurchasedFrom(stockSupplier);
         stock.setLastRestockQuantity(stock.getStockQuantityPurchased());
+        stock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
         stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
         stock.setStockQuantityRemaining(stock.getStockQuantityPurchased());
         stock.setStockRemainingTotalPrice(stock.getStockPurchasedTotalPrice());
@@ -135,8 +144,17 @@ public class GenericServiceImpl implements GenericService {
             stock.setPricePerStockPurchased(newStock.getStockPurchasedTotalPrice()
                     .divide(BigDecimal.valueOf(newStock.getStockQuantityPurchased()), 2));
 
-            //If stock is added by user with the role as admin, then tag the stock as approved first, set createdBy,
-            // lastRestockBy and approvedBy to admin's name. Else set createdBy and lastRestockBy as seller name.
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                stock.setApproved(true);
+                stock.setApprovedDate(new Date());
+                stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+            }else {
+
+                stock.setApproved(false);
+                stock.setApprovedBy(null);
+                stock.setApprovedBy(null);
+            }
 
             reStock.set(stockRepository.save(stock));
 
@@ -148,7 +166,61 @@ public class GenericServiceImpl implements GenericService {
     @Transactional
     @Override
     public Invoice sellStock(Invoice invoice) {
-        return null;
+
+        AtomicReference<Customer> customer = new AtomicReference<>();
+
+        Set<StockSold> stockSoldSet = new HashSet<>();
+
+        //Find a customer by phone number
+        customer.set(
+                customerRepository.findDistinctByCustomerPhoneNumber(invoice.getCustomerId().getCustomerPhoneNumber()));
+
+        //If customer does not exist before, save it.
+        if (null == customer.get()) customer.set(customerRepository.save(invoice.getCustomerId()));
+
+        //Get a difference between total amount in invoice and the amount paid by the customer, noting any discount
+        BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
+                .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));
+
+        //If customer under pays for list of stocks in his invoice, record a debt against the invoice.
+        if (totalToAmountPaidDiff.compareTo(BigDecimal.ZERO) >= 0) invoice.setDebt(totalToAmountPaidDiff.abs());
+
+        //Decrement the quantity of stock left for all stock in the customers stock bought list
+        invoice.getStockSold().forEach(stockSold -> {
+
+            Stock stockFound = stockRepository.findDistinctByStockName(stockSold.getStockName());
+            if (stockFound == null){
+
+                //throw error and return
+                return;
+            }
+
+            //Assign a number to the invoice
+            invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
+
+            //Save all stock bought by the customer as new and independent objects of stockSold, then add them to a set
+            stockSold.setCostPricePerStock(stockFound.getSellingPricePerStock());
+            stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
+            stockSoldSet.add(stockSoldRepository.save(stockSold));
+
+            //Decrementing of overall stock in the store starts now, while profit, and stock sold total price increases
+            stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
+            stockFound.setStockSoldTotalPrice(stockFound.getProfit().add(stockSold.getCostPricePerStock()
+                    .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
+            stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
+            stockFound.setProfit(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice()));
+            stockRepository.save(stockFound);
+        });
+
+        //Add amount paid by customer as a new income, this would be needed when balancing inflow and outflow of cash
+        String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
+        addIncome(new Income(invoice.getAmountPaid(), INCOME_TYPE.STOCK_SALE, incomeDescription));
+
+        invoice.getStockSold().clear();
+        invoice.setStockSold(stockSoldSet);
+        invoice.setCustomerId(customer.get());
+
+        return invoiceRepository.save(invoice);
     }
 
     @Transactional
@@ -212,11 +284,13 @@ public class GenericServiceImpl implements GenericService {
 
                     stockRepository.save(stockToReturn);
 
-
                     //Update stockSold
-                    stockSold.setUpdateDate(new Date());
-                    stockSold.setQuantitySold(stockSold.getQuantitySold() - returnedStock.getQuantityReturned());
-                    updatedStockSold.set(stockSoldRepository.save(stockSold));
+                    //Reduce quantity of stock from the stock sold table, after find
+                    StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
+                            (returnedStock.getInvoiceId(), stockSold.getStockName());
+                    initStockSold.setUpdateDate(new Date());
+                    initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
+                    updatedStockSold.set(stockSoldRepository.save(initStockSold));
                 }
             });
 
@@ -226,6 +300,10 @@ public class GenericServiceImpl implements GenericService {
             stockSoldSet.add(updatedStockSold.get());
             invoiceRetrieved.setStockSold(stockSoldSet);
             invoiceRepository.save(invoiceRetrieved);
+
+            //Create an Expense of type sales_return and save it
+            String expenseDescription = returnStock.get().getStockName() + " returned with reason: " + returnStock.get().getReasonForReturn();
+            addExpense(new Expense(EXPENSE_TYPE.RETURNED_SALE, returnStock.get().getStockReturnedCost(), expenseDescription));
 
         }else{
 
@@ -256,7 +334,12 @@ public class GenericServiceImpl implements GenericService {
 
         expense.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
-        //If expense was created by admin, then approve it, set approved date and approved by as well
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            expense.setApproved(true);
+            expense.setApprovedDate(new Date());
+            expense.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        }
 
         return expenseRepository.save(expense);
     }
@@ -265,6 +348,13 @@ public class GenericServiceImpl implements GenericService {
     public Income addIncome(Income income) {
 
         income.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            income.setApproved(true);
+            income.setApprovedDate(new Date());
+            income.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        }
 
         return incomeRepository.save(income);
     }

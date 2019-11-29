@@ -65,6 +65,6 @@ public class StockSold {
     @Column(name = "costPricePerStock")
     private BigDecimal costPricePerStock;
 
-    @Column(name = "stockSoldBy")
-    private String stockSoldBy;
+    @Column(name = "stockSoldIinvoiceId")
+    private String stockSoldInvoiceId;
 }

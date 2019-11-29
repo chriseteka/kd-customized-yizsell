@@ -58,7 +58,17 @@ public class Income {
     @Column(name = "approved")
     private Boolean approved = false;
 
+    @Temporal(TemporalType.DATE)
+    @Column(name = "approvedDate")
+    private Date approvedDate;
+
     @Column(name = "approvedBy")
     private String approvedBy;
 
+    public Income(BigDecimal incomeAmount, INCOME_TYPE income_type, String incomeDescription) {
+
+        this.incomeAmount = incomeAmount;
+        this.incomeType = income_type;
+        this.incomeReference = incomeDescription;
+    }
 }

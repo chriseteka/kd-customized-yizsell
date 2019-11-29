@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @email chriseteka@gmail.com
  */
 public interface StockSoldRepository extends JpaRepository<StockSold, Long> {
+
+    StockSold findDistinctByStockSoldInvoiceIdAndStockName(String invoiceId, String stockName);
 }

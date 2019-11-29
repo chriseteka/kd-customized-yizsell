@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @email chriseteka@gmail.com
  */
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
+
+    Customer findDistinctByCustomerPhoneNumber(String phoneNumber);
 }
