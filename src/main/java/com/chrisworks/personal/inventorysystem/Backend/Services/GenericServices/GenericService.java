@@ -35,4 +35,6 @@ public interface GenericService {
     Stock changeStockSellingPriceById(Long stockId, BigDecimal newSellingPrice);
 
     Stock changeStockSellingPriceByName(String stockName, BigDecimal newSellingPrice);
+
+    Shop shopBySellerName(String sellerName);
 }

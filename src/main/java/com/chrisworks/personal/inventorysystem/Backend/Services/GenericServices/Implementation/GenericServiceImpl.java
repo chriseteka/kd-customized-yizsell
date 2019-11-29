@@ -42,11 +42,16 @@ public class GenericServiceImpl implements GenericService {
 
     private IncomeRepository incomeRepository;
 
+    private SellerRepository sellerRepository;
+
+    private ShopRepository shopRepository;
+
     @Autowired
     public GenericServiceImpl(SupplierRepository supplierRepository, CustomerRepository customerRepository,
                               StockRepository stockRepository, InvoiceRepository invoiceRepository,
                               ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
-                              ExpenseRepository expenseRepository, IncomeRepository incomeRepository) {
+                              ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
+                              SellerRepository sellerRepository, ShopRepository shopRepository) {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.stockRepository = stockRepository;
@@ -55,6 +60,8 @@ public class GenericServiceImpl implements GenericService {
         this.stockSoldRepository = stockSoldRepository;
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
+        this.sellerRepository = sellerRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -303,7 +310,24 @@ public class GenericServiceImpl implements GenericService {
 
             //Create an Expense of type sales_return and save it
             String expenseDescription = returnStock.get().getStockName() + " returned with reason: " + returnStock.get().getReasonForReturn();
-            addExpense(new Expense(EXPENSE_TYPE.RETURNED_SALE, returnStock.get().getStockReturnedCost(), expenseDescription));
+            Expense expenseOnReturn = addExpense(new Expense(EXPENSE_TYPE.RETURNED_SALE, returnStock.get().getStockReturnedCost(), expenseDescription));
+
+            //Do the following if user is a seller
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SELLER)) {
+
+                //Add the returned stock to the set of returned stock in the shop it was returned
+                Shop stockReturnedShop = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
+                Set<ReturnedStock> allReturnedSales = stockReturnedShop.getReturnedSales();
+                allReturnedSales.add(returnStock.get());
+                stockReturnedShop.setReturnedSales(allReturnedSales);
+
+                //Add the newly created expense to the set of expenses incurred in the shop
+                Set<Expense> allExpensesInShop = stockReturnedShop.getExpenses();
+                allExpensesInShop.add(expenseOnReturn);
+                stockReturnedShop.setExpenses(allExpensesInShop);
+
+                shopRepository.save(stockReturnedShop);
+            }
 
         }else{
 
@@ -379,6 +403,20 @@ public class GenericServiceImpl implements GenericService {
         if (null != stockRetrieved) return stockRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
 
         return null;
+    }
+
+    @Override
+    public Shop shopBySellerName(String sellerName) {
+
+        Seller sellerFound = sellerRepository.findDistinctBySellerFullName(sellerName);
+
+        if (null == sellerFound){
+
+            //Throw error
+            return null;
+        }
+
+        return shopRepository.findDistinctBySellers(sellerFound);
     }
 
     private Stock changeStockSellingPrice(Stock stock, BigDecimal newSellingPrice) {

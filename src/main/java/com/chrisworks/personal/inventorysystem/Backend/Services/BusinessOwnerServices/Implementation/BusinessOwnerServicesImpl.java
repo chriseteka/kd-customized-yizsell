@@ -87,6 +87,20 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     }
 
     @Override
+    public Seller deleteSeller(Long sellerId) {
+
+        AtomicReference<Seller> sellerToDelete = new AtomicReference<>();
+
+        sellerRepository.findById(sellerId).ifPresent(seller -> {
+
+            sellerToDelete.set(seller);
+            sellerRepository.delete(seller);
+        });
+
+        return sellerToDelete.get();
+    }
+
+    @Override
     public Warehouse addWarehouse(Warehouse warehouse) {
 
         return warehouseRepository.save(warehouse);
@@ -280,6 +294,38 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
             allSellers.addAll(sellerList);
             shop.setSellers(allSellers);
             shop.setUpdateDate(new Date());
+            updatedShop.set(shopRepository.save(shop));
+        });
+
+        return updatedShop.get();
+    }
+
+    @Override
+    public Shop removeSellerFromShop(Long shopId, Seller seller) {
+
+        AtomicReference<Shop> updatedShop = new AtomicReference<>();
+
+        shopRepository.findById(shopId).ifPresent(shop -> {
+
+            Set<Seller> sellerSet = shop.getSellers();
+            sellerSet.remove(seller);
+            shop.setSellers(sellerSet);
+            updatedShop.set(shopRepository.save(shop));
+        });
+
+        return updatedShop.get();
+    }
+
+    @Override
+    public Shop removeSellersFromShop(Long shopId, List<Seller> sellerList) {
+
+        AtomicReference<Shop> updatedShop = new AtomicReference<>();
+
+        shopRepository.findById(shopId).ifPresent(shop -> {
+
+            Set<Seller> sellerSet = shop.getSellers();
+            sellerSet.removeAll(sellerList);
+            shop.setSellers(sellerSet);
             updatedShop.set(shopRepository.save(shop));
         });
 

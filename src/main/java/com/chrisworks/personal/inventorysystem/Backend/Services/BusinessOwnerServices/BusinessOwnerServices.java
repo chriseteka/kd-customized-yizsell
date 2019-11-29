@@ -26,6 +26,8 @@ public interface BusinessOwnerServices{
 
     List<Seller> allSellers();
 
+    Seller deleteSeller(Long sellerId);
+
     Warehouse addWarehouse(Warehouse warehouse);
 
     Shop addShop(Shop shop);
@@ -53,4 +55,8 @@ public interface BusinessOwnerServices{
     Shop addSellerToShop(Long shopId, Seller seller);
 
     Shop addSellerListToShop(Long shopId, List<Seller> sellerList);
+
+    Shop removeSellerFromShop(Long shopId, Seller seller);
+
+    Shop removeSellersFromShop(Long shopId, List<Seller> sellerList);
 }

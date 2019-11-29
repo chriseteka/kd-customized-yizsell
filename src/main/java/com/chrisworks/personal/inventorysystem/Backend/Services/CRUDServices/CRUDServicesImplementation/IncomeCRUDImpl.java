@@ -20,8 +20,12 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class IncomeCRUDImpl implements CRUDServices<Income> {
 
+    private final IncomeRepository incomeRepository;
+
     @Autowired
-    private IncomeRepository incomeRepository;
+    public IncomeCRUDImpl(IncomeRepository incomeRepository) {
+        this.incomeRepository = incomeRepository;
+    }
 
     @Override
     public Income createEntity(Income income) {
