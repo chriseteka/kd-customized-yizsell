@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM;
 
+import java.util.stream.Stream;
+
 /**
  * @author Chris_Eteka
  * @since 11/25/2019
@@ -7,11 +9,28 @@ package com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM;
  */
 public enum EXPENSE_TYPE {
 
-    PURCHASES,
+    PURCHASES(100),
 
-    DEBT_CLEARANCE,
+    DEBT_CLEARANCE(200),
 
-    RETURNED_SALE,
+    RETURNED_SALE(300),
 
-    OTHERS;
+    OTHERS(400);
+
+    private int expense_type_value;
+
+    EXPENSE_TYPE(int expense_type_value) {
+        this.expense_type_value = expense_type_value;
+    }
+
+    public int getExpense_type_value() {
+        return expense_type_value;
+    }
+
+    public static EXPENSE_TYPE of(int expense_type_value) {
+        return Stream.of(EXPENSE_TYPE.values())
+                .filter(p -> p.getExpense_type_value() == expense_type_value)
+                .findFirst()
+                .orElseThrow(IllegalArgumentException::new);
+    }
 }

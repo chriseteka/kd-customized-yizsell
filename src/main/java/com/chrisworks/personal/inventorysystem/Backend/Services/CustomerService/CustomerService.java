@@ -21,4 +21,8 @@ public interface CustomerService {
     List<Customer> fetchAllCustomersWithReturnedPurchases();
 
     Customer updateCustomerDetails(Long customerId, Customer customerUpdates);
+
+    List<Customer> fetchCustomersByShop(Long shopId);
+
+    Customer deleteCustomerById(Long customerId);
 }

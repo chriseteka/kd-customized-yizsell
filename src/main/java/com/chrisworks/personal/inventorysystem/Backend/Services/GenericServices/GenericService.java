@@ -26,7 +26,7 @@ public interface GenericService {
 
     ReturnedStock processReturn(ReturnedStock returnedStock);
 
-    ReturnedStock processReturnList(List<ReturnedStock> returnedStock);
+    List<ReturnedStock> processReturnList(List<ReturnedStock> returnedStock);
 
     Expense addExpense(Expense expense);
 

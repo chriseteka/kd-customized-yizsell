@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,11 +45,6 @@ public class Invoice {
     @Column(name = "invoiceNumber", unique = true)
     private String invoiceNumber;
 
-    @NotNull(message = "Payment mode cannot be null")
-    @Column(name = "paymentMode", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private PAYMENT_MODE paymentMode;
-
     @DecimalMin(value = "0.0", inclusive = false, message = "Invoice amount must be greater than zero")
     @NotNull(message = "Invoice total amount cannot be null")
     @Column(name = "invoiceTotalAmount", nullable = false)
@@ -65,16 +61,41 @@ public class Invoice {
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
 
-    @NotNull(message = "Invoice must contain at least one stock to be sold")
-    @ManyToMany
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
+//    private Seller seller;
+
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
     private Set<StockSold> stockSold = new HashSet<>();
 
-    @NotNull(message = "Invoice must contain a customer detail")
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "customersInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
 
     @Column(name = "createdBy")
     private String createdBy;
+
+    @Basic
+    @JsonIgnore
+    @NotNull(message = "Payment mode cannot be null")
+    @Column(name = "paymentMode", nullable = false)
+    private int paymentModeValue;
+
+    @Transient
+    private PAYMENT_MODE paymentMode;
+
+    @PostLoad
+    void fillTransient() {
+        if (paymentModeValue > 0) {
+            this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
+        }
+    }
+
+    @PrePersist
+    void fillPersistent() {
+        if (paymentMode != null) {
+            this.paymentModeValue = paymentMode.getPayment_mode_value();
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -65,6 +66,10 @@ public class StockSold {
     @Column(name = "costPricePerStock")
     private BigDecimal costPricePerStock;
 
-    @Column(name = "stockSoldIinvoiceId")
+    @Column(name = "stockSoldInvoiceId")
     private String stockSoldInvoiceId;
+
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
+//    private Invoice invoice;
 }

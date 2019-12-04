@@ -1,16 +1,20 @@
-package com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.CRUDServicesImplementation;
+package com.chrisworks.personal.inventorysystem.Backend.Services.ReturnedStockServices.Implementation;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ReturnedStockRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.ReturnedStockServices;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Services.ReturnedStockServices.ReturnedStockServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -24,10 +28,14 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
 
     private final CustomerRepository customerRepository;
 
+    private final ShopRepository shopRepository;
+
     @Autowired
-    public ReturnedStockCRUDImpl(ReturnedStockRepository returnedStockRepository, CustomerRepository customerRepository) {
+    public ReturnedStockCRUDImpl(ReturnedStockRepository returnedStockRepository, CustomerRepository customerRepository,
+                                 ShopRepository shopRepository) {
         this.returnedStockRepository = returnedStockRepository;
         this.customerRepository = customerRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -40,6 +48,15 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
     public List<ReturnedStock> fetchAllStockReturnedTo(String userFullName) {
 
         return returnedStockRepository.findAllByCreatedBy(userFullName);
+    }
+
+    @Override
+    public List<ReturnedStock> fetchAllStockReturnedToShop(Long shopId) {
+
+        return shopRepository
+                .findById(shopId)
+                .map(shop -> new ArrayList<>(shop.getReturnedSales()))
+                .orElse(null);
     }
 
     @Override

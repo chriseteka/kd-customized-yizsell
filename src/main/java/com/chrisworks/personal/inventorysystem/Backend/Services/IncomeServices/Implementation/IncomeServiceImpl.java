@@ -1,13 +1,16 @@
-package com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.CRUDServicesImplementation;
+package com.chrisworks.personal.inventorysystem.Backend.Services.IncomeServices.Implementation;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.CRUDServices;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Services.IncomeServices.IncomeServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,13 +21,16 @@ import java.util.concurrent.atomic.AtomicReference;
  * @email chriseteka@gmail.com
  */
 @Service
-public class IncomeCRUDImpl implements CRUDServices<Income> {
+public class IncomeServiceImpl implements IncomeServices {
 
     private final IncomeRepository incomeRepository;
 
+    private final ShopRepository shopRepository;
+
     @Autowired
-    public IncomeCRUDImpl(IncomeRepository incomeRepository) {
+    public IncomeServiceImpl(IncomeRepository incomeRepository, ShopRepository shopRepository) {
         this.incomeRepository = incomeRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -91,5 +97,50 @@ public class IncomeCRUDImpl implements CRUDServices<Income> {
         });
 
         return incomeToDelete.get();
+    }
+
+    @Override
+    public List<Income> fetchAllApprovedIncome() {
+
+        return incomeRepository.findAllByApprovedTrue();
+    }
+
+    @Override
+    public List<Income> fetchAllUnApprovedIncome() {
+
+        return incomeRepository.findAllByApprovedFalse();
+    }
+
+    @Override
+    public List<Income> fetchIncomeCreatedBy(String createdBy) {
+
+        return incomeRepository.findAllByCreatedBy(createdBy);
+    }
+
+    @Override
+    public List<Income> fetchAllIncomeCreatedOn(Date createdOn) {
+
+        return incomeRepository.findAllByCreatedDate(createdOn);
+    }
+
+    @Override
+    public List<Income> fetchAlIncomeBetween(Date from, Date to) {
+
+        return incomeRepository.findAllByCreatedDateIsBetween(from, to);
+    }
+
+    @Override
+    public List<Income> fetchAllIncomeByType(int incomeTypeValue) {
+
+        return incomeRepository.findAllByIncomeTypeValue(incomeTypeValue);
+    }
+
+    @Override
+    public List<Income> fetchAllIncomeInShop(Long shopId) {
+
+        return shopRepository
+                .findById(shopId)
+                .map(shop -> new ArrayList<>(shop.getIncome()))
+                .orElse(null);
     }
 }

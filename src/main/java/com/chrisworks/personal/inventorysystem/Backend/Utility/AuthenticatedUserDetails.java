@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 //@NoArgsConstructor
 public class AuthenticatedUserDetails {
 
-    private static String userId;
+    private static Long userId;
 
     private static String userFullName;
 
@@ -24,7 +24,7 @@ public class AuthenticatedUserDetails {
         return userFullName;
     }
 
-    public static String getUserId() {
+    public static Long getUserId() {
         return userId;
     }
 

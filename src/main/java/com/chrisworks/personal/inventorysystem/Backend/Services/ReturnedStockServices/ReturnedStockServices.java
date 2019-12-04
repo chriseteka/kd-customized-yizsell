@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
+package com.chrisworks.personal.inventorysystem.Backend.Services.ReturnedStockServices;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
 
@@ -10,6 +10,8 @@ public interface ReturnedStockServices {
     ReturnedStock fetchStockReturnedByInvoiceNumberAndStockName(String invoiceNumber, String stockName);
 
     List<ReturnedStock> fetchAllStockReturnedTo(String userFullName);
+
+    List<ReturnedStock> fetchAllStockReturnedToShop(Long shopId);
 
     List<ReturnedStock> fetchAllStockReturnedWithInvoice(String invoiceNumber);
 

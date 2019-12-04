@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers.SellerContro
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Services.BusinessOwnerServices.BusinessOwnerServices;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
+import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServiecs.SellerServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,26 +21,26 @@ import java.util.List;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class SellerController {
 
-    private BusinessOwnerServices businessOwnerServices;
+    private SellerServices sellerServices;
 
     private GenericService genericService;
 
     @Autowired
-    public SellerController(BusinessOwnerServices businessOwnerServices, GenericService genericService) {
-        this.businessOwnerServices = businessOwnerServices;
+    public SellerController(SellerServices sellerServices, GenericService genericService) {
+        this.sellerServices = sellerServices;
         this.genericService = genericService;
     }
 
     @PostMapping(path = "/createSeller", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createSeller(@RequestBody @Valid Seller seller){
 
-        return ResponseEntity.ok(businessOwnerServices.createSeller(seller));
+        return ResponseEntity.ok(sellerServices.createSeller(seller));
     }
 
     @GetMapping(path = "/seller/id")
     public ResponseEntity<?> fetchSellerById(@RequestParam Long id){
 
-        Seller seller = businessOwnerServices.fetchSellerById(id);
+        Seller seller = sellerServices.fetchSellerById(id);
 
         return seller != null ? ResponseEntity.ok(seller) : ResponseEntity.notFound().build();
     }
@@ -47,7 +48,7 @@ public class SellerController {
     @GetMapping(path = "/seller/name")
     public ResponseEntity<?> fetchSellerByName(@RequestParam String sellerName){
 
-        Seller seller = businessOwnerServices.fetchSellerByName(sellerName);
+        Seller seller = sellerServices.fetchSellerByName(sellerName);
 
         return seller != null ? ResponseEntity.ok(seller) : ResponseEntity.notFound().build();
     }
@@ -55,7 +56,7 @@ public class SellerController {
     @GetMapping(path = "/sellers")
     public ResponseEntity<?> fetchAllSellers(){
 
-        List<Seller> allSellers = businessOwnerServices.allSellers();
+        List<Seller> allSellers = sellerServices.allSellers();
 
         return (allSellers != null && !allSellers.isEmpty()) ? ResponseEntity.ok(allSellers) : ResponseEntity.notFound().build();
     }

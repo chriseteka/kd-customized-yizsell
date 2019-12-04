@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Chris_Eteka
@@ -55,4 +58,12 @@ public class Customer {
 
     @Column(name = "createdBy")
     private String createdBy;
+
+//    @JsonIgnore
+//    @OneToMany(fetch = FetchType.LAZY, mappedBy = "customerId", cascade = CascadeType.ALL)
+//    private Set<Invoice> invoices = new HashSet<>();
+
+//    @JsonIgnore
+//    @OneToMany(fetch = FetchType.LAZY, mappedBy = "customerId", cascade = CascadeType.ALL)
+//    private Set<ReturnedStock> returnedStocks = new HashSet<>();
 }

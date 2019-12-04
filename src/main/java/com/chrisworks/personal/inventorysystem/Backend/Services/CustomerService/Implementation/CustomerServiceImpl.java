@@ -1,18 +1,17 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services.CustomerService.Implementation;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ReturnedStockRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CustomerService.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -30,12 +29,15 @@ public class CustomerServiceImpl implements CustomerService {
 
     private InvoiceRepository invoiceRepository;
 
+    private ShopRepository shopRepository;
+
     @Autowired
     public CustomerServiceImpl(CustomerRepository customerRepository, ReturnedStockRepository returnedStockRepository,
-                               InvoiceRepository invoiceRepository) {
+                               InvoiceRepository invoiceRepository, ShopRepository shopRepository) {
         this.customerRepository = customerRepository;
         this.returnedStockRepository = returnedStockRepository;
         this.invoiceRepository = invoiceRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -85,4 +87,34 @@ public class CustomerServiceImpl implements CustomerService {
 
         return updatedCustomer.get();
     }
+
+    @Override
+    public List<Customer> fetchCustomersByShop(Long shopId) {
+
+        Optional<Shop> optionalShop = shopRepository.findById(shopId);
+
+        return optionalShop.map(shop -> shop
+                .getSellers()
+                .stream()
+                .flatMap(seller -> seller.getInvoices().stream()
+                        .map(Invoice::getCustomerId))
+                .collect(Collectors.toList()))
+                .orElse(null);
+    }
+
+    @Override
+    public Customer deleteCustomerById(Long customerId) {
+
+        AtomicReference<Customer> customerDeleted = new AtomicReference<>(null);
+
+        customerRepository.findById(customerId).ifPresent(customer -> {
+
+            customerDeleted.set(customer);
+            customerRepository.delete(customer);
+        });
+
+        return customerDeleted.get();
+    }
+
+
 }

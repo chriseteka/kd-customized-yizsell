@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -47,11 +48,6 @@ public class Income {
     @Column(name = "incomeReference")
     private String incomeReference = "Nil";
 
-    @NotNull(message = "Income type cannot be null")
-    @Column(name = "incomeType", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private INCOME_TYPE incomeType;
-
     @Column(name = "createdBy")
     private String createdBy;
 
@@ -65,10 +61,37 @@ public class Income {
     @Column(name = "approvedBy")
     private String approvedBy;
 
-    public Income(BigDecimal incomeAmount, INCOME_TYPE income_type, String incomeDescription) {
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "incomeId"))
+//    private Shop shop;
+
+    @Basic
+    @JsonIgnore
+    @NotNull(message = "Income type cannot be null")
+    @Column(name = "incomeType", nullable = false)
+    private int incomeTypeValue;
+
+    @Transient
+    private INCOME_TYPE incomeType;
+
+    @PostLoad
+    void fillTransient() {
+        if (incomeTypeValue > 0) {
+            this.incomeType = INCOME_TYPE.of(incomeTypeValue);
+        }
+    }
+
+    @PrePersist
+    void fillPersistent() {
+        if (incomeType != null) {
+            this.incomeTypeValue = incomeType.getIncome_type_value();
+        }
+    }
+
+    public Income(BigDecimal incomeAmount, int incomeTypeValue, String incomeDescription) {
 
         this.incomeAmount = incomeAmount;
-        this.incomeType = income_type;
+        this.incomeTypeValue = incomeTypeValue;
         this.incomeReference = incomeDescription;
     }
 }

@@ -1,7 +1,11 @@
 package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -9,4 +13,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @email chriseteka@gmail.com
  */
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+
+    List<Expense> findAllByCreatedDateIsBetween(Date from, Date to);
+
+    List<Expense> findAllByCreatedBy(String createdBy);
+
+    List<Expense> findAllByCreatedDate(Date createdDate);
+
+    List<Expense> findAllByApprovedTrue();
+
+    List<Expense> findAllByApprovedFalse();
+
+    List<Expense> findAllByExpenseTypeValue(int expenseTypeValue);
 }

@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,16 +41,26 @@ public class Warehouse {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
+    @NotNull(message = "Warehouse name cannot be null")
+    @Size(min = 3, message = "Warehouse name must contain at least two characters")
+    @Column(name = "warehouseName", nullable = false, unique = true)
+    private String warehouseName;
+
     @NotNull(message = "Warehouse address cannot be null")
     @Size(min = 3, message = "Address must contain at least two characters")
     @Column(name = "warehouseAddress", nullable = false)
     private String warehouseAddress;
 
-    @ManyToMany
-    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
-    private Set<Shop> shops = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    @JsonIgnoreProperties("warehouses")
+    private BusinessOwner businessOwner;
 
-    @ManyToMany
-    @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
-    private Set<Stock> stocks = new HashSet<>();
+//    @JsonIgnore
+//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "warehouses")
+//    private Set<Shop> shops = new HashSet<>();
+
+//    @JsonIgnore
+//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "warehouses")
+//    private Set<Stock> stocks = new HashSet<>();
 }

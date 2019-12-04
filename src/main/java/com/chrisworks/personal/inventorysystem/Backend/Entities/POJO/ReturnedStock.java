@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -68,8 +69,11 @@ public class ReturnedStock {
     @Column(name = "approvedBy")
     private String approvedBy;
 
-    @NotNull(message = "Stock returned must contain a customer detail")
-    @ManyToOne
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
+//    private Shop shop;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "customerReturns", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
 

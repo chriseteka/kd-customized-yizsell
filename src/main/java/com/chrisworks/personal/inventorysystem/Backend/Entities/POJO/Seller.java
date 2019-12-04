@@ -1,8 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -82,12 +81,34 @@ public class Seller {
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
 
-    @JsonIgnore
-    @Column(name = "accountType", updatable = false)
-    private ACCOUNT_TYPE account_type = ACCOUNT_TYPE.SELLER;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+//    private Shop shop;
 
-    @ManyToMany
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
     private Set<Invoice> invoices = new HashSet<>();
+
+    @Basic
+    @JsonIgnore
+    @Column(name = "accountType", updatable = false)
+    private int accountTypeValue;
+
+    @Transient
+    private ACCOUNT_TYPE accountType = ACCOUNT_TYPE.SELLER;
+
+    @PostLoad
+    void fillTransient() {
+        if (accountTypeValue > 0) {
+            this.accountType = ACCOUNT_TYPE.of(accountTypeValue);
+        }
+    }
+
+    @PrePersist
+    void fillPersistent() {
+        if (accountType != null) {
+            this.accountTypeValue = accountType.getAccount_type_value();
+        }
+    }
 
 }

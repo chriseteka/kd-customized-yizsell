@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,11 +41,6 @@ public class Expense {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Expense type cannot be null")
-    @Column(name = "expenseType", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private EXPENSE_TYPE expenseType;
-
     @DecimalMin(value = "0.0", inclusive = false, message = "Expense must be greater than zero")
     @NotNull(message = "Expense amount cannot be null")
     @Column(name = "expenseAmount", nullable = false)
@@ -68,9 +64,36 @@ public class Expense {
     @Column(name = "approvedBy")
     private String approvedBy;
 
-    public Expense(EXPENSE_TYPE expense_type, BigDecimal expenseAmount, String expenseDescription) {
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
+//    private Shop shop;
 
-        this.expenseType = expense_type;
+    @Basic
+    @JsonIgnore
+    @NotNull(message = "Expense type cannot be null")
+    @Column(name = "expenseType", nullable = false)
+    private int expenseTypeValue;
+
+    @Transient
+    private EXPENSE_TYPE expenseType;
+
+    @PostLoad
+    void fillTransient() {
+        if (expenseTypeValue > 0) {
+            this.expenseType = EXPENSE_TYPE.of(expenseTypeValue);
+        }
+    }
+
+    @PrePersist
+    void fillPersistent() {
+        if (expenseType != null) {
+            this.expenseTypeValue = expenseType.getExpense_type_value();
+        }
+    }
+
+    public Expense(int expenseTypeValue, BigDecimal expenseAmount, String expenseDescription) {
+
+        this.expenseTypeValue = expenseTypeValue;
         this.expenseAmount = expenseAmount;
         this.expenseDescription = expenseDescription;
     }

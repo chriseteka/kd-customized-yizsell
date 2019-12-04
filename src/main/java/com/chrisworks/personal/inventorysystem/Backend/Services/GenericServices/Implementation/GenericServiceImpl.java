@@ -1,8 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.Implementation;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
@@ -18,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 /**
  * @author Chris_Eteka
  * @since 11/27/2019
@@ -183,7 +183,7 @@ public class GenericServiceImpl implements GenericService {
                 customerRepository.findDistinctByCustomerPhoneNumber(invoice.getCustomerId().getCustomerPhoneNumber()));
 
         //If customer does not exist before, save it.
-        if (null == customer.get()) customer.set(customerRepository.save(invoice.getCustomerId()));
+        if (null == customer.get()) customer.set(this.addCustomer(invoice.getCustomerId()));
 
         //Get a difference between total amount in invoice and the amount paid by the customer, noting any discount
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
@@ -221,7 +221,7 @@ public class GenericServiceImpl implements GenericService {
 
         //Add amount paid by customer as a new income, this would be needed when balancing inflow and outflow of cash
         String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
-        addIncome(new Income(invoice.getAmountPaid(), INCOME_TYPE.STOCK_SALE, incomeDescription));
+        addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
 
         invoice.getStockSold().clear();
         invoice.setStockSold(stockSoldSet);
@@ -310,7 +310,7 @@ public class GenericServiceImpl implements GenericService {
 
             //Create an Expense of type sales_return and save it
             String expenseDescription = returnStock.get().getStockName() + " returned with reason: " + returnStock.get().getReasonForReturn();
-            Expense expenseOnReturn = addExpense(new Expense(EXPENSE_TYPE.RETURNED_SALE, returnStock.get().getStockReturnedCost(), expenseDescription));
+            Expense expenseOnReturn = addExpense(new Expense(300, returnStock.get().getStockReturnedCost(), expenseDescription));
 
             //Do the following if user is a seller
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SELLER)) {
@@ -338,9 +338,7 @@ public class GenericServiceImpl implements GenericService {
     }
 
     @Override
-    public ReturnedStock processReturnList(List<ReturnedStock> returnedStockList) {
-
-        AtomicReference<ReturnedStock> returnStock = new AtomicReference<>();
+    public List<ReturnedStock> processReturnList(List<ReturnedStock> returnedStockList) {
 
         if (null == returnedStockList || returnedStockList.isEmpty()){
 
@@ -348,9 +346,7 @@ public class GenericServiceImpl implements GenericService {
             return null;
         }
 
-        returnedStockList.forEach(returnedStock -> returnStock.set(processReturn(returnedStock)));
-
-        return returnStock.get();
+        return returnedStockList.stream().map(this::processReturn).collect(Collectors.toList());
     }
 
     @Override

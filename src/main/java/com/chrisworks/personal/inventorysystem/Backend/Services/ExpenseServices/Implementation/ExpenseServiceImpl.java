@@ -1,13 +1,16 @@
-package com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.CRUDServicesImplementation;
+package com.chrisworks.personal.inventorysystem.Backend.Services.ExpenseServices.Implementation;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ExpenseRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices.CRUDServices;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Services.ExpenseServices.ExpenseServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,13 +21,16 @@ import java.util.concurrent.atomic.AtomicReference;
  * @email chriseteka@gmail.com
  */
 @Service
-public class ExpenseCRUDImpl implements CRUDServices<Expense> {
+public class ExpenseServiceImpl implements ExpenseServices {
 
     private final ExpenseRepository expenseRepository;
 
+    private ShopRepository shopRepository;
+
     @Autowired
-    public ExpenseCRUDImpl(ExpenseRepository expenseRepository) {
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, ShopRepository shopRepository) {
         this.expenseRepository = expenseRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -75,16 +81,13 @@ public class ExpenseCRUDImpl implements CRUDServices<Expense> {
     @Override
     public Expense getSingleEntity(Long entityId) {
 
-        AtomicReference<Expense> expenseRetrieved = new AtomicReference<>();
-
         if(null == entityId){
 
             //Throw error
             return null;
         }
-        expenseRepository.findById(entityId).ifPresent(expenseRetrieved::set);
 
-        return expenseRetrieved.get();
+        return expenseRepository.findById(entityId).orElse(null);
     }
 
     @Override
@@ -105,5 +108,50 @@ public class ExpenseCRUDImpl implements CRUDServices<Expense> {
         });
 
         return expenseToDelete.get();
+    }
+
+    @Override
+    public List<Expense> fetchAllApprovedExpenses() {
+
+        return expenseRepository.findAllByApprovedTrue();
+    }
+
+    @Override
+    public List<Expense> fetchAllUnApprovedExpenses() {
+
+        return expenseRepository.findAllByApprovedFalse();
+    }
+
+    @Override
+    public List<Expense> fetchExpensesCreatedBy(String createdBy) {
+
+        return expenseRepository.findAllByCreatedBy(createdBy);
+    }
+
+    @Override
+    public List<Expense> fetchAllExpensesCreatedOn(Date createdOn) {
+
+        return expenseRepository.findAllByCreatedDate(createdOn);
+    }
+
+    @Override
+    public List<Expense> fetchAllExpensesBetween(Date from, Date to) {
+
+        return expenseRepository.findAllByCreatedDateIsBetween(from, to);
+    }
+
+    @Override
+    public List<Expense> fetchAllExpensesByType(int expenseTypeValue) {
+
+        return expenseRepository.findAllByExpenseTypeValue(expenseTypeValue);
+    }
+
+    @Override
+    public List<Expense> fetchAllExpensesInShop(Long shopId) {
+
+        return shopRepository
+                .findById(shopId)
+                .map(shop -> new ArrayList<>(shop.getExpenses()))
+                .orElse(null);
     }
 }

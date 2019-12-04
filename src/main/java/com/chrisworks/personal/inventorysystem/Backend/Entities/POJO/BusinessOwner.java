@@ -1,8 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -86,12 +85,31 @@ public class BusinessOwner {
     @Column(name = "businessTotalProfit", precision = 2)
     private BigDecimal businessTotalProfit = BigDecimal.ZERO;
 
+//    @JsonIgnore
+//    @OneToMany(fetch = FetchType.EAGER, mappedBy = "businessOwner", cascade = CascadeType.ALL)
+//    @JsonIgnoreProperties("businessOwner")
+//    private Set<Warehouse> warehouses = new HashSet<>();
+
+    @Basic
     @JsonIgnore
     @Column(name = "accountType", updatable = false)
-    private ACCOUNT_TYPE account_type = ACCOUNT_TYPE.BUSINESS_OWNER;
+    private int accountTypeValue;
 
-    @ManyToMany
-    @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
-    private Set<Warehouse> warehouses = new HashSet<>();
+    @Transient
+    private ACCOUNT_TYPE accountType = ACCOUNT_TYPE.BUSINESS_OWNER;
+
+    @PostLoad
+    void fillTransient() {
+        if (accountTypeValue > 0) {
+            this.accountType = ACCOUNT_TYPE.of(accountTypeValue);
+        }
+    }
+
+    @PrePersist
+    void fillPersistent() {
+        if (accountType != null) {
+            this.accountTypeValue = accountType.getAccount_type_value();
+        }
+    }
 
 }

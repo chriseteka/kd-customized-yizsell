@@ -1,15 +1,19 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers.BusinessOwnerController;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Services.BusinessOwnerServices.BusinessOwnerServices;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
+import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServiecs.SellerServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.ShopServices.ShopServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.WarehoseServices.WarehouseServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -25,10 +29,21 @@ public class BusinessOwnerController {
 
     private GenericService genericService;
 
+    private ShopServices shopServices;
+
+    private SellerServices sellerServices;
+
+    private WarehouseServices warehouseServices;
+
     @Autowired
-    public BusinessOwnerController(BusinessOwnerServices businessOwnerServices, GenericService genericService) {
+    public BusinessOwnerController(BusinessOwnerServices businessOwnerServices, GenericService genericService,
+                                   ShopServices shopServices, SellerServices sellerServices,
+                                   WarehouseServices warehouseServices) {
         this.businessOwnerServices = businessOwnerServices;
         this.genericService = genericService;
+        this.shopServices = shopServices;
+        this.sellerServices = sellerServices;
+        this.warehouseServices = warehouseServices;
     }
 
     @PostMapping(path = "/createAccount", consumes = "application/json", produces = "application/json")
@@ -60,27 +75,35 @@ public class BusinessOwnerController {
         return shopRetrieved != null ? ResponseEntity.ok(shopRetrieved) : ResponseEntity.noContent().build();
     }
 
-    @PostMapping(path = "/addShop", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> addShop(@RequestBody Shop shop){
+    @PostMapping(path = "/addWarehouse", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> addWarehouse(@RequestBody Warehouse warehouse, @RequestParam Long businessOwnerId){
 
-        Shop shopAdded = businessOwnerServices.addShop(shop);
+        Warehouse warehouseAdded = warehouseServices.addWarehouse(businessOwnerId, warehouse);
+
+        return warehouseAdded != null ? ResponseEntity.ok(warehouseAdded) : ResponseEntity.badRequest().body(null);
+    }
+
+    @PostMapping(path = "/addShop", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> addShop(@RequestBody Shop shop, @RequestParam Long warehouseId){
+
+        Shop shopAdded = shopServices.addShop(warehouseId, shop);
 
         return shopAdded != null ? ResponseEntity.ok(shopAdded) : ResponseEntity.badRequest().body(shop);
     }
 
     @PostMapping(path = "/addSellerToShop", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> addSellerToShop(@RequestParam Long shopId, @RequestBody Seller seller){
+    public ResponseEntity<?> addSellerToShop(@RequestParam Long shopId, @RequestParam Long sellerId){
 
-        Shop shop = businessOwnerServices.addSellerToShop(shopId, seller);
+        Shop shop = shopServices.addSellerToShop(shopId, sellerServices.fetchSellerById(sellerId));
 
         return shop != null ? ResponseEntity.ok(shop) : ResponseEntity.badRequest().build();
     }
 
-    @PostMapping(path = "/addSeller", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> addSeller(@RequestBody Seller seller){
+    @GetMapping(path = "/shops")
+    public ResponseEntity<?> fetchAllShop(@RequestParam Long warehouseId){
 
-        Seller sellerAdded = businessOwnerServices.createSeller(seller);
+        List<Shop> shops = shopServices.fetchAllShopInWarehouse(warehouseId);
 
-        return sellerAdded != null ? ResponseEntity.ok(sellerAdded) : ResponseEntity.badRequest().build();
+        return shops != null ? ResponseEntity.ok(shops) : ResponseEntity.noContent().build();
     }
 }
