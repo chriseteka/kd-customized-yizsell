@@ -1,15 +1,24 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author Chris_Eteka
@@ -34,9 +43,10 @@ public class MainController {
 
         Customer newCustomer = genericService.addCustomer(customer);
 
-        //Exception thrown here should be modified.
+        if (newCustomer == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + customer, null);
 
-        return newCustomer != null ? ResponseEntity.ok(newCustomer) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(newCustomer, HttpStatus.CREATED);
     }
 
     @PostMapping(path = "supplier", consumes = "application/json", produces = "application/json")
@@ -44,30 +54,33 @@ public class MainController {
 
         Supplier newSupplier = genericService.addSupplier(supplier);
 
-        //Exception thrown here should be modified.
+        if (newSupplier == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + supplier, null);
 
-        return newSupplier != null ? ResponseEntity.ok(newSupplier) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(newSupplier, HttpStatus.CREATED);
     }
 
     @PostMapping(path = "stock", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> addStock(@RequestBody @Valid Stock stock, @RequestBody @Valid Supplier supplier){
+    public ResponseEntity<?> addStock(@RequestParam Long warehouseId, @RequestBody @Valid Stock stock){
 
-        Stock newStock = genericService.addStock(stock, supplier);
+        Stock newStock = genericService.addStock(warehouseId, stock);
 
-        //Exception thrown here should be modified.
+        if (newStock == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stock, null);
 
-        return newStock != null ? ResponseEntity.ok(newStock) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(newStock, HttpStatus.CREATED);
     }
 
-    @PostMapping(path = "restock", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> reStock(@RequestParam Long stockId, @RequestBody @Valid Stock stock,
-                                     @RequestBody @Valid Supplier supplier){
+    @PutMapping(path = "restock", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> reStock(@RequestParam Long stockId, @RequestParam Long warehouseId,
+                                     @RequestBody @Valid Stock stock){
 
-        Stock reStock = genericService.reStock(stockId, stock, supplier);
+        Stock reStock = genericService.reStock(warehouseId, stockId, stock);
 
-        //Exception thrown here should be modified.
+        if (reStock == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stock, null);
 
-        return reStock != null ? ResponseEntity.ok(reStock) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(reStock, HttpStatus.CREATED);
     }
 
     @PostMapping(path = "sell", consumes = "application/json", produces = "application/json")
@@ -75,9 +88,10 @@ public class MainController {
 
         Invoice newInvoice = genericService.sellStock(invoice);
 
-        //Exception thrown here should be modified.
+        if (newInvoice == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + invoice, null);
 
-        return newInvoice != null ? ResponseEntity.ok(newInvoice) : ResponseEntity.noContent().build();
+        return ResponseEntity.ok(newInvoice);
     }
 
     @PostMapping(path = "return", consumes = "application/json", produces = "application/json")
@@ -85,64 +99,87 @@ public class MainController {
 
         ReturnedStock newReturnedStock = genericService.processReturn(returnedStock);
 
-        //Exception thrown here should be modified.
+        if (newReturnedStock == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + returnedStock, null);
 
-        return newReturnedStock != null ? ResponseEntity.ok(newReturnedStock) : ResponseEntity.noContent().build();
+        return ResponseEntity.ok(newReturnedStock);
     }
-
 
     @PostMapping(path = "list/return", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> processReturnList(@RequestBody @Valid List<ReturnedStock> returnedStockList){
 
         List<ReturnedStock> newReturnedStockList = genericService.processReturnList(returnedStockList);
 
-        //Exception thrown here should be modified.
+        if (newReturnedStockList == null) throw new InventoryAPIOperationException
+                ("List not saved", "Could not save the list of entities: " + returnedStockList, null);
 
-        return (newReturnedStockList != null && !newReturnedStockList.isEmpty()) ?
-                ResponseEntity.ok(newReturnedStockList) : ResponseEntity.noContent().build();
+        return (!newReturnedStockList.isEmpty()) ? ResponseEntity.ok(newReturnedStockList)
+                : ResponseEntity.noContent().build();
     }
 
     @PostMapping(path = "expense", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> addExpense(@RequestBody @Valid Expense expense){
 
+        if (!expense.getExpenseTypeVal().matches("\\d+")) throw new InventoryAPIDataValidationException
+                ("Expense Type value error", "Expense Type value must be any of these: 100, 200, 300, 400", null);
+
+        expense.setExpenseTypeValue(Integer.parseInt(expense.getExpenseTypeVal()));
+
+        IntStream incomeValueStream = Arrays.stream(EXPENSE_TYPE.values()).mapToInt(EXPENSE_TYPE::getExpense_type_value);
+
+        if (incomeValueStream.noneMatch(value -> value == expense.getExpenseTypeValue()))
+            throw new InventoryAPIDataValidationException("Income Type value error", "Income Type value must be any of these: 100, 200, 300, 400", null);
+
         Expense newExpense = genericService.addExpense(expense);
 
-        //Exception thrown here should be modified.
+        if (newExpense == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + expense, null);
 
-        return newExpense != null ? ResponseEntity.ok(newExpense) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(newExpense, HttpStatus.CREATED);
     }
 
     @PostMapping(path = "income", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> addIncome(@RequestBody @Valid Income income){
 
+        if (!income.getIncomeTypeVal().matches("\\d+"))
+            throw new InventoryAPIDataValidationException("Income Type value error", "Income Type value must be any of these: 100, 200, 300", null);
+
+        income.setIncomeTypeValue(Integer.parseInt(income.getIncomeTypeVal()));
+
+        IntStream incomeValueStream = Arrays.stream(INCOME_TYPE.values()).mapToInt(INCOME_TYPE::getIncome_type_value);
+
+        if (incomeValueStream.noneMatch(value -> value == income.getIncomeTypeValue())) throw new
+                InventoryAPIDataValidationException("Income Type value error", "Income Type value must be any of these: 100, 200, 300", null);
+
         Income newIncome = genericService.addIncome(income);
 
-        //Exception thrown here should be modified.
+        if (newIncome == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + income, null);
 
-        return newIncome != null ? ResponseEntity.ok(newIncome) : ResponseEntity.noContent().build();
+        return new ResponseEntity<>(newIncome, HttpStatus.CREATED);
     }
 
-    @GetMapping(path = "change/selling/price/stockId")
-    public ResponseEntity<?> changeStockSellingPriceById(@RequestParam Long stockId, @RequestParam BigDecimal newSellingPrice){
+    @PutMapping(path = "change/selling/price/stockId")
+    public ResponseEntity<?> changeStockSellingPriceById(@RequestParam Long stockId,
+                                                         @RequestParam BigDecimal newSellingPrice){
 
         Stock stockWithNewSellingPrice = genericService.changeStockSellingPriceById(stockId, newSellingPrice);
 
-        //Exception thrown here should be modified.
+        if (stockWithNewSellingPrice == null) throw new InventoryAPIOperationException
+                ("Data not updated", "Could not update entity with value: " + newSellingPrice.toString(), null);
 
-        return stockWithNewSellingPrice != null ?
-                ResponseEntity.ok(stockWithNewSellingPrice) : ResponseEntity.noContent().build();
+        return ResponseEntity.ok(stockWithNewSellingPrice);
     }
 
-    @GetMapping(path = "change/selling/price/stockName")
+    @PutMapping(path = "change/selling/price/stockName")
     public ResponseEntity<?> changeStockSellingPriceByName(@RequestParam String stockName,
                                                            @RequestParam BigDecimal newSellingPrice){
 
         Stock stockWithNewSellingPrice = genericService.changeStockSellingPriceByName(stockName, newSellingPrice);
 
-        //Exception thrown here should be modified.
+        if (stockWithNewSellingPrice == null) throw new InventoryAPIOperationException
+                ("Data not updated", "Could not update entity with value: " + newSellingPrice.toString(), null);
 
-        return stockWithNewSellingPrice != null ?
-                ResponseEntity.ok(stockWithNewSellingPrice) : ResponseEntity.noContent().build();
+        return ResponseEntity.ok(stockWithNewSellingPrice);
     }
-
 }

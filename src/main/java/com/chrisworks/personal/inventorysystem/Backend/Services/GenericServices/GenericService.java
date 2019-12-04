@@ -18,9 +18,9 @@ public interface GenericService {
 
     Supplier addSupplier(Supplier supplier);
 
-    Stock addStock(Stock stock, Supplier supplier);
+    Stock addStock(Long warehouseId, Stock stock);
 
-    Stock reStock(Long stockId, Stock newStock, Supplier supplier);
+    Stock reStock(Long warehouseId, Long stockId, Stock newStock);
 
     Invoice sellStock(Invoice invoice);
 

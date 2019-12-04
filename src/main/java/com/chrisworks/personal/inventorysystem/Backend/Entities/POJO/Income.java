@@ -7,8 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -67,9 +66,12 @@ public class Income {
 
     @Basic
     @JsonIgnore
-    @NotNull(message = "Income type cannot be null")
     @Column(name = "incomeType", nullable = false)
     private int incomeTypeValue;
+
+    @Transient
+    @NotEmpty(message = "Income type cannot be null")
+    private String incomeTypeVal;
 
     @Transient
     private INCOME_TYPE incomeType;
@@ -85,6 +87,9 @@ public class Income {
     void fillPersistent() {
         if (incomeType != null) {
             this.incomeTypeValue = incomeType.getIncome_type_value();
+        }
+        if (incomeTypeValue > 0) {
+            this.incomeType = INCOME_TYPE.of(incomeTypeValue);
         }
     }
 

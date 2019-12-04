@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
  * @email chriseteka@gmail.com
  */
 //This object is created on successful authentication, and they form the requirements(claims) for jwt
+@Data
 @AllArgsConstructor
 //@NoArgsConstructor
 public class AuthenticatedUserDetails {
@@ -29,4 +31,11 @@ public class AuthenticatedUserDetails {
     }
 
     public static ACCOUNT_TYPE getAccount_type(){ return account_type; }
+
+    public AuthenticatedUserDetails(Long userId, String fullName, ACCOUNT_TYPE account_type) {
+
+        AuthenticatedUserDetails.userId = userId;
+        AuthenticatedUserDetails.userFullName = fullName;
+        AuthenticatedUserDetails.account_type = account_type;
+    }
 }

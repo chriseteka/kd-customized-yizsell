@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -46,12 +43,15 @@ public class GenericServiceImpl implements GenericService {
 
     private ShopRepository shopRepository;
 
+    private WarehouseRepository warehouseRepository;
+
     @Autowired
     public GenericServiceImpl(SupplierRepository supplierRepository, CustomerRepository customerRepository,
                               StockRepository stockRepository, InvoiceRepository invoiceRepository,
                               ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
                               ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
-                              SellerRepository sellerRepository, ShopRepository shopRepository) {
+                              SellerRepository sellerRepository, ShopRepository shopRepository,
+                              WarehouseRepository warehouseRepository) {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.stockRepository = stockRepository;
@@ -62,6 +62,7 @@ public class GenericServiceImpl implements GenericService {
         this.incomeRepository = incomeRepository;
         this.sellerRepository = sellerRepository;
         this.shopRepository = shopRepository;
+        this.warehouseRepository = warehouseRepository;
     }
 
     @Override
@@ -82,23 +83,41 @@ public class GenericServiceImpl implements GenericService {
 
     @Transactional
     @Override
-    public Stock addStock(Stock stock, Supplier supplier) {
+    public Stock addStock(Long warehouseId, Stock stock) {
 
-        Supplier stockSupplier;
+        Supplier stockSupplier = stock.getLastRestockPurchasedFrom();
 
-        stockSupplier = supplierRepository.findDistinctBySupplierPhoneNumber(supplier.getSupplierPhoneNumber());
+        stockSupplier = supplierRepository
+                .findDistinctBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
-        if (null == stockSupplier) stockSupplier = addSupplier(supplier);
+        if (null == stockSupplier) stockSupplier = addSupplier(stock.getLastRestockPurchasedFrom());
 
         Stock existingStock = stockRepository.findDistinctByStockName(stock.getStockName());
 
         if (existingStock != null){
 
-            return reStock(existingStock.getStockId(), stock, stockSupplier);
+            existingStock.setLastRestockPurchasedFrom(stockSupplier);
+
+            return reStock(warehouseId, existingStock.getStockId(), stock);
         }
+
+        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
+
+        if(!optionalWarehouse.isPresent()){
+
+            //Throw error and return;
+            return null;
+        }
+//        if (optionalWarehouse.get().getBusinessOwner() != bussOwnerAddingIt) throw error and return
 
         Set<Supplier> supplierSet = new HashSet<>();
         supplierSet.add(stockSupplier);
+
+        Set<Warehouse> warehouseSet = new HashSet<>();
+        warehouseSet.add(optionalWarehouse.get());
+
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -108,6 +127,7 @@ public class GenericServiceImpl implements GenericService {
         }
 
         stock.setStockPurchasedFrom(supplierSet);
+        stock.setWarehouses(warehouseSet);
         stock.setLastRestockPurchasedFrom(stockSupplier);
         stock.setLastRestockQuantity(stock.getStockQuantityPurchased());
         stock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
@@ -122,13 +142,25 @@ public class GenericServiceImpl implements GenericService {
 
     @Transactional
     @Override
-    public Stock reStock(Long stockId, Stock newStock, Supplier supplier) {
+    public Stock reStock(Long warehouseId, Long stockId, Stock newStock) {
 
-        Supplier stockSupplier;
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
 
-        stockSupplier = supplierRepository.findDistinctBySupplierPhoneNumber(supplier.getSupplierPhoneNumber());
+        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
 
-        if (null == stockSupplier) stockSupplier = addSupplier(supplier);
+        if(!optionalWarehouse.isPresent()){
+
+            //Throw error and return;
+            return null;
+        }
+//        if (optionalWarehouse.get().getBusinessOwner() != bussOwnerAddingIt) throw error and return
+
+        Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
+
+        stockSupplier = supplierRepository.findDistinctBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
+
+        if (null == stockSupplier) stockSupplier = addSupplier(newStock.getLastRestockPurchasedFrom());
 
         AtomicReference<Stock> reStock = new AtomicReference<>();
 
@@ -136,10 +168,13 @@ public class GenericServiceImpl implements GenericService {
 
         stockRepository.findById(stockId).ifPresent(stock -> {
 
+            Set<Warehouse> allWarehouses = stock.getWarehouses();
             Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
             allSuppliers.add(finalStockSupplier);
+            allWarehouses.add(optionalWarehouse.get());
             stock.setUpdateDate(new Date());
             stock.setStockPurchasedFrom(allSuppliers);
+            stock.setWarehouses(allWarehouses);
             stock.setLastRestockPurchasedFrom(finalStockSupplier);
             stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
             stock.setLastRestockQuantity(newStock.getStockQuantityPurchased());
@@ -352,6 +387,9 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Expense addExpense(Expense expense) {
 
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
+
         expense.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
@@ -366,6 +404,9 @@ public class GenericServiceImpl implements GenericService {
 
     @Override
     public Income addIncome(Income income) {
+
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
 
         income.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 

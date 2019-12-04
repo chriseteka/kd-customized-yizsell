@@ -1,6 +1,6 @@
-package com.chrisworks.personal.inventorysystem.Backend.Exceptions;
+package com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionHandlers;
 
-import com.chrisworks.personal.inventorysystem.Backend.Exceptions.ExceptionResponse.ExceptionResponse;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionResponse.ExceptionResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,9 +13,15 @@ import javax.validation.ConstraintViolationException;
 import java.util.Date;
 import java.util.Set;
 
+/**
+ * @author Chris_Eteka
+ * @since 12/4/2019
+ * @email chriseteka@gmail.com
+ */
+//This was added due to @Validated annotation called on some controller classes
 @RestControllerAdvice
 @Component
-public class ControllerExceptionHandler {
+public class CustomControllerExceptionHandler {
 
     /**
      * handle controller methods parameter validation exceptions
@@ -34,6 +40,6 @@ public class ControllerExceptionHandler {
             builder.append(violation.getMessage());
             break;
         }
-        return new ExceptionResponse(new Date(), HttpStatus.PRECONDITION_FAILED.toString(), builder.toString());
+        return new ExceptionResponse(new Date(), HttpStatus.PRECONDITION_FAILED.value(), exception.getMessage(), builder.toString());
     }
 }

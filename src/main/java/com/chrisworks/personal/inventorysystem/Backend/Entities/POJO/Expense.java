@@ -7,9 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -70,9 +68,12 @@ public class Expense {
 
     @Basic
     @JsonIgnore
-    @NotNull(message = "Expense type cannot be null")
     @Column(name = "expenseType", nullable = false)
     private int expenseTypeValue;
+
+    @Transient
+    @NotEmpty(message = "Expense type cannot be null")
+    private String expenseTypeVal;
 
     @Transient
     private EXPENSE_TYPE expenseType;
@@ -88,6 +89,9 @@ public class Expense {
     void fillPersistent() {
         if (expenseType != null) {
             this.expenseTypeValue = expenseType.getExpense_type_value();
+        }
+        if (expenseTypeValue > 0) {
+            this.expenseType = EXPENSE_TYPE.of(expenseTypeValue);
         }
     }
 
