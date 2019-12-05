@@ -1,6 +1,5 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
-import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

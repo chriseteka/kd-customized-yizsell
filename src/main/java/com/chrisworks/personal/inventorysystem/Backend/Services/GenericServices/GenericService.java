@@ -18,6 +18,8 @@ public interface GenericService {
 
     Supplier addSupplier(Supplier supplier);
 
+    StockCategory addStockCategory(StockCategory stockCategory);
+
     Stock addStock(Long warehouseId, Stock stock);
 
     Stock reStock(Long warehouseId, Long stockId, Stock newStock);
@@ -34,7 +36,7 @@ public interface GenericService {
 
     Stock changeStockSellingPriceById(Long stockId, BigDecimal newSellingPrice);
 
-    Stock changeStockSellingPriceByName(String stockName, BigDecimal newSellingPrice);
+    Stock changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice);
 
     Shop shopBySellerName(String sellerName);
 }

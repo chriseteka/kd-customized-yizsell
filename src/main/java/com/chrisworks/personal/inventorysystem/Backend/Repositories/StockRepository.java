@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Stock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -12,5 +13,5 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     Stock findDistinctByStockNameAndApprovedIsFalse(String stockName);
 
-    Stock findDistinctByStockName(String stockName);
+    Stock findDistinctByStockNameAndWarehouses(String stockName, Warehouse warehouse);
 }

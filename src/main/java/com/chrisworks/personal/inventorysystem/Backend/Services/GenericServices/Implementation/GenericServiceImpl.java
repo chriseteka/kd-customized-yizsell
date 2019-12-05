@@ -2,6 +2,8 @@ package com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class GenericServiceImpl implements GenericService {
+
+    private  BusinessOwnerRepository businessOwnerRepository;
 
     private SupplierRepository supplierRepository;
 
@@ -45,13 +49,16 @@ public class GenericServiceImpl implements GenericService {
 
     private WarehouseRepository warehouseRepository;
 
+    private StockCategoryRepository stockCategoryRepository;
+
     @Autowired
-    public GenericServiceImpl(SupplierRepository supplierRepository, CustomerRepository customerRepository,
-                              StockRepository stockRepository, InvoiceRepository invoiceRepository,
-                              ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
-                              ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
-                              SellerRepository sellerRepository, ShopRepository shopRepository,
-                              WarehouseRepository warehouseRepository) {
+    public GenericServiceImpl
+            (SupplierRepository supplierRepository, CustomerRepository customerRepository, StockRepository stockRepository,
+             InvoiceRepository invoiceRepository, ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
+             ExpenseRepository expenseRepository, IncomeRepository incomeRepository, SellerRepository sellerRepository,
+             ShopRepository shopRepository, WarehouseRepository warehouseRepository, BusinessOwnerRepository businessOwnerRepository,
+             StockCategoryRepository stockCategoryRepository)
+    {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.stockRepository = stockRepository;
@@ -63,10 +70,15 @@ public class GenericServiceImpl implements GenericService {
         this.sellerRepository = sellerRepository;
         this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
+        this.businessOwnerRepository = businessOwnerRepository;
+        this.stockCategoryRepository = stockCategoryRepository;
     }
 
     @Override
     public Customer addCustomer(Customer customer) {
+
+        if (null == customer) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find customer entity to save", null);
 
         customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
@@ -76,23 +88,58 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Supplier addSupplier(Supplier supplier) {
 
+        if (null == supplier) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find supplier entity to save", null);
+
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
+
         supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
         return supplierRepository.save(supplier);
+    }
+
+    @Override
+    public StockCategory addStockCategory(StockCategory stockCategory) {
+
+        if (null == stockCategory) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find stockCategory entity to save", null);
+
+        stockCategory.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        return stockCategoryRepository.save(stockCategory);
     }
 
     @Transactional
     @Override
     public Stock addStock(Long warehouseId, Stock stock) {
 
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
+
+        if (null == stock) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find stock entity to save", null);
+
+        //for testing purpose
+        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
+
         Supplier stockSupplier = stock.getLastRestockPurchasedFrom();
+
+        StockCategory stockCategory = stock.getStockCategory();
+
+        stockCategory = stockCategoryRepository.findDistinctFirstByCategoryName(stockCategory.getCategoryName());
+
+        if (null == stockCategory) stockCategory = addStockCategory(stock.getStockCategory());
 
         stockSupplier = supplierRepository
                 .findDistinctBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
         if (null == stockSupplier) stockSupplier = addSupplier(stock.getLastRestockPurchasedFrom());
 
-        Stock existingStock = stockRepository.findDistinctByStockName(stock.getStockName());
+        Warehouse warehouse = fetchAuthUserWarehouse(warehouseId);
+//        if (optionalWarehouse.get().getBusinessOwner() != bussOwnerAddingIt) throw error and return
+
+        Stock existingStock = stockRepository
+                .findDistinctByStockNameAndWarehouses(stock.getStockName(), warehouse);
 
         if (existingStock != null){
 
@@ -101,23 +148,11 @@ public class GenericServiceImpl implements GenericService {
             return reStock(warehouseId, existingStock.getStockId(), stock);
         }
 
-        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
-
-        if(!optionalWarehouse.isPresent()){
-
-            //Throw error and return;
-            return null;
-        }
-//        if (optionalWarehouse.get().getBusinessOwner() != bussOwnerAddingIt) throw error and return
-
         Set<Supplier> supplierSet = new HashSet<>();
         supplierSet.add(stockSupplier);
 
         Set<Warehouse> warehouseSet = new HashSet<>();
-        warehouseSet.add(optionalWarehouse.get());
-
-        //for testing purpose
-        new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
+        warehouseSet.add(warehouse);
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -126,6 +161,7 @@ public class GenericServiceImpl implements GenericService {
             stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
         }
 
+        stock.setStockCategory(stockCategory);
         stock.setStockPurchasedFrom(supplierSet);
         stock.setWarehouses(warehouseSet);
         stock.setLastRestockPurchasedFrom(stockSupplier);
@@ -144,16 +180,17 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Stock reStock(Long warehouseId, Long stockId, Stock newStock) {
 
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")
+            || null == stockId || stockId < 0 || !stockId.toString().matches("\\d+")) throw new InventoryAPIOperationException
+                ("warehouse id or stock id error", "warehouse id and/or stock id is empty or not a valid number", null);
+
+        if (null == newStock) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find stock entity to save", null);
+
         //for testing purpose
         new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
 
-        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
-
-        if(!optionalWarehouse.isPresent()){
-
-            //Throw error and return;
-            return null;
-        }
+        Warehouse warehouse = fetchAuthUserWarehouse(warehouseId);
 //        if (optionalWarehouse.get().getBusinessOwner() != bussOwnerAddingIt) throw error and return
 
         Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
@@ -166,12 +203,17 @@ public class GenericServiceImpl implements GenericService {
 
         Supplier finalStockSupplier = stockSupplier;
 
-        stockRepository.findById(stockId).ifPresent(stock -> {
+        Optional<Stock> optionalStock = stockRepository.findById(stockId);
+
+        if (!optionalStock.isPresent()) throw new InventoryAPIOperationException
+                ("could not find an entity", "Could not find stock with the id " + stockId, null);
+
+        optionalStock.ifPresent(stock -> {
 
             Set<Warehouse> allWarehouses = stock.getWarehouses();
             Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
             allSuppliers.add(finalStockSupplier);
-            allWarehouses.add(optionalWarehouse.get());
+            allWarehouses.add(warehouse);
             stock.setUpdateDate(new Date());
             stock.setStockPurchasedFrom(allSuppliers);
             stock.setWarehouses(allWarehouses);
@@ -209,9 +251,15 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Invoice sellStock(Invoice invoice) {
 
+        if (null == invoice) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find valid data to generate an invoice", null);
+
         AtomicReference<Customer> customer = new AtomicReference<>();
 
         Set<StockSold> stockSoldSet = new HashSet<>();
+
+        //Ready warehouses to fetch stock from
+        List<Warehouse> warehouseList = warehouseList();
 
         //Find a customer by phone number
         customer.set(
@@ -227,31 +275,38 @@ public class GenericServiceImpl implements GenericService {
         //If customer under pays for list of stocks in his invoice, record a debt against the invoice.
         if (totalToAmountPaidDiff.compareTo(BigDecimal.ZERO) >= 0) invoice.setDebt(totalToAmountPaidDiff.abs());
 
+        AtomicReference<Stock> atomicStock = new AtomicReference<>();
         //Decrement the quantity of stock left for all stock in the customers stock bought list
         invoice.getStockSold().forEach(stockSold -> {
 
-            Stock stockFound = stockRepository.findDistinctByStockName(stockSold.getStockName());
-            if (stockFound == null){
+            for (Warehouse warehouse : warehouseList) {
 
-                //throw error and return
-                return;
+                atomicStock.set(stockRepository
+                        .findDistinctByStockNameAndWarehouses(stockSold.getStockName(), warehouse));
+
+                if (atomicStock.get() == null) return;
+
+                Stock stockFound = atomicStock.get();
+
+                //Assign a number to the invoice
+                invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
+
+                //Save all stock bought by the customer as new and independent objects of stockSold, then add them to a set
+                stockSold.setCostPricePerStock(stockFound.getSellingPricePerStock());
+                stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
+                stockSoldSet.add(stockSoldRepository.save(stockSold));
+
+                //Decrementing of overall stock in the store starts now, while profit, and stock sold total price increases
+                stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
+                stockFound.setStockSoldTotalPrice(stockFound.getProfit().add(stockSold.getCostPricePerStock()
+                        .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
+                stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
+                stockFound.setProfit(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice()));
+                stockRepository.save(stockFound);
             }
 
-            //Assign a number to the invoice
-            invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
-
-            //Save all stock bought by the customer as new and independent objects of stockSold, then add them to a set
-            stockSold.setCostPricePerStock(stockFound.getSellingPricePerStock());
-            stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
-            stockSoldSet.add(stockSoldRepository.save(stockSold));
-
-            //Decrementing of overall stock in the store starts now, while profit, and stock sold total price increases
-            stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
-            stockFound.setStockSoldTotalPrice(stockFound.getProfit().add(stockSold.getCostPricePerStock()
-                    .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
-            stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
-            stockFound.setProfit(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice()));
-            stockRepository.save(stockFound);
+            if (atomicStock.get() == null) throw new InventoryAPIResourceNotFoundException
+                    ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouses", null);
         });
 
         //Add amount paid by customer as a new income, this would be needed when balancing inflow and outflow of cash
@@ -269,11 +324,17 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public ReturnedStock processReturn(ReturnedStock returnedStock) {
 
+        if (returnedStock == null) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find returned stock entity to save", null);
+
         AtomicReference<ReturnedStock> returnStock = new AtomicReference<>();
 
         AtomicReference<StockSold> initialStockSold = new AtomicReference<>();
 
         AtomicReference<StockSold> updatedStockSold = new AtomicReference<>();
+
+        //Ready warehouses to return stock to
+        List<Warehouse> warehouseList = warehouseList();
 
         Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
 
@@ -281,58 +342,61 @@ public class GenericServiceImpl implements GenericService {
 
             invoiceRetrieved.getStockSold().forEach(stockSold -> {
 
-                if (stockSold.getStockName().equalsIgnoreCase(returnedStock.getStockName())){
+                if (stockSold.getStockName().equalsIgnoreCase(returnedStock.getStockName())) {
 
                     //Get the initial stock sold object
                     initialStockSold.set(stockSold);
 
                     //Stock sold is greater than stock returned
-                    if (stockSold.getQuantitySold() < returnedStock.getQuantityReturned()){
+                    if (stockSold.getQuantitySold() < returnedStock.getQuantityReturned()) throw new InventoryAPIOperationException
+                            ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
 
-                        //Error to be thrown here
-                        return;
+                    Stock stockToReturn = null;
+
+                    for (Warehouse warehouse : warehouseList) {
+
+                        stockToReturn = stockRepository
+                                .findDistinctByStockNameAndWarehouses(returnedStock.getStockName(), warehouse);
+
+                        if (null == stockToReturn) return;
+
+                        //Save returns
+                        returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                        returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
+                        returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                                .multiply(stockToReturn.getSellingPricePerStock()));
+                        returnStock.set(returnedStockRepository.save(returnedStock));
+
+                        //Update stock left after return
+                        stockToReturn.setStockRemainingTotalPrice(stockToReturn.getStockRemainingTotalPrice()
+                                .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                                        .multiply(stockSold.getCostPricePerStock())));
+                        stockToReturn.setStockQuantityRemaining(returnedStock.getQuantityReturned() +
+                                stockToReturn.getStockQuantityRemaining());
+                        stockToReturn.setProfit(stockToReturn.getProfit()
+                                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                                        .multiply(stockToReturn.getSellingPricePerStock())));
+                        stockToReturn.setStockSoldTotalPrice(stockToReturn.getStockSoldTotalPrice()
+                                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                                        .multiply(stockSold.getPricePerStockSold())));
+                        stockToReturn.setStockQuantitySold(stockToReturn.getStockQuantitySold() -
+                                returnedStock.getQuantityReturned());
+                        stockToReturn.setUpdateDate(new Date());
+
+                        stockRepository.save(stockToReturn);
+
+                        //Update stockSold
+                        //Reduce quantity of stock from the stock sold table, after find
+                        StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
+                                (returnedStock.getInvoiceId(), stockSold.getStockName());
+                        initStockSold.setUpdateDate(new Date());
+                        initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
+                        updatedStockSold.set(stockSoldRepository.save(initStockSold));
                     }
 
-                    Stock stockToReturn = stockRepository.findDistinctByStockName(returnedStock.getStockName());
-
-                    if (null == stockToReturn){
-
-                        //Error that stock about to be returned does not exist in the store
-                        return;
-                    }
-
-                    //Save returns
-                    returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-                    returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
-                    returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                            .multiply(stockToReturn.getSellingPricePerStock()));
-                    returnStock.set(returnedStockRepository.save(returnedStock));
-
-                    //Update stock left after return
-                    stockToReturn.setStockRemainingTotalPrice(stockToReturn.getStockRemainingTotalPrice()
-                            .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                    .multiply(stockSold.getCostPricePerStock())));
-                    stockToReturn.setStockQuantityRemaining(returnedStock.getQuantityReturned() +
-                            stockToReturn.getStockQuantityRemaining());
-                    stockToReturn.setProfit(stockToReturn.getProfit()
-                            .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                    .multiply(stockToReturn.getSellingPricePerStock())));
-                    stockToReturn.setStockSoldTotalPrice(stockToReturn.getStockSoldTotalPrice()
-                            .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                    .multiply(stockSold.getPricePerStockSold())));
-                    stockToReturn.setStockQuantitySold(stockToReturn.getStockQuantitySold() -
-                            returnedStock.getQuantityReturned());
-                    stockToReturn.setUpdateDate(new Date());
-
-                    stockRepository.save(stockToReturn);
-
-                    //Update stockSold
-                    //Reduce quantity of stock from the stock sold table, after find
-                    StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
-                            (returnedStock.getInvoiceId(), stockSold.getStockName());
-                    initStockSold.setUpdateDate(new Date());
-                    initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
-                    updatedStockSold.set(stockSoldRepository.save(initStockSold));
+                    //Could not find the stock to return any of the warehouses
+                    if(stockToReturn == null) throw new InventoryAPIResourceNotFoundException
+                            ("Stock not found", "The stock about to be returned was never existed in any of your warehouses", null);
                 }
             });
 
@@ -364,10 +428,8 @@ public class GenericServiceImpl implements GenericService {
                 shopRepository.save(stockReturnedShop);
             }
 
-        }else{
-
-            //Throw error that invoice was not retrieved
-        }
+        }else throw new InventoryAPIResourceNotFoundException
+                ("Invoice not found", "Invoice not found for the returned stock invoice number", null);
 
         return returnStock.get();
     }
@@ -375,17 +437,17 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public List<ReturnedStock> processReturnList(List<ReturnedStock> returnedStockList) {
 
-        if (null == returnedStockList || returnedStockList.isEmpty()){
-
-            //Throw error, list empty
-            return null;
-        }
+        if (null == returnedStockList || returnedStockList.isEmpty()) throw new InventoryAPIOperationException
+                ("Invalid list of returned stock", "Returned stock list is empty or null", null);
 
         return returnedStockList.stream().map(this::processReturn).collect(Collectors.toList());
     }
 
     @Override
     public Expense addExpense(Expense expense) {
+
+        if (null == expense) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find expense entity to save", null);
 
         //for testing purpose
         new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
@@ -405,6 +467,9 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Income addIncome(Income income) {
 
+        if (null == income) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find income entity to save", null);
+
         //for testing purpose
         new AuthenticatedUserDetails(Long.parseLong("1000"), "ETEKA CHRISTOPHER (ADMIN)", ACCOUNT_TYPE.SELLER);
 
@@ -423,6 +488,12 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Stock changeStockSellingPriceById(Long stockId, BigDecimal newSellingPrice) {
 
+        if (null == stockId || stockId < 0 || !stockId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("stock id error", "stock id is empty or not a valid number", null);
+
+        if (null == newSellingPrice || newSellingPrice.compareTo(BigDecimal.ZERO) <= 0 || !newSellingPrice.toString().matches("\\d+"))
+            throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
+
         AtomicReference<Stock> updatedStock = new AtomicReference<>();
 
         stockRepository.findById(stockId).ifPresent(stock ->
@@ -433,9 +504,21 @@ public class GenericServiceImpl implements GenericService {
     }
 
     @Override
-    public Stock changeStockSellingPriceByName(String stockName, BigDecimal newSellingPrice) {
+    public Stock changeStockSellingPriceByWarehouseIdAndStockName
+            (Long warehouseId, String stockName, BigDecimal newSellingPrice) {
 
-        Stock stockRetrieved = stockRepository.findDistinctByStockName(stockName);
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
+
+        if (null == stockName || stockName.isEmpty()) throw new
+                InventoryAPIOperationException("stock name error", "stock name is empty or null", null);
+
+        if (null == newSellingPrice || newSellingPrice.compareTo(BigDecimal.ZERO) <= 0 || !newSellingPrice.toString().matches("\\d+"))
+            throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
+
+        Warehouse warehouse = fetchAuthUserWarehouse(warehouseId);
+
+        Stock stockRetrieved = stockRepository.findDistinctByStockNameAndWarehouses(stockName, warehouse);
 
         if (null != stockRetrieved) return stockRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
 
@@ -445,13 +528,13 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public Shop shopBySellerName(String sellerName) {
 
+        if (null == sellerName || sellerName.isEmpty()) throw new
+                InventoryAPIOperationException("seller name error", "seller name is empty or null", null);
+
         Seller sellerFound = sellerRepository.findDistinctBySellerFullName(sellerName);
 
-        if (null == sellerFound){
-
-            //Throw error
-            return null;
-        }
+        if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
+                ("Seller not retrieved", "No shop exist with a seller named: " + sellerName, null);
 
         return shopRepository.findDistinctBySellers(sellerFound);
     }
@@ -465,5 +548,39 @@ public class GenericServiceImpl implements GenericService {
         // and approvedBy to admin's name. Else set approved to false.
 
         return stock;
+    }
+
+    private Warehouse fetchAuthUserWarehouse(Long warehouseId){
+
+        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
+
+        if (!optionalWarehouse.isPresent()) throw new InventoryAPIResourceNotFoundException
+                ("warehouse not found", "warehouse not found with the id: " + warehouseId, null);
+
+        return optionalWarehouse.get();
+
+    }
+
+    private List<Warehouse> warehouseList(){
+
+        List<Warehouse> warehouseList = new ArrayList<>();
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+            Optional<BusinessOwner> businessOwner = businessOwnerRepository.findById(AuthenticatedUserDetails.getUserId());
+
+            businessOwner.ifPresent(owner -> warehouseList.addAll(warehouseRepository.findAllByBusinessOwner(owner)));
+        }
+        else{
+
+            Optional<Seller> optionalSeller = sellerRepository.findById(AuthenticatedUserDetails.getUserId());
+
+            optionalSeller.ifPresent(seller -> warehouseList.addAll(shopRepository.findDistinctBySellers(seller).getWarehouses()));
+        }
+
+        if (warehouseList.isEmpty()) throw new InventoryAPIResourceNotFoundException
+                ("warehouse list not found", "no warehouse was found with active user details", null);
+
+        return warehouseList;
     }
 }

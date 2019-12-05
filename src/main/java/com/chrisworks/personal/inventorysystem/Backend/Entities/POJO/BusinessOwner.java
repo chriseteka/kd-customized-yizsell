@@ -85,6 +85,10 @@ public class BusinessOwner {
     @Column(name = "businessTotalProfit", precision = 2)
     private BigDecimal businessTotalProfit = BigDecimal.ZERO;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "businessOwnerInvoices", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
+    private Set<Invoice> invoices = new HashSet<>();
+
 //    @JsonIgnore
 //    @OneToMany(fetch = FetchType.EAGER, mappedBy = "businessOwner", cascade = CascadeType.ALL)
 //    @JsonIgnoreProperties("businessOwner")

@@ -1,6 +1,5 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
-import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,14 +42,18 @@ public class Stock {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "stock category cannot be null")
-    @Size(min = 3, message = "stock category must contain at least three characters")
-    @Column(name = "stockCategory", nullable = false)
-    private String stockCategory;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "stockStockCategory", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
+    private StockCategory stockCategory;
+
+//    @NotNull(message = "stock category cannot be null")
+//    @Size(min = 3, message = "stock category must contain at least three characters")
+//    @Column(name = "stockCategory", nullable = false)
+//    private String stockCategory;
 
     @NotNull(message = "stock name cannot be null")
     @Size(min = 3, message = "stock name must contain at least three characters")
-    @Column(name = "stockName", nullable = false, unique = true)
+    @Column(name = "stockName", nullable = false)
     private String stockName;
 
     @Min(value = 1, message = "Stock quantity purchased must be greater than zero")
@@ -117,4 +120,11 @@ public class Stock {
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "restockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;
+
+    @Column(name = "expiryDate")
+    @Temporal(TemporalType.DATE)
+    private Date expiryDate;
+
+    @Column(name = "stockBarCodeId")
+    private String stockBarCodeId;
 }

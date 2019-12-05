@@ -70,6 +70,7 @@ public class Income {
     private int incomeTypeValue;
 
     @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotEmpty(message = "Income type cannot be null")
     private String incomeTypeVal;
 

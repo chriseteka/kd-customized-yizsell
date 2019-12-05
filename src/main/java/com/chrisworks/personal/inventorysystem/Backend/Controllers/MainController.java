@@ -60,6 +60,17 @@ public class MainController {
         return new ResponseEntity<>(newSupplier, HttpStatus.CREATED);
     }
 
+    @PostMapping(path = "stock/category", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> addStockCategory(@RequestBody @Valid StockCategory stockCategory){
+
+        StockCategory newStockCategory = genericService.addStockCategory(stockCategory);
+
+        if (newStockCategory == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + newStockCategory, null);
+
+        return new ResponseEntity<>(newStockCategory, HttpStatus.CREATED);
+    }
+
     @PostMapping(path = "stock", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> addStock(@RequestParam Long warehouseId, @RequestBody @Valid Stock stock){
 
@@ -83,6 +94,7 @@ public class MainController {
         return new ResponseEntity<>(reStock, HttpStatus.CREATED);
     }
 
+    //Not tested yet
     @PostMapping(path = "sell", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> sellStock(@RequestBody @Valid Invoice invoice){
 
@@ -94,6 +106,7 @@ public class MainController {
         return ResponseEntity.ok(newInvoice);
     }
 
+    //Not tested yet
     @PostMapping(path = "return", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> processReturn(@RequestBody @Valid ReturnedStock returnedStock){
 
@@ -172,10 +185,11 @@ public class MainController {
     }
 
     @PutMapping(path = "change/selling/price/stockName")
-    public ResponseEntity<?> changeStockSellingPriceByName(@RequestParam String stockName,
+    public ResponseEntity<?> changeStockSellingPriceByName(@RequestParam Long warehouseId, @RequestParam String stockName,
                                                            @RequestParam BigDecimal newSellingPrice){
 
-        Stock stockWithNewSellingPrice = genericService.changeStockSellingPriceByName(stockName, newSellingPrice);
+        Stock stockWithNewSellingPrice = genericService
+                .changeStockSellingPriceByWarehouseIdAndStockName(warehouseId, stockName, newSellingPrice);
 
         if (stockWithNewSellingPrice == null) throw new InventoryAPIOperationException
                 ("Data not updated", "Could not update entity with value: " + newSellingPrice.toString(), null);

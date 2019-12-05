@@ -11,6 +11,7 @@ public class UniqueIdentifier {
 
         long UNIQUE_ID = (System.currentTimeMillis());
 
-        return String.valueOf(UNIQUE_ID).substring(3, 12);
+        //format invoice to take the form "001-4576282"
+        return "00" + AuthenticatedUserDetails.getUserId() + "-" + String.valueOf(UNIQUE_ID).substring(3, 12);
     }
 }

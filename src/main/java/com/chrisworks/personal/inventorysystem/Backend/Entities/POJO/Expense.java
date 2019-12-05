@@ -72,6 +72,7 @@ public class Expense {
     private int expenseTypeValue;
 
     @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotEmpty(message = "Expense type cannot be null")
     private String expenseTypeVal;
 
