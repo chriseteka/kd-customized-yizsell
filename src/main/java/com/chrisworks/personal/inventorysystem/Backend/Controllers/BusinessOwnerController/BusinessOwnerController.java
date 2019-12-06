@@ -3,11 +3,11 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers.BusinessOwne
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
-import com.chrisworks.personal.inventorysystem.Backend.Services.BusinessOwnerServices.BusinessOwnerServices;
-import com.chrisworks.personal.inventorysystem.Backend.Services.GenericServices.GenericService;
-import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServiecs.SellerServices;
-import com.chrisworks.personal.inventorysystem.Backend.Services.ShopServices.ShopServices;
-import com.chrisworks.personal.inventorysystem.Backend.Services.WarehoseServices.WarehouseServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.BusinessOwnerServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.GenericService;
+import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.ShopServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.WarehouseServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

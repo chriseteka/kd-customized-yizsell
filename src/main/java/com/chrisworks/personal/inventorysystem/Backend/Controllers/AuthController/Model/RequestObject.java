@@ -1,9 +1,11 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
@@ -17,6 +19,7 @@ import javax.validation.constraints.Size;
 @AllArgsConstructor
 public class RequestObject {
 
+    @Email(message = "Invalid Email Address Entered")
     @NotEmpty(message = "Username cannot be empty")
     @Size(min = 3, message = "Username should be at least three characters")
     private String username;

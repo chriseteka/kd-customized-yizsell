@@ -11,4 +11,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface BusinessOwnerRepository extends JpaRepository<BusinessOwner, Long> {
+
+    BusinessOwner findDistinctByBusinessOwnerEmail(String email);
 }

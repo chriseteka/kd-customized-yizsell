@@ -11,4 +11,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SellerRepository extends JpaRepository<Seller, Long> {
 
     Seller findDistinctBySellerFullName(String sellerName);
+
+    Seller findDistinctBySellerEmail(String email);
 }

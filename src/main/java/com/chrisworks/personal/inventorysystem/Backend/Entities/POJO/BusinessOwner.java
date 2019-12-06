@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static javax.persistence.GenerationType.AUTO;
 import static javax.persistence.TemporalType.DATE;
@@ -27,7 +27,7 @@ import static javax.persistence.TemporalType.TIME;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "businessOwners")
-public class BusinessOwner {
+public class BusinessOwner implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = AUTO)
@@ -116,4 +116,44 @@ public class BusinessOwner {
         }
     }
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singleton(ACCOUNT_TYPE.BUSINESS_OWNER::toString);
+    }
+
+    @Override
+    @JsonIgnore
+    public String getPassword() {
+        return getBusinessOwnerPassword();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getUsername() {
+        return getBusinessOwnerEmail();
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isEnabled() {
+        return true;
+    }
 }

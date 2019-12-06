@@ -141,14 +141,14 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     }
 
     //DB error, remove this before prod
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<?> SQLDataViolationExceptionHandler(DataIntegrityViolationException ex, WebRequest request) {
-
-        ExceptionResponse exceptionResponse = new
-                ExceptionResponse(new Date(), HttpStatus.CONFLICT.value(), "DB VIOLATION ERROR: " + ex.getMessage(), request.getDescription(false));
-
-        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
-
-//        return exceptionInfoHandler.getErrorInfoResponseEntity(req, e, EXCEPTION_DUPLICATE_EMAIL, HttpStatus.CONFLICT);
-    }
+//    @ExceptionHandler(DataIntegrityViolationException.class)
+//    public ResponseEntity<?> SQLDataViolationExceptionHandler(DataIntegrityViolationException ex, WebRequest request) {
+//
+//        ExceptionResponse exceptionResponse = new
+//                ExceptionResponse(new Date(), HttpStatus.CONFLICT.value(), "DB VIOLATION ERROR: " + ex.getMessage(), request.getDescription(false));
+//
+//        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
+//
+////        return exceptionInfoHandler.getErrorInfoResponseEntity(req, e, EXCEPTION_DUPLICATE_EMAIL, HttpStatus.CONFLICT);
+//    }
 }

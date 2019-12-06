@@ -1,12 +1,21 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController;
 
+import com.chrisworks.personal.inventorysystem.Backend.Configurations.JwtTokenProvider;
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.RequestObject;
-import com.chrisworks.personal.inventorysystem.Backend.Services.AuthenticationService.AuthenticationService;
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.TOKEN_PREFIX;
 
 /**
  * @author Chris_Eteka
@@ -18,18 +27,43 @@ import javax.validation.Valid;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthenticationController {
 
-    private AuthenticationService authenticationService;
+//    private final AuthenticationService authenticationService;
+
+    private final JwtTokenProvider tokenProvider;
+
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public AuthenticationController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    public AuthenticationController(JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager) {
+        this.tokenProvider = tokenProvider;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping(path = "/signIn", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> authenticateUser(@RequestBody @Valid RequestObject request){
 
-        boolean authenticated = authenticationService.authenticateUser(request);
+        String token;
 
-        return authenticated ? ResponseEntity.ok(true) : ResponseEntity.ok(false);
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                ));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        try {
+
+            BusinessOwner userDetails = (BusinessOwner) authentication.getPrincipal();
+            token = TOKEN_PREFIX + tokenProvider.generateBusinessOwnerToken(userDetails);
+
+        }catch (Exception e){
+
+            Seller userDetails = (Seller) authentication.getPrincipal();
+            token = TOKEN_PREFIX + tokenProvider.generateSellerToken(userDetails);
+        }
+
+
+        return ResponseEntity.ok(new ResponseObject(true, token));
     }
 }
