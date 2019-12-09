@@ -9,7 +9,7 @@ public interface IncomeServices extends CRUDServices<Income> {
 
     List<Income> fetchAllApprovedIncome();
 
-    List<Income> fetchAllUnApprovedIncome();
+    List<Income> fetchAllUnApprovedIncomeByCreator(String createdBy);
 
     List<Income> fetchIncomeCreatedBy(String createdBy);
 
@@ -20,5 +20,4 @@ public interface IncomeServices extends CRUDServices<Income> {
     List<Income> fetchAllIncomeByType(int incomeTypeValue);
 
     List<Income> fetchAllIncomeInShop(Long shopId);
-
 }

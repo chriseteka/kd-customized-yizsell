@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers.BusinessOwnerController;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.*;
@@ -42,11 +43,16 @@ public class BusinessOwnerController {
 
     private ExpenseServices expenseServices;
 
+    private ReturnedStockServices returnedStockServices;
+
+    private InvoiceServices invoiceServices;
+
     @Autowired
     public BusinessOwnerController(BusinessOwnerServices businessOwnerServices, GenericService genericService,
                                    ShopServices shopServices, SellerServices sellerServices,
                                    WarehouseServices warehouseServices, StockServices stockServices,
-                                   IncomeServices incomeServices, ExpenseServices expenseServices) {
+                                   IncomeServices incomeServices, ExpenseServices expenseServices,
+                                   ReturnedStockServices returnedStockServices, InvoiceServices invoiceServices) {
         this.businessOwnerServices = businessOwnerServices;
         this.genericService = genericService;
         this.shopServices = shopServices;
@@ -55,6 +61,8 @@ public class BusinessOwnerController {
         this.stockServices = stockServices;
         this.incomeServices = incomeServices;
         this.expenseServices = expenseServices;
+        this.returnedStockServices = returnedStockServices;
+        this.invoiceServices = invoiceServices;
     }
 
     @PostMapping(path = "/createAccount", consumes = "application/json", produces = "application/json")
@@ -228,7 +236,8 @@ public class BusinessOwnerController {
                 .map(Shop::getIncome)
                 .flatMap(Set::parallelStream)
                 .collect(Collectors.toList());
-        incomeList.addAll(incomeServices.fetchIncomeCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+        if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))
+            incomeList.addAll(incomeServices.fetchIncomeCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
         return ResponseEntity.ok(incomeList);
     }
@@ -245,8 +254,194 @@ public class BusinessOwnerController {
                 .map(Shop::getExpenses)
                 .flatMap(Set::parallelStream)
                 .collect(Collectors.toList());
-        expenseList.addAll(expenseServices.fetchExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+        if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))
+            expenseList.addAll(expenseServices.fetchExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
         return ResponseEntity.ok(expenseList);
     }
+
+    //Get all returned stock
+    @GetMapping(path = "/return/sales")
+    public ResponseEntity<?> fetchAllReturnSales(){
+
+        List<ReturnedStock> returnedStocks = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getReturnedSales)
+                .flatMap(Set::parallelStream)
+                .collect(Collectors.toList());
+        if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))
+            returnedStocks.addAll(returnedStockServices.fetchAllStockReturnedTo(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(returnedStocks);
+    }
+
+    //Get all invoices
+    @GetMapping(path = "/invoices")
+    public ResponseEntity<?> fetchAllInvoices(){
+
+        List<Invoice> invoiceList = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getSellers)
+                .flatMap(Set::parallelStream)
+                .map(Seller::getInvoices)
+                .flatMap(Set::parallelStream)
+                .collect(Collectors.toList());
+        if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))
+            invoiceList.addAll(invoiceServices.fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(invoiceList);
+    }
+
+    //Get all stock sold from the invoices
+    @GetMapping(path = "/stock/sold")
+    public ResponseEntity<?> fetchAllStockSold(){
+
+        List<StockSold> stockSoldList = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getSellers)
+                .flatMap(Set::parallelStream)
+                .map(Seller::getInvoices)
+                .flatMap(Set::parallelStream)
+                .map(Invoice::getStockSold)
+                .flatMap(Set::parallelStream)
+                .collect(Collectors.toList());
+
+        if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))
+            stockSoldList.addAll(invoiceServices
+                    .fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName())
+                    .stream()
+                    .map(Invoice::getStockSold)
+                    .flatMap(Set::parallelStream)
+                    .collect(Collectors.toList()));
+
+        return ResponseEntity.ok(stockSoldList);
+    }
+
+    //Get all unapproved stock
+    @GetMapping(path = "/stock/unapproved")
+    public ResponseEntity<?> fetchAllUnapprovedStock(){
+
+        List<Stock> unApprovedStockList = genericService.allWarehouseByAuthUserId()
+                .parallelStream()
+                .map(Warehouse::getWarehouseId)
+                .map(stockServices::unApprovedStock)
+                .flatMap(List::parallelStream)
+                .collect(Collectors.toList());
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
+            unApprovedStockList.addAll(stockServices.unApprovedStockByCreator(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(unApprovedStockList);
+    }
+
+    //Get all unapproved income
+    @GetMapping(path = "/income/unapproved")
+    public ResponseEntity<?> fetchAllUnapprovedIncome(){
+
+        List<Income> unApprovedIncomeList = shopServices.allUnApprovedIncome();
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
+            unApprovedIncomeList.addAll(incomeServices
+                    .fetchAllUnApprovedIncomeByCreator(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(unApprovedIncomeList);
+    }
+
+    //Get all unapproved expense
+    @GetMapping(path = "/expense/unapproved")
+    public ResponseEntity<?> fetchAllUnapprovedExpense(){
+
+        List<Expense> allUnApprovedExpense = shopServices.allUnApprovedExpense();
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
+            allUnApprovedExpense.addAll(expenseServices
+                    .fetchAllUnApprovedExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(allUnApprovedExpense);
+    }
+
+    //Get all unapproved returned sales
+    @GetMapping(path = "/return/sales/unapproved")
+    public ResponseEntity<?> fetchAllUnapprovedReturns(){
+
+        List<ReturnedStock> returnedStockList = shopServices.allUnApprovedReturnSales();
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
+            returnedStockList.addAll(returnedStockServices
+                    .fetchAllUnapprovedReturnsCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+
+        return ResponseEntity.ok(returnedStockList);
+    }
+
+    //Put request, approve stock
+    @PutMapping(path = "/approve/stock")
+    public ResponseEntity<?> approveStock(@RequestParam Long stockId){
+
+        Stock approvedStock = stockServices.approveStock(stockId);
+
+        if (null == approvedStock) throw new InventoryAPIOperationException
+                ("Stock not approved", "Stock not approved", null);
+
+        return ResponseEntity.ok(approvedStock);
+    }
+
+    //Put request, approve stock list
+    @PutMapping(path = "/approve/stockList")
+    public ResponseEntity<?> approveStockList(@RequestParam List<Long> stockIds){
+
+        List<Stock> stockList = stockServices.approveStockList(stockIds);
+
+        if (null == stockList || stockList.isEmpty()) throw new InventoryAPIOperationException
+                ("stock list not approved", "stock list not approved", null);
+
+        return ResponseEntity.ok(stockList);
+    }
+
+    //Put request, approve income
+    @PutMapping(path = "/approve/income")
+    public ResponseEntity<?> approveIncome(@RequestParam Long incomeId){
+
+        Income approvedIncome = shopServices.approveIncome(incomeId);
+
+        if (null == approvedIncome) throw new InventoryAPIOperationException
+                ("Income not approved", "Income not approved", null);
+
+        return ResponseEntity.ok(approvedIncome);
+    }
+
+    //Put request, approve expense
+    @PutMapping(path = "/approve/expense")
+    public ResponseEntity<?> approveExpense(@RequestParam Long expenseId){
+
+        Expense approvedExpense = shopServices.approveExpense(expenseId);
+
+        if (null == approvedExpense) throw new InventoryAPIOperationException
+                ("Expense not approved", "Expense not approved", null);
+
+        return ResponseEntity.ok(approvedExpense);
+    }
+
+    //Put request, approve returns
+    @PutMapping(path = "/approve/return/sale")
+    public ResponseEntity<?> approveReturnSale(@RequestParam Long returnSaleId){
+
+        ReturnedStock returnedStock = shopServices.approveReturnSales(returnSaleId);
+
+        if (null == returnedStock) throw new InventoryAPIOperationException
+                ("Returned stock not approved", "Returned stock not approved", null);
+
+        return ResponseEntity.ok(returnedStock);
+    }
+
+    //Delete request in pairs, for stock, seller, warehouse, income, expense, shop, stock category, returns, invoice,
+    //supplier, customer
 }

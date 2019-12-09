@@ -13,9 +13,11 @@ import java.util.List;
  */
 public interface StockRepository extends JpaRepository<Stock, Long> {
 
-    Stock findDistinctByStockNameAndApprovedIsFalse(String stockName);
+    List<Stock> findAllByWarehousesAndApprovedIsFalse(Warehouse warehouse);
 
     Stock findDistinctByStockNameAndWarehouses(String stockName, Warehouse warehouse);
 
     List<Stock> findAllByWarehouses(Warehouse warehouse);
+
+    List<Stock> findAllByCreatedByAndAndApprovedIsFalse(String createdBy);
 }

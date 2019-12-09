@@ -1,18 +1,18 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -24,12 +24,26 @@ public class ShopServicesImpl implements ShopServices {
 
     private final ShopRepository shopRepository;
 
+    private final IncomeRepository incomeRepository;
+
+    private final GenericService genericService;
+
     private final WarehouseRepository warehouseRepository;
 
+    private final ExpenseRepository expenseRepository;
+
+    private final ReturnedStockRepository returnedStockRepository;
+
     @Autowired
-    public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository) {
+    public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository,
+                            IncomeRepository incomeRepository, GenericService genericService,
+                            ExpenseRepository expenseRepository, ReturnedStockRepository returnedStockRepository) {
         this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
+        this.incomeRepository = incomeRepository;
+        this.genericService = genericService;
+        this.expenseRepository = expenseRepository;
+        this.returnedStockRepository = returnedStockRepository;
     }
 
     @Override
@@ -60,6 +74,68 @@ public class ShopServicesImpl implements ShopServices {
     }
 
     @Override
+    public Expense approveExpense(Long expenseId) {
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
+                ("Operation not allowed", "Logged in user cannot perform this operation", null);
+
+        Expense expenseFound = allUnApprovedExpense().stream()
+                .filter(expense -> expense.getExpenseId().equals(expenseId))
+                .collect(toSingleton());
+
+        expenseFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        expenseFound.setApproved(true);
+        expenseFound.setApprovedDate(new Date());
+
+        return expenseRepository.save(expenseFound);
+    }
+
+    @Override
+    public List<Expense> allUnApprovedExpense() {
+
+        return genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(this::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getExpenses)
+                .flatMap(Set::parallelStream)
+                .filter(expense -> !expense.getApproved())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ReturnedStock approveReturnSales(Long returnSaleId) {
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
+                ("Operation not allowed", "Logged in user cannot perform this operation", null);
+
+        ReturnedStock returnedStockFound = allUnApprovedReturnSales().stream()
+                .filter(returnedStock -> returnedStock.getReturnedStockId().equals(returnSaleId))
+                .collect(toSingleton());
+
+        returnedStockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        returnedStockFound.setApproved(true);
+        returnedStockFound.setApprovedDate(new Date());
+
+        return returnedStockRepository.save(returnedStockFound);
+    }
+
+    @Override
+    public List<ReturnedStock> allUnApprovedReturnSales() {
+
+        return genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(this::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getReturnedSales)
+                .flatMap(Set::parallelStream)
+                .filter(returnedStock -> !returnedStock.getApproved())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Shop addShop(Warehouse warehouse, Shop shop) {
 
         Set<Warehouse> warehouseSet = new HashSet<>();
@@ -85,6 +161,37 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public Shop findShopById(Long shopId) {
         return shopRepository.findById(shopId).orElse(null);
+    }
+
+    @Override
+    public Income approveIncome(Long incomeId) {
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
+                ("Operation not allowed", "Logged in user cannot perform this operation", null);
+
+        Income incomeFound = allUnApprovedIncome().stream()
+                .filter(income -> income.getIncomeId().equals(incomeId))
+                .collect(toSingleton());
+
+        incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        incomeFound.setApproved(true);
+        incomeFound.setApprovedDate(new Date());
+
+        return incomeRepository.save(incomeFound);
+    }
+
+    @Override
+    public List<Income> allUnApprovedIncome() {
+
+        return genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(this::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(Shop::getIncome)
+                .flatMap(Set::parallelStream)
+                .filter(income -> !income.getApproved())
+                .collect(Collectors.toList());
     }
 
     @Override

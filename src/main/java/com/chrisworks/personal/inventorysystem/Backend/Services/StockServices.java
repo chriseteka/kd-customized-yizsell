@@ -19,9 +19,12 @@ public interface StockServices extends CRUDServices<Stock> {
     //Fetch all stock that will soon expire
     //Fetch all approved stock
     //Fetch all unapproved stock
+    List<Stock> unApprovedStock(Long warehouseId);
 
-    Boolean approveStock(Long stockId);
+    List<Stock> unApprovedStockByCreator(String createdBy);
 
-    Boolean approveStockList(List<Long> stockIdList);
+    Stock approveStock(Long stockId);
+
+    List<Stock> approveStockList(List<Long> stockIdList);
 
 }

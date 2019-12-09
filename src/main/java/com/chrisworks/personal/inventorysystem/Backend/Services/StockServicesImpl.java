@@ -1,6 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Stock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.StockRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -25,10 +29,14 @@ public class StockServicesImpl implements StockServices {
 
     private WarehouseRepository warehouseRepository;
 
+    private GenericService genericService;
+
     @Autowired
-    public StockServicesImpl(StockRepository stockRepository, WarehouseRepository warehouseRepository) {
+    public StockServicesImpl(StockRepository stockRepository, WarehouseRepository warehouseRepository,
+                             GenericService genericService) {
         this.stockRepository = stockRepository;
         this.warehouseRepository = warehouseRepository;
+        this.genericService = genericService;
     }
 
     @Override
@@ -68,29 +76,49 @@ public class StockServicesImpl implements StockServices {
     }
 
     @Override
-    public Boolean approveStock(Long stockId) {
+    public List<Stock> unApprovedStock(Long warehouseId) {
 
-        AtomicReference<Boolean> approveStatus = new AtomicReference<>(false);
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
 
-        stockRepository.findById(stockId).ifPresent(unApprovedStock -> {
-
-            unApprovedStock.setApproved(true);
-            unApprovedStock.setApprovedDate(new Date());
-            unApprovedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-
-            if (stockRepository.save(unApprovedStock) != null) approveStatus.set(true);
-        });
-
-        return approveStatus.get();
+        return warehouseRepository.findById(warehouseId)
+                .map(stockRepository::findAllByWarehousesAndApprovedIsFalse)
+                .orElse(Collections.emptyList());
     }
 
     @Override
-    public Boolean approveStockList(List<Long> stockIdList) {
+    public List<Stock> unApprovedStockByCreator(String createdBy) {
 
-        AtomicReference<Boolean> stockApprovedFlag = new AtomicReference<>(false);
+        return stockRepository.findAllByCreatedByAndAndApprovedIsFalse(createdBy);
+    }
 
-        stockIdList.parallelStream().forEach(stockId -> stockApprovedFlag.set(this.approveStock(stockId)));
+    @Override
+    public Stock approveStock(Long stockId) {
 
-        return stockApprovedFlag.get();
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
+                ("Operation not allowed", "Logged in user cannot perform this operation", null);
+
+        Stock stockFound = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(this::unApprovedStock)
+                .flatMap(List::parallelStream)
+                .filter(stock -> stock.getStockId().equals(stockId))
+                .collect(toSingleton());
+
+        stockFound.setUpdateDate(new Date());
+        stockFound.setApproved(true);
+        stockFound.setApprovedDate(new Date());
+        stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+
+        return stockRepository.save(stockFound);
+    }
+
+    @Override
+    public List<Stock> approveStockList(List<Long> stockIdList) {
+
+        return stockIdList.parallelStream()
+                .map(this::approveStock)
+                .collect(Collectors.toList());
     }
 }

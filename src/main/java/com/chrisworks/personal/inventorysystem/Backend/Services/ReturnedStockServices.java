@@ -19,7 +19,7 @@ public interface ReturnedStockServices {
 
     List<ReturnedStock> fetchAllApprovedReturns();
 
-    List<ReturnedStock> fetchAllUnapprovedReturns();
+    List<ReturnedStock> fetchAllUnapprovedReturnsCreatedBy(String createdBy);
 
     List<ReturnedStock> fetchAllReturnsWithin(Date startDate, Date toDate);
 

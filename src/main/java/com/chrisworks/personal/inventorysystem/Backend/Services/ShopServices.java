@@ -1,8 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
 import java.util.List;
@@ -20,6 +18,10 @@ public interface ShopServices extends CRUDServices<Shop> {
 
     Shop findShopById(Long shopId);
 
+    Income approveIncome(Long incomeId);
+
+    List<Income> allUnApprovedIncome();
+
     Shop addSellerListToShop(Long shopId, List<Seller> sellerList);
 
     Shop removeSellerFromShop(Long shopId, Seller seller);
@@ -29,4 +31,12 @@ public interface ShopServices extends CRUDServices<Shop> {
     Shop updateShop(Long shopId, Shop shopUpdates);
 
     List<Shop> fetchAllShopInWarehouse(Long warehouseId);
+
+    Expense approveExpense(Long expenseId);
+
+    List<Expense> allUnApprovedExpense();
+
+    ReturnedStock approveReturnSales(Long returnSaleId);
+
+    List<ReturnedStock> allUnApprovedReturnSales();
 }

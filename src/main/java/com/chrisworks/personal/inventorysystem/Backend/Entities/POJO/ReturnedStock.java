@@ -68,6 +68,10 @@ public class ReturnedStock {
     @Column(name = "approvedBy")
     private String approvedBy;
 
+    @Temporal(TemporalType.DATE)
+    @Column(name = "approvedDate")
+    private Date approvedDate;
+
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
 //    private Shop shop;

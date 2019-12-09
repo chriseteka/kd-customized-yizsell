@@ -22,7 +22,7 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     List<Income> findAllByApprovedTrue();
 
-    List<Income> findAllByApprovedFalse();
-
     List<Income> findAllByIncomeTypeValue(int incomeTypeValue);
+
+    List<Income> findAllByCreatedByAndApprovedIsFalse(String createdBy);
 }

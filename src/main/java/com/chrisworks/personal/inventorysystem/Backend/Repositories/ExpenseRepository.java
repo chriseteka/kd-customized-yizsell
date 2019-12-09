@@ -22,7 +22,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     List<Expense> findAllByApprovedTrue();
 
-    List<Expense> findAllByApprovedFalse();
+    List<Expense> findAllByCreatedByAndApprovedByIsFalse(String createdBy);
 
     List<Expense> findAllByExpenseTypeValue(int expenseTypeValue);
 }

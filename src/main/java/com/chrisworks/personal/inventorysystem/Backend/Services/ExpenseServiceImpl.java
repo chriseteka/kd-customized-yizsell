@@ -115,9 +115,9 @@ public class ExpenseServiceImpl implements ExpenseServices {
     }
 
     @Override
-    public List<Expense> fetchAllUnApprovedExpenses() {
+    public List<Expense> fetchAllUnApprovedExpensesCreatedBy(String createdBy) {
 
-        return expenseRepository.findAllByApprovedFalse();
+        return expenseRepository.findAllByCreatedByAndApprovedByIsFalse(createdBy);
     }
 
     @Override

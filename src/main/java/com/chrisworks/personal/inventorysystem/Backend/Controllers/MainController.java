@@ -194,4 +194,10 @@ public class MainController {
 
         return ResponseEntity.ok(stockWithNewSellingPrice);
     }
+
+    //Get all customers from invoices or directly created by his seller or him
+
+    //Get all stock category, using created by
+
+    //Get all supplier, using created by
 }

@@ -85,9 +85,9 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
     }
 
     @Override
-    public List<ReturnedStock> fetchAllUnapprovedReturns() {
+    public List<ReturnedStock> fetchAllUnapprovedReturnsCreatedBy(String createdBy) {
 
-        return returnedStockRepository.findAllByApprovedFalse();
+        return returnedStockRepository.findAllByCreatedByApprovedIsFalse(createdBy);
     }
 
     @Override

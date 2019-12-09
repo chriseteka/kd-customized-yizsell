@@ -25,7 +25,7 @@ public interface ReturnedStockRepository extends JpaRepository<ReturnedStock, Lo
 
     List<ReturnedStock> findAllByApprovedTrue();
 
-    List<ReturnedStock> findAllByApprovedFalse();
+    List<ReturnedStock> findAllByCreatedByApprovedIsFalse(String createdBy);
 
     List<ReturnedStock> findAllByCreatedDateIsBetween(Date fromDate, Date toDate);
 }

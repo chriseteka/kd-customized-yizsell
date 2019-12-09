@@ -2,6 +2,8 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -104,9 +108,9 @@ public class IncomeServiceImpl implements IncomeServices {
     }
 
     @Override
-    public List<Income> fetchAllUnApprovedIncome() {
+    public List<Income> fetchAllUnApprovedIncomeByCreator(String createdBy) {
 
-        return incomeRepository.findAllByApprovedFalse();
+        return incomeRepository.findAllByCreatedByAndApprovedIsFalse(createdBy);
     }
 
     @Override

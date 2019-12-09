@@ -10,7 +10,7 @@ public interface ExpenseServices extends CRUDServices<Expense> {
 
     List<Expense> fetchAllApprovedExpenses();
 
-    List<Expense> fetchAllUnApprovedExpenses();
+    List<Expense> fetchAllUnApprovedExpensesCreatedBy(String createdBy);
 
     List<Expense> fetchExpensesCreatedBy(String createdBy);
 
