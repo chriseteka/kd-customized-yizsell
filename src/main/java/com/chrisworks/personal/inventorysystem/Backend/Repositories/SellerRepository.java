@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SellerRepository extends JpaRepository<Seller, Long> {
 
-    Seller findDistinctBySellerFullName(String sellerName);
+    Seller findDistinctBySellerFullNameOrSellerEmail(String sellerName, String sellerEmail);
 
     Seller findDistinctBySellerEmail(String email);
 }

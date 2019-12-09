@@ -3,7 +3,9 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -25,14 +26,10 @@ public class ShopServicesImpl implements ShopServices {
 
     private final WarehouseRepository warehouseRepository;
 
-    private final BusinessOwnerRepository businessOwnerRepository;
-
     @Autowired
-    public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository,
-                            BusinessOwnerRepository businessOwnerRepository) {
+    public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository) {
         this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
-        this.businessOwnerRepository = businessOwnerRepository;
     }
 
     @Override
@@ -53,56 +50,41 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public List<Shop> fetchAllShopInWarehouse(Long warehouseId) {
 
-        Optional<Warehouse> warehouse = warehouseRepository.findById(warehouseId);
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
 
-        return warehouse.map(value -> shopRepository.findAll().stream()
-                .filter(shop -> shop.getWarehouses()
-                        .stream()
-                        .allMatch(warehouse1 -> warehouse1.getWarehouseId().equals(value.getWarehouseId())))
-                .collect(Collectors.toList())).orElse(null);
+        return warehouseRepository.findById(warehouseId)
+                .map(shopRepository::findAllByWarehouses)
+                .orElse(Collections.emptyList());
 
     }
 
     @Override
-    public Shop addShop(Long warehouseId, Shop shop) {
+    public Shop addShop(Warehouse warehouse, Shop shop) {
 
-//        return warehouseRepository.findById(warehouseId)
-//                .map(warehouse -> {
-//
-//                    Set<Warehouse> warehouseSet = new HashSet<>();
-//                    warehouseSet.add(warehouse);
-//                    shop.setWarehouses(warehouseSet);
-//                    return shopRepository.save(shop);
-//                }).orElse(null);
-
-        Optional<Warehouse> warehouse = warehouseRepository.findById(warehouseId);
-
-        if (warehouse.isPresent()){
-
-            Set<Warehouse> warehouseSet = new HashSet<>();
-            warehouseSet.add(warehouse.get());
-            shop.setWarehouses(warehouseSet);
-            return shopRepository.save(shop);
-        }
-
-        return null;
+        Set<Warehouse> warehouseSet = new HashSet<>();
+        warehouseSet.add(warehouse);
+        shop.setWarehouses(warehouseSet);
+        return shopRepository.save(shop);
     }
 
     @Override
-    public Shop addSellerToShop(Long shopId, Seller seller) {
+    public Shop addSellerToShop(Shop shop, Seller seller) {
 
-        AtomicReference<Shop> updatedShop = new AtomicReference<>();
+        if (null == seller) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find seller entity to save", null);
 
-        shopRepository.findById(shopId).ifPresent(shop -> {
+        Set<Seller> allSellers = shop.getSellers();
+        allSellers.add(seller);
+        shop.setSellers(allSellers);
+        shop.setUpdateDate(new Date());
 
-            Set<Seller> allSellers = shop.getSellers();
-            allSellers.add(seller);
-            shop.setSellers(allSellers);
-            shop.setUpdateDate(new Date());
-            updatedShop.set(shopRepository.save(shop));
-        });
+        return shopRepository.save(shop);
+    }
 
-        return updatedShop.get();
+    @Override
+    public Shop findShopById(Long shopId) {
+        return shopRepository.findById(shopId).orElse(null);
     }
 
     @Override

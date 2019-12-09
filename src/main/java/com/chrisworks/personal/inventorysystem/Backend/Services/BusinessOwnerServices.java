@@ -14,8 +14,6 @@ public interface BusinessOwnerServices{
 
     BusinessOwner updateAccount(Long businessOwnerId, BusinessOwner updates);
 
-    BusinessOwner fetchBusinessOwner(Long id);
-
     Boolean approveIncome(Long incomeId);
 
     Boolean approveExpense(Long expenseId);

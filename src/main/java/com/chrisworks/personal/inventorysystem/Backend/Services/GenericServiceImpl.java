@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
+
 /**
  * @author Chris_Eteka
  * @since 11/27/2019
@@ -446,9 +448,23 @@ public class GenericServiceImpl implements GenericService {
             expense.setApproved(true);
             expense.setApprovedDate(new Date());
             expense.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        }
+            return expenseRepository.save(expense);
+        }else{
 
-        return expenseRepository.save(expense);
+            //get the seller's shop, add the expense to it then persist it
+            Shop distinctShopBySeller = shopRepository
+                    .findDistinctBySellers(sellerRepository
+                            .findDistinctBySellerEmail(AuthenticatedUserDetails
+                                    .getUserFullName()));
+
+            Expense newExpense = expenseRepository.save(expense);
+            Set<Expense> shopExpenses = distinctShopBySeller.getExpenses();
+            shopExpenses.add(newExpense);
+            distinctShopBySeller.setExpenses(shopExpenses);
+            shopRepository.save(distinctShopBySeller);
+
+            return newExpense;
+        }
     }
 
     @Override
@@ -464,9 +480,23 @@ public class GenericServiceImpl implements GenericService {
             income.setApproved(true);
             income.setApprovedDate(new Date());
             income.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        }
+            return incomeRepository.save(income);
+        }else{
 
-        return incomeRepository.save(income);
+            //get the seller's shop, add the expense to it then persist it
+            Shop distinctShopBySeller = shopRepository
+                    .findDistinctBySellers(sellerRepository
+                            .findDistinctBySellerEmail(AuthenticatedUserDetails
+                                    .getUserFullName()));
+
+            Income newIncome = incomeRepository.save(income);
+            Set<Income> shopIncome = distinctShopBySeller.getIncome();
+            shopIncome.add(newIncome);
+            distinctShopBySeller.setIncome(shopIncome);
+            shopRepository.save(distinctShopBySeller);
+
+            return newIncome;
+        }
     }
 
     @Override
@@ -515,12 +545,37 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerName || sellerName.isEmpty()) throw new
                 InventoryAPIOperationException("seller name error", "seller name is empty or null", null);
 
-        Seller sellerFound = sellerRepository.findDistinctBySellerFullName(sellerName);
+        Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(sellerName, sellerName);
 
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
-                ("Seller not retrieved", "No shop exist with a seller named: " + sellerName, null);
+                ("Seller not retrieved", "Seller with name: " + sellerName + " was not found.", null);
 
         return shopRepository.findDistinctBySellers(sellerFound);
+    }
+
+    @Override
+    public List<Warehouse> allWarehouseByAuthUserId() {
+
+        Long authUserId = AuthenticatedUserDetails.getUserId();
+
+        ACCOUNT_TYPE authUserType = AuthenticatedUserDetails.getAccount_type();
+
+        String authUserMail = AuthenticatedUserDetails.getUserFullName();
+
+        if (null == authUserId || authUserId < 0 || !authUserId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("authUserId id error", "Authenticated user id is empty or not a valid number", null);
+
+        if (authUserType.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            return businessOwnerRepository.findById(authUserId)
+                    .map(warehouseRepository::findAllByBusinessOwner)
+                    .orElse(Collections.emptyList());
+        if (authUserType.equals(ACCOUNT_TYPE.SELLER)){
+
+            Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
+            return new ArrayList<>(shopRepository.findDistinctBySellers(sellerFound).getWarehouses());
+        }
+
+        return null;
     }
 
     private Stock changeStockSellingPrice(Stock stock, BigDecimal newSellingPrice) {
@@ -536,12 +591,13 @@ public class GenericServiceImpl implements GenericService {
 
     private Warehouse fetchAuthUserWarehouse(Long warehouseId){
 
-        Optional<Warehouse> optionalWarehouse = warehouseRepository.findById(warehouseId);
+        if (!warehouseRepository.findById(warehouseId).isPresent()) throw new InventoryAPIOperationException
+                ("warehouse id error", "No warehouse was retrieved with the id: " + warehouseId, null);
 
-        if (!optionalWarehouse.isPresent()) throw new InventoryAPIResourceNotFoundException
-                ("warehouse not found", "warehouse not found with the id: " + warehouseId, null);
-
-        return optionalWarehouse.get();
+        return allWarehouseByAuthUserId()
+                .stream()
+                .filter(warehouse -> warehouse.getWarehouseId().equals(warehouseId))
+                .collect(toSingleton());
 
     }
 

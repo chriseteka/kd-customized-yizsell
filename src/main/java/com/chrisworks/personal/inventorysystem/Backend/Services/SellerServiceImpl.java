@@ -2,9 +2,12 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -43,11 +46,11 @@ public class SellerServiceImpl implements SellerServices {
     public Seller createSeller(Seller seller) {
 
         if (sellerRepository.findDistinctBySellerEmail(seller.getSellerEmail()) != null) throw new
-                InventoryAPIDataValidationException("Email already exist", "A seller account already exist with the email address: " +
+                InventoryAPIDuplicateEntryException("Email already exist", "A seller account already exist with the email address: " +
                 seller.getSellerEmail(), null);
 
         if (businessOwnerRepository.findDistinctByBusinessOwnerEmail(seller.getSellerEmail()) != null) throw new
-                InventoryAPIDataValidationException("Email already exist", "A business account already exist with the email address: " +
+                InventoryAPIDuplicateEntryException("Email already exist", "A business account already exist with the email address: " +
                 seller.getSellerEmail(), null);
 
         seller.setSellerPassword
@@ -59,21 +62,20 @@ public class SellerServiceImpl implements SellerServices {
     @Override
     public Seller fetchSellerById(Long sellerId) {
 
-        AtomicReference<Seller> retrievedSeller = new AtomicReference<>();
+        if (null == sellerId || sellerId < 0 || !sellerId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("seller id error", "seller id is empty or not a valid number", null);
 
-        sellerRepository.findById(sellerId).ifPresent(retrievedSeller::set);
-
-        return retrievedSeller.get();
+        return sellerRepository.findById(sellerId).orElse(null);
     }
 
     @Override
     public Seller fetchSellerByName(String sellerName) {
 
-        return sellerRepository.findDistinctBySellerFullName(sellerName);
+        return sellerRepository.findDistinctBySellerFullNameOrSellerEmail(sellerName, sellerName);
     }
 
     @Override
-    public List<Seller> allSellers() {
+    public List<Seller> allSellers(List<Long> warehouseIds) {
 
         return sellerRepository.findAll();
     }

@@ -52,11 +52,11 @@ public class SellerController {
         return seller != null ? ResponseEntity.ok(seller) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(path = "/sellers")
-    public ResponseEntity<?> fetchAllSellers(){
-
-        List<Seller> allSellers = sellerServices.allSellers();
-
-        return (allSellers != null && !allSellers.isEmpty()) ? ResponseEntity.ok(allSellers) : ResponseEntity.notFound().build();
-    }
+//    @GetMapping(path = "/sellers")
+//    public ResponseEntity<?> fetchAllSellers(){
+//
+//        List<Seller> allSellers = sellerServices.allSellers();
+//
+//        return (allSellers != null && !allSellers.isEmpty()) ? ResponseEntity.ok(allSellers) : ResponseEntity.notFound().build();
+//    }
 }

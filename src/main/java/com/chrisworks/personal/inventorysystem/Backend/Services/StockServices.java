@@ -13,6 +13,8 @@ import java.util.List;
 public interface StockServices extends CRUDServices<Stock> {
 
     //Fetch all stock using authenticated user's details
+    List<Stock> allStockByWarehouseId(Long warehouseId);
+
     //Fetch all stock that will soon finish
     //Fetch all stock that will soon expire
     //Fetch all approved stock

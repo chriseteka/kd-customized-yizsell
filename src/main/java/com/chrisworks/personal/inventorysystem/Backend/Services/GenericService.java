@@ -39,4 +39,6 @@ public interface GenericService {
     Stock changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice);
 
     Shop shopBySellerName(String sellerName);
+
+    List<Warehouse> allWarehouseByAuthUserId();
 }

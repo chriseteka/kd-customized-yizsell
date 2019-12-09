@@ -2,6 +2,9 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -48,11 +52,11 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     public BusinessOwner createAccount(BusinessOwner businessOwner) {
 
         if (businessOwnerRepository.findDistinctByBusinessOwnerEmail(businessOwner.getBusinessOwnerEmail()) != null) throw new
-                InventoryAPIDataValidationException("Email already exist", "A business account already exist with the email address: " +
+                InventoryAPIDuplicateEntryException("Email already exist", "A business account already exist with the email address: " +
                 businessOwner.getBusinessOwnerEmail(), null);
 
         if (sellerRepository.findDistinctBySellerEmail(businessOwner.getBusinessOwnerEmail()) != null) throw new
-                InventoryAPIDataValidationException("Email already exist", "A seller account already exist with the email address: " +
+                InventoryAPIDuplicateEntryException("Email already exist", "A seller account already exist with the email address: " +
                 businessOwner.getBusinessOwnerEmail(), null);
 
         businessOwner.setBusinessOwnerPassword
@@ -112,9 +116,23 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     @Override
     public BusinessOwner updateAccount(Long businessOwnerId, BusinessOwner businessOwnerUpdates) {
 
+        if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("business owner id error", "business owner id is empty or not a valid number", null);
+
+        if (!businessOwnerId.equals(AuthenticatedUserDetails.getUserId())) throw new InventoryAPIOperationException
+                ("business owner id error", "Authenticated user id does not match id from request", null);
+
+        if (null == businessOwnerUpdates) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find business owner entity to save", null);
+
         AtomicReference<BusinessOwner> updatedDetails = new AtomicReference<>();
 
-        businessOwnerRepository.findById(businessOwnerId).ifPresent(businessOwner -> {
+        Optional<BusinessOwner> optionalBusinessOwner = businessOwnerRepository.findById(businessOwnerId);
+
+        if (!optionalBusinessOwner.isPresent()) throw new InventoryAPIResourceNotFoundException
+                ("Entity to update not found", "No business owner exist with id: " + businessOwnerId, null);
+
+        optionalBusinessOwner.ifPresent(businessOwner -> {
 
             businessOwner.setBusinessOwnerFullName(businessOwnerUpdates.getBusinessOwnerFullName());
             businessOwner.setBusinessOwnerPhoneNumber(businessOwnerUpdates.getBusinessOwnerPhoneNumber());
@@ -124,15 +142,5 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
         });
 
         return updatedDetails.get();
-    }
-
-    @Override
-    public BusinessOwner fetchBusinessOwner(Long id) {
-
-        AtomicReference<BusinessOwner> businessOwnerRetrieved = new AtomicReference<>();
-
-        businessOwnerRepository.findById(id).ifPresent(businessOwnerRetrieved::set);
-
-        return businessOwnerRetrieved.get();
     }
 }

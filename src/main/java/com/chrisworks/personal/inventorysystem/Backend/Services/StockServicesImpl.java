@@ -1,11 +1,14 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Stock;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.StockRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,9 +23,12 @@ public class StockServicesImpl implements StockServices {
 
     private StockRepository stockRepository;
 
+    private WarehouseRepository warehouseRepository;
+
     @Autowired
-    public StockServicesImpl(StockRepository stockRepository) {
+    public StockServicesImpl(StockRepository stockRepository, WarehouseRepository warehouseRepository) {
         this.stockRepository = stockRepository;
+        this.warehouseRepository = warehouseRepository;
     }
 
     @Override
@@ -48,6 +54,17 @@ public class StockServicesImpl implements StockServices {
     @Override
     public Stock deleteEntity(Long entityId) {
         return null;
+    }
+
+    @Override
+    public List<Stock> allStockByWarehouseId(Long warehouseId) {
+
+        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
+
+        return warehouseRepository.findById(warehouseId)
+                .map(stockRepository::findAllByWarehouses)
+                .orElse(Collections.emptyList());
     }
 
     @Override

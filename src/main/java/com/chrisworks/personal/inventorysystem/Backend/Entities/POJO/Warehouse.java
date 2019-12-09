@@ -1,6 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -50,7 +50,7 @@ public class Warehouse {
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
-    @JsonIgnoreProperties("warehouses")
+    @JsonIgnore
     private BusinessOwner businessOwner;
 
 //    @JsonIgnore

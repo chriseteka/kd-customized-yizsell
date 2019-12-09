@@ -1,11 +1,14 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -76,7 +79,19 @@ public class WarehouseServicesImpl implements WarehouseServices {
     }
 
     @Override
+    public Warehouse warehouseById(Long warehouseId) {
+
+        return warehouseRepository.findById(warehouseId).orElse(null);
+    }
+
+    @Override
     public Warehouse addWarehouse(Long businessOwnerId, Warehouse warehouse) {
+
+        if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
+                InventoryAPIOperationException("business owner id error", "business owner id is empty or not a valid number", null);
+
+        if (!businessOwnerId.equals(AuthenticatedUserDetails.getUserId())) throw new InventoryAPIOperationException
+                ("business owner id error", "Authenticated id does not match id used for this request", null);
 
         return businessOwnerRepository.findById(businessOwnerId)
                 .map(businessOwner -> {

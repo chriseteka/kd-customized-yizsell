@@ -64,7 +64,7 @@ public class MainController {
         StockCategory newStockCategory = genericService.addStockCategory(stockCategory);
 
         if (newStockCategory == null)
-            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + newStockCategory, null);
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stockCategory, null);
 
         return new ResponseEntity<>(newStockCategory, HttpStatus.CREATED);
     }

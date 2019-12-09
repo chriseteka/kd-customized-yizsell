@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
 import java.util.List;
@@ -13,9 +14,11 @@ import java.util.List;
  */
 public interface ShopServices extends CRUDServices<Shop> {
 
-    Shop addShop(Long warehouseId, Shop shop);
+    Shop addShop(Warehouse warehouse, Shop shop);
 
-    Shop addSellerToShop(Long shopId, Seller seller);
+    Shop addSellerToShop(Shop shop, Seller seller);
+
+    Shop findShopById(Long shopId);
 
     Shop addSellerListToShop(Long shopId, List<Seller> sellerList);
 

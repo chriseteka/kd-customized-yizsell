@@ -18,7 +18,7 @@ public interface SellerServices {
 
     Seller fetchSellerByName(String sellerName);
 
-    List<Seller> allSellers();
+    List<Seller> allSellers(List<Long> warehouseIds);
 
     List<Seller> allSellersInShop(Long shopId);
 

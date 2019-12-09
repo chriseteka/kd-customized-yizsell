@@ -2,7 +2,6 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 
-import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -14,6 +13,8 @@ public interface WarehouseServices {
     Warehouse addWarehouse(Long businessOwnerId, Warehouse warehouse);
 
     Warehouse updateWarehouse(Long warehouseId, Warehouse warehouseUpdates);
+
+    Warehouse warehouseById(Long warehouseId);
 
 //    Warehouse addShopToWarehouse(Long warehouseId, Shop shop);
 //

@@ -59,6 +59,15 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InventoryAPIDuplicateEntryException.class)
+    private ResponseEntity<?> handleInventoryDuplicateEntryExceptions(InventoryAPIExceptions ex, WebRequest request){
+
+        ExceptionResponse exceptionResponse = new ExceptionResponse
+                (new Date(), HttpStatus.CONFLICT.value(), ex.getDefaultUserMessage(), request.getDescription(false));
+
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(InventoryAPIFunctionNotSupportedException.class)
     private ResponseEntity<?> handleFunctionNotSupportedExceptions(InventoryAPIExceptions ex, WebRequest request){
 
