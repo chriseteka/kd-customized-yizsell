@@ -14,7 +14,7 @@ public interface CustomerService {
 
     Customer fetchCustomerByPhoneNumber(String customerPhoneNumber);
 
-    List<Customer> fetchAllCustomers();
+    List<Customer> fetchAllCustomersByCreator(String createdBy);
 
     List<Customer> fetchAllCustomersWithDebt(BigDecimal debtLimit);
 

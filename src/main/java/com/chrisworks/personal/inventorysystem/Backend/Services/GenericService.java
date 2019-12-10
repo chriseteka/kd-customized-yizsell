@@ -3,7 +3,11 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -41,4 +45,8 @@ public interface GenericService {
     Shop shopBySellerName(String sellerName);
 
     List<Warehouse> allWarehouseByAuthUserId();
+
+    List<Supplier> fetchSuppliersByCreator(String createdBy);
+
+    List<StockCategory> fetchAllStockCategoryByCreator(String businessOwnerMail);
 }

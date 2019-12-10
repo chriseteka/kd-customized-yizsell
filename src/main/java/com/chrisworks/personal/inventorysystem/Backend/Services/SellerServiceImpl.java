@@ -104,6 +104,14 @@ public class SellerServiceImpl implements SellerServices {
     }
 
     @Override
+    public List<Seller> deleteSellerList(List<Seller> sellerList) {
+
+        sellerRepository.deleteAll(sellerList);
+
+        return sellerList;
+    }
+
+    @Override
     public Seller updateSeller(Long sellerId, Seller sellerUpdates) {
 
         AtomicReference<Seller> updatedSeller = new AtomicReference<>();

@@ -46,9 +46,9 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public List<Customer> fetchAllCustomers() {
+    public List<Customer> fetchAllCustomersByCreator(String createdBy) {
 
-        return customerRepository.findAll();
+        return customerRepository.findAllByCreatedBy(createdBy);
     }
 
     @Override

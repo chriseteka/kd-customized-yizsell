@@ -14,4 +14,6 @@ import java.util.List;
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     List<Warehouse> findAllByBusinessOwner(BusinessOwner businessOwner);
+
+    Warehouse findDistinctByWarehouseName(String warehouseName);
 }

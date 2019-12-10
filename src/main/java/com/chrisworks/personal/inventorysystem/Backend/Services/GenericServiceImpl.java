@@ -578,6 +578,18 @@ public class GenericServiceImpl implements GenericService {
         return null;
     }
 
+    @Override
+    public List<Supplier> fetchSuppliersByCreator(String createdBy) {
+
+        return supplierRepository.findAllByCreatedBy(createdBy);
+    }
+
+    @Override
+    public List<StockCategory> fetchAllStockCategoryByCreator(String businessOwnerMail) {
+
+        return stockCategoryRepository.findAllByCreatedBy(businessOwnerMail);
+    }
+
     private Stock changeStockSellingPrice(Stock stock, BigDecimal newSellingPrice) {
 
         stock.setUpdateDate(new Date());

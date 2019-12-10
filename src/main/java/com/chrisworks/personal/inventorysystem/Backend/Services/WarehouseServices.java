@@ -19,4 +19,6 @@ public interface WarehouseServices {
 //    Warehouse addShopToWarehouse(Long warehouseId, Shop shop);
 //
 //    Warehouse addShopListToWarehouse(Long warehouseId, List<Shop> shopList);
+
+    Warehouse deleteWarehouse(Warehouse warehouseToDelete);
 }

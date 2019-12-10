@@ -26,5 +26,7 @@ public interface SellerServices {
 
     Seller deleteSeller(Long sellerId);
 
+    List<Seller> deleteSellerList(List<Seller> sellerList);
+
 
 }

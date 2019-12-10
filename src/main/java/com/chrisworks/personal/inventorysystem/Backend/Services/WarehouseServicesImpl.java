@@ -85,6 +85,14 @@ public class WarehouseServicesImpl implements WarehouseServices {
     }
 
     @Override
+    public Warehouse deleteWarehouse(Warehouse warehouseToDelete) {
+
+        warehouseRepository.delete(warehouseToDelete);
+
+        return warehouseToDelete;
+    }
+
+    @Override
     public Warehouse addWarehouse(Long businessOwnerId, Warehouse warehouse) {
 
         if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
@@ -92,6 +100,10 @@ public class WarehouseServicesImpl implements WarehouseServices {
 
         if (!businessOwnerId.equals(AuthenticatedUserDetails.getUserId())) throw new InventoryAPIOperationException
                 ("business owner id error", "Authenticated id does not match id used for this request", null);
+
+        if (warehouseRepository.findDistinctByWarehouseName(warehouse.getWarehouseName()) != null) throw new
+                InventoryAPIOperationException("Warehouse name already exist",
+                "A warehouse exist with the warehouse name: " + warehouse.getWarehouseName(), null);
 
         return businessOwnerRepository.findById(businessOwnerId)
                 .map(businessOwner -> {

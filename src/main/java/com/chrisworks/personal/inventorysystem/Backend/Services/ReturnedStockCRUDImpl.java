@@ -95,4 +95,18 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
 
         return returnedStockRepository.findAllByCreatedDateIsBetween(startDate, toDate);
     }
+
+    @Override
+    public ReturnedStock deleteReturnedStock(Long returnedStockId) {
+
+        AtomicReference<ReturnedStock> returnedStockToDelete = new AtomicReference<>(null);
+
+        returnedStockRepository.findById(returnedStockId).ifPresent(returnedStock -> {
+
+            returnedStockToDelete.set(returnedStock);
+            returnedStockRepository.delete(returnedStock);
+        });
+
+        return returnedStockToDelete.get();
+    }
 }

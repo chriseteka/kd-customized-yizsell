@@ -23,4 +23,5 @@ public interface ReturnedStockServices {
 
     List<ReturnedStock> fetchAllReturnsWithin(Date startDate, Date toDate);
 
+    ReturnedStock deleteReturnedStock(Long returnedStockId);
 }

@@ -1,8 +1,11 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Stock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCategory;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -16,8 +19,14 @@ public interface StockServices extends CRUDServices<Stock> {
     List<Stock> allStockByWarehouseId(Long warehouseId);
 
     //Fetch all stock that will soon finish
+    List<Stock> allSoonToFinishStock(Long warehouseId, int limit);
+
     //Fetch all stock that will soon expire
-    //Fetch all approved stock
+    List<Stock> allSoonToExpireStock(Long warehouseId, Date expiryDateInterval);
+
+    //Fetch all approved stock for seller to sell
+    List<Stock> allApprovedStock(Long warehouseId);
+
     //Fetch all unapproved stock
     List<Stock> unApprovedStock(Long warehouseId);
 
@@ -27,4 +36,9 @@ public interface StockServices extends CRUDServices<Stock> {
 
     List<Stock> approveStockList(List<Long> stockIdList);
 
+    List<Stock> deleteStockList(List<Stock> stockListToDelete);
+
+    StockCategory deleteStockCategory(Long stockCategoryId);
+
+    Supplier deleteSupplier(Long supplierId);
 }

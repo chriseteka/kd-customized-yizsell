@@ -88,12 +88,6 @@ public class InvoicesServicesImpl implements InvoiceServices {
         Invoice invoiceFound = invoiceRepository
                 .findDistinctByInvoiceNumberAndDebtGreaterThan(invoiceNumber, BigDecimal.ONE);
 
-        if (null == invoiceFound){
-
-            //Throw invoice not found error
-            return null;
-        }
-
         Income incomeOnDebtClearance = new Income(amount,200,"Debt cleared on invoice with id" + invoiceNumber);
         incomeOnDebtClearance.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
@@ -105,6 +99,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
         }
 
         invoiceFound.setUpdateDate(new Date());
+        invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
         invoiceFound.setAmountPaid(invoiceFound.getAmountPaid().add(amount));
 
         incomeRepository.save(incomeOnDebtClearance);
