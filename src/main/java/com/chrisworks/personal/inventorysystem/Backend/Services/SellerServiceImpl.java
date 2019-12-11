@@ -85,7 +85,7 @@ public class SellerServiceImpl implements SellerServices {
 
         return shopRepository
                 .findById(shopId)
-                .map(shop -> new ArrayList<>(shop.getSellers()))
+                .map(this::fetchSellerByShop)
                 .orElse(null);
     }
 
@@ -109,6 +109,12 @@ public class SellerServiceImpl implements SellerServices {
         sellerRepository.deleteAll(sellerList);
 
         return sellerList;
+    }
+
+    @Override
+    public List<Seller> fetchSellerByShop(Shop shop) {
+
+        return sellerRepository.findAllByShop(shop);
     }
 
     @Override

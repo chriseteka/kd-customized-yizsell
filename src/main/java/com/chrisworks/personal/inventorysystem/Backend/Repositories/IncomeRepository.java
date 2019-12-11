@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Date;
@@ -25,4 +26,6 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     List<Income> findAllByIncomeTypeValue(int incomeTypeValue);
 
     List<Income> findAllByCreatedByAndApprovedIsFalse(String createdBy);
+
+    List<Income> findAllByShop(Shop shop);
 }

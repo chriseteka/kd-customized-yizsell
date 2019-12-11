@@ -371,10 +371,9 @@ public class MainController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
+                .map(Shop::getShopId)
+                .map(invoiceServices::fetchAllInvoiceInShop)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toSet());
 
         if (ACCOUNT_TYPE.BUSINESS_OWNER.equals(AuthenticatedUserDetails.getAccount_type()))

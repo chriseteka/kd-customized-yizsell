@@ -1,16 +1,14 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.ReturnedStockRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -30,13 +28,17 @@ public class CustomerServiceImpl implements CustomerService {
 
     private ShopRepository shopRepository;
 
+    private SellerRepository sellerRepository;
+
     @Autowired
     public CustomerServiceImpl(CustomerRepository customerRepository, ReturnedStockRepository returnedStockRepository,
-                               InvoiceRepository invoiceRepository, ShopRepository shopRepository) {
+                               InvoiceRepository invoiceRepository, ShopRepository shopRepository,
+                               SellerRepository sellerRepository) {
         this.customerRepository = customerRepository;
         this.returnedStockRepository = returnedStockRepository;
         this.invoiceRepository = invoiceRepository;
         this.shopRepository = shopRepository;
+        this.sellerRepository = sellerRepository;
     }
 
     @Override
@@ -90,15 +92,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public List<Customer> fetchCustomersByShop(Long shopId) {
 
-        Optional<Shop> optionalShop = shopRepository.findById(shopId);
-
-        return optionalShop.map(shop -> shop
-                .getSellers()
-                .stream()
-                .flatMap(seller -> seller.getInvoices().stream()
-                        .map(Invoice::getCustomerId))
-                .collect(Collectors.toList()))
-                .orElse(null);
+        return shopRepository.findById(shopId)
+                .map(shop -> sellerRepository
+                        .findAllByShop(shop)
+                        .stream()
+                        .map(Seller::getInvoices)
+                        .flatMap(Set::parallelStream)
+                        .map(Invoice::getCustomerId)
+                        .collect(Collectors.toList())).orElse(null);
     }
 
     @Override

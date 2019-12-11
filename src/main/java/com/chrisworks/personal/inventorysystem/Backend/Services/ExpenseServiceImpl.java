@@ -117,7 +117,7 @@ public class ExpenseServiceImpl implements ExpenseServices {
     @Override
     public List<Expense> fetchAllUnApprovedExpensesCreatedBy(String createdBy) {
 
-        return expenseRepository.findAllByCreatedByAndApprovedByIsFalse(createdBy);
+        return expenseRepository.findAllByCreatedByAndApprovedIsFalse(createdBy);
     }
 
     @Override
@@ -149,7 +149,7 @@ public class ExpenseServiceImpl implements ExpenseServices {
 
         return shopRepository
                 .findById(shopId)
-                .map(shop -> new ArrayList<>(shop.getExpenses()))
+                .map(expenseRepository::findAllByShop)
                 .orElse(null);
     }
 }

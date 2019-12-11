@@ -3,8 +3,10 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -31,12 +34,15 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
     private final IncomeRepository incomeRepository;
 
+    private final SellerRepository sellerRepository;
+
     @Autowired
     public InvoicesServicesImpl(InvoiceRepository invoiceRepository, ShopRepository shopRepository,
-                                IncomeRepository incomeRepository) {
+                                IncomeRepository incomeRepository, SellerRepository sellerRepository) {
         this.invoiceRepository = invoiceRepository;
         this.shopRepository = shopRepository;
         this.incomeRepository = incomeRepository;
+        this.sellerRepository = sellerRepository;
     }
 
     @Override
@@ -128,12 +134,13 @@ public class InvoicesServicesImpl implements InvoiceServices {
     @Override
     public List<Invoice> fetchAllInvoiceInShop(Long shopId) {
 
-        return shopRepository
-                .findById(shopId)
-                .map(shop -> shop.getSellers()
+        return shopRepository.findById(shopId)
+                .map(shop -> sellerRepository
+                        .findAllByShop(shop)
                 .stream()
-                .flatMap(seller -> seller.getInvoices().stream())
-                        .collect(Collectors.toList())).orElse(null);
+                .map(Seller::getInvoices)
+                .flatMap(Set::parallelStream)
+                .collect(Collectors.toList())).orElse(null);
     }
 
     @Override

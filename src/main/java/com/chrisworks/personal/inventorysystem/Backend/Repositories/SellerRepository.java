@@ -1,7 +1,10 @@
 package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -13,4 +16,6 @@ public interface SellerRepository extends JpaRepository<Seller, Long> {
     Seller findDistinctBySellerFullNameOrSellerEmail(String sellerName, String sellerEmail);
 
     Seller findDistinctBySellerEmail(String email);
+
+    List<Seller> findAllByShop(Shop shop);
 }

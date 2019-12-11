@@ -62,9 +62,9 @@ public class Expense {
     @Column(name = "approvedBy")
     private String approvedBy;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
-//    private Shop shop;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "expenseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    private Shop shop;
 
     @Basic
     @JsonIgnore

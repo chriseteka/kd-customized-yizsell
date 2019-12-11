@@ -72,9 +72,9 @@ public class ReturnedStock {
     @Column(name = "approvedDate")
     private Date approvedDate;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
-//    private Shop shop;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    private Shop shop;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "customerReturns", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "customerId"))

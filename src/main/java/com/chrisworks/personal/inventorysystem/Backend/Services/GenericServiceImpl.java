@@ -46,8 +46,6 @@ public class GenericServiceImpl implements GenericService {
 
     private SellerRepository sellerRepository;
 
-    private ShopRepository shopRepository;
-
     private WarehouseRepository warehouseRepository;
 
     private StockCategoryRepository stockCategoryRepository;
@@ -57,7 +55,7 @@ public class GenericServiceImpl implements GenericService {
             (SupplierRepository supplierRepository, CustomerRepository customerRepository, StockRepository stockRepository,
              InvoiceRepository invoiceRepository, ReturnedStockRepository returnedStockRepository, StockSoldRepository stockSoldRepository,
              ExpenseRepository expenseRepository, IncomeRepository incomeRepository, SellerRepository sellerRepository,
-             ShopRepository shopRepository, WarehouseRepository warehouseRepository, BusinessOwnerRepository businessOwnerRepository,
+             WarehouseRepository warehouseRepository, BusinessOwnerRepository businessOwnerRepository,
              StockCategoryRepository stockCategoryRepository)
     {
         this.supplierRepository = supplierRepository;
@@ -69,7 +67,6 @@ public class GenericServiceImpl implements GenericService {
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
         this.sellerRepository = sellerRepository;
-        this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
         this.businessOwnerRepository = businessOwnerRepository;
         this.stockCategoryRepository = stockCategoryRepository;
@@ -357,7 +354,7 @@ public class GenericServiceImpl implements GenericService {
                         returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
                         returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                                 .multiply(stockToReturn.getSellingPricePerStock()));
-                        returnStock.set(returnedStockRepository.save(returnedStock));
+//                        returnStock.set(returnedStockRepository.save(returnedStock));
 
                         //Update stock left after return
                         stockToReturn.setStockRemainingTotalPrice(stockToReturn.getStockRemainingTotalPrice()
@@ -402,22 +399,43 @@ public class GenericServiceImpl implements GenericService {
             //Create an Expense of type sales_return and save it
             String expenseDescription = returnStock.get().getStockName() + " returned with reason: " + returnStock.get().getReasonForReturn();
             Expense expenseOnReturn = addExpense(new Expense(300, returnStock.get().getStockReturnedCost(), expenseDescription));
+            expenseOnReturn.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
             //Do the following if user is a seller
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SELLER)) {
 
-                //Add the returned stock to the set of returned stock in the shop it was returned
+                //Add the returned stock and new expense created to the shop of that seller
                 Shop stockReturnedShop = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
-                Set<ReturnedStock> allReturnedSales = stockReturnedShop.getReturnedSales();
-                allReturnedSales.add(returnStock.get());
-                stockReturnedShop.setReturnedSales(allReturnedSales);
+
+                expenseOnReturn.setShop(stockReturnedShop);
+                returnedStock.setShop(stockReturnedShop);
+
+                expenseRepository.save(expenseOnReturn);
+                returnStock.set(returnedStockRepository.save(returnedStock));
+
+
+//                Set<ReturnedStock> allReturnedSales = new HashSet<>(stockReturnedShop.getReturnedSales());
+//                allReturnedSales.add(returnStock.get());
+//                stockReturnedShop.setReturnedSales(allReturnedSales);
 
                 //Add the newly created expense to the set of expenses incurred in the shop
-                Set<Expense> allExpensesInShop = stockReturnedShop.getExpenses();
-                allExpensesInShop.add(expenseOnReturn);
-                stockReturnedShop.setExpenses(allExpensesInShop);
+//                Set<Expense> allExpensesInShop = stockReturnedShop.getExpenses();
+//                allExpensesInShop.add(expenseOnReturn);
+//                stockReturnedShop.setExpenses(allExpensesInShop);
 
-                shopRepository.save(stockReturnedShop);
+//                shopRepository.save(stockReturnedShop);
+            }else{
+
+                expenseOnReturn.setApproved(true);
+                expenseOnReturn.setApprovedDate(new Date());
+                expenseOnReturn.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+
+                returnedStock.setApproved(true);
+                returnedStock.setApprovedDate(new Date());
+                returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+
+                expenseRepository.save(expenseOnReturn);
+                returnStock.set(returnedStockRepository.save(returnedStock));
             }
 
         }else throw new InventoryAPIResourceNotFoundException
@@ -452,22 +470,18 @@ public class GenericServiceImpl implements GenericService {
         }else{
 
             //get the seller's shop, add the expense to it then persist it
-            Shop distinctShopBySeller = shopRepository
-                    .findDistinctBySellers(sellerRepository
-                            .findDistinctBySellerEmail(AuthenticatedUserDetails
-                                    .getUserFullName()));
+            expense.setShop(shopBySellerName(AuthenticatedUserDetails.getUserFullName()));
+//            Set<Expense> shopExpenses = new HashSet<>(distinctShopBySeller.getExpenses());
+//            shopExpenses.add(newExpense);
+//            distinctShopBySeller.setExpenses(shopExpenses);
+//            shopRepository.save(distinctShopBySeller);
 
-            Expense newExpense = expenseRepository.save(expense);
-            Set<Expense> shopExpenses = distinctShopBySeller.getExpenses();
-            shopExpenses.add(newExpense);
-            distinctShopBySeller.setExpenses(shopExpenses);
-            shopRepository.save(distinctShopBySeller);
-
-            return newExpense;
+            return expenseRepository.save(expense);
         }
     }
 
     @Override
+    @Transactional
     public Income addIncome(Income income) {
 
         if (null == income) throw new InventoryAPIOperationException
@@ -483,19 +497,15 @@ public class GenericServiceImpl implements GenericService {
             return incomeRepository.save(income);
         }else{
 
-            //get the seller's shop, add the expense to it then persist it
-            Shop distinctShopBySeller = shopRepository
-                    .findDistinctBySellers(sellerRepository
-                            .findDistinctBySellerEmail(AuthenticatedUserDetails
-                                    .getUserFullName()));
+            //get the seller's shop, add the income to it then persist it
+            Shop distinctShopBySeller = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
+            income.setShop(distinctShopBySeller);
+//            Set<Income> shopIncome = new HashSet<>(distinctShopBySeller.getIncome());
+//            shopIncome.add(newIncome);
+//            distinctShopBySeller.setIncome(shopIncome);
+//            shopRepository.save(distinctShopBySeller);
 
-            Income newIncome = incomeRepository.save(income);
-            Set<Income> shopIncome = distinctShopBySeller.getIncome();
-            shopIncome.add(newIncome);
-            distinctShopBySeller.setIncome(shopIncome);
-            shopRepository.save(distinctShopBySeller);
-
-            return newIncome;
+            return incomeRepository.save(income);
         }
     }
 
@@ -550,7 +560,7 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
                 ("Seller not retrieved", "Seller with name: " + sellerName + " was not found.", null);
 
-        return shopRepository.findDistinctBySellers(sellerFound);
+        return sellerFound.getShop();
     }
 
     @Override
@@ -572,7 +582,7 @@ public class GenericServiceImpl implements GenericService {
         if (authUserType.equals(ACCOUNT_TYPE.SELLER)){
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
-            return new ArrayList<>(shopRepository.findDistinctBySellers(sellerFound).getWarehouses());
+            return new ArrayList<>(sellerFound.getShop().getWarehouses());
         }
 
         return null;
@@ -627,7 +637,7 @@ public class GenericServiceImpl implements GenericService {
 
             Optional<Seller> optionalSeller = sellerRepository.findById(AuthenticatedUserDetails.getUserId());
 
-            optionalSeller.ifPresent(seller -> warehouseList.addAll(shopRepository.findDistinctBySellers(seller).getWarehouses()));
+            optionalSeller.ifPresent(seller -> warehouseList.addAll(seller.getShop().getWarehouses()));
         }
 
         if (warehouseList.isEmpty()) throw new InventoryAPIResourceNotFoundException

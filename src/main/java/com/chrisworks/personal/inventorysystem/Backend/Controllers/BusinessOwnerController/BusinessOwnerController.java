@@ -97,7 +97,7 @@ public class BusinessOwnerController {
     }
 
     @GetMapping(path = "/sellerShop")
-    public ResponseEntity<?> shopBySeller(@RequestParam String sellerName){
+    public ResponseEntity<?> shopBySeller(@RequestParam String seller){
 
         preAuthorizeBusinessOwner();
 
@@ -106,11 +106,12 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::stream)
-                .filter(shop -> shop.getSellers()
-                        .stream()
-                        .map(seller -> seller.getSellerFullName().equalsIgnoreCase(sellerName))
-                        .collect(toSingleton()))
-                .collect(toSingleton());
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::stream)
+                .filter(sellerFound -> sellerFound.getSellerFullName().equalsIgnoreCase(seller)
+                        || sellerFound.getSellerEmail().equalsIgnoreCase(seller))
+                .collect(toSingleton())
+                .getShop();
 
 //        Shop shopRetrieved = genericService.shopBySellerName(sellerName);
 
@@ -224,8 +225,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(sellerList);
@@ -258,8 +259,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getIncome)
-                .flatMap(Set::parallelStream)
+                .map(shop -> incomeServices.fetchAllIncomeInShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toSet());
         incomeList.addAll(incomeServices.fetchIncomeCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
@@ -277,8 +278,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getExpenses)
-                .flatMap(Set::parallelStream)
+                .map(shop -> expenseServices.fetchAllExpensesInShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toSet());
         expenseList.addAll(expenseServices.fetchExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
@@ -296,8 +297,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getReturnedSales)
-                .flatMap(Set::parallelStream)
+                .map(shop -> returnedStockServices.fetchAllStockReturnedToShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toSet());
         returnedStocks.addAll(returnedStockServices.fetchAllStockReturnedTo(AuthenticatedUserDetails.getUserFullName()));
 
@@ -315,8 +316,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .map(Seller::getInvoices)
                 .flatMap(Set::parallelStream)
                 .collect(Collectors.toSet());
@@ -336,8 +337,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .map(Seller::getInvoices)
                 .flatMap(Set::parallelStream)
                 .map(Invoice::getStockSold)
@@ -428,8 +429,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .map(Seller::getInvoices)
                 .flatMap(Set::parallelStream)
                 .filter(invoices -> invoices.getDebt().compareTo(BigDecimal.ONE) >= 1)
@@ -566,8 +567,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .filter(seller -> seller.getSellerId().equals(sellerId))
                 .collect(toSingleton());
 
@@ -590,8 +591,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .filter(seller -> sellerIds.contains(seller.getSellerId()))
                 .collect(Collectors.toList());
 
@@ -633,8 +634,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getIncome)
-                .flatMap(Set::parallelStream)
+                .map(shop -> incomeServices.fetchAllIncomeInShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
         incomeList.addAll(incomeServices.fetchIncomeCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
@@ -662,8 +663,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getExpenses)
-                .flatMap(Set::parallelStream)
+                .map(shop -> expenseServices.fetchAllExpensesInShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
         expenseList.addAll(expenseServices.fetchExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
@@ -724,8 +725,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getReturnedSales)
-                .flatMap(Set::parallelStream)
+                .map(shop -> returnedStockServices.fetchAllStockReturnedToShop(shop.getShopId()))
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
         returnedStocks.addAll(returnedStockServices.fetchAllStockReturnedTo(AuthenticatedUserDetails.getUserFullName()));
 
@@ -753,8 +754,8 @@ public class BusinessOwnerController {
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getSellers)
-                .flatMap(Set::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::parallelStream)
                 .map(Seller::getInvoices)
                 .flatMap(Set::parallelStream)
                 .collect(Collectors.toList());

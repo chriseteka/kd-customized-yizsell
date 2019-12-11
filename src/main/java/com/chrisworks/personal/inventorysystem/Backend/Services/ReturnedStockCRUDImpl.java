@@ -52,7 +52,7 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
 
         return shopRepository
                 .findById(shopId)
-                .map(shop -> new ArrayList<>(shop.getReturnedSales()))
+                .map(returnedStockRepository::findAllByShop)
                 .orElse(null);
     }
 
@@ -87,7 +87,7 @@ public class ReturnedStockCRUDImpl implements ReturnedStockServices {
     @Override
     public List<ReturnedStock> fetchAllUnapprovedReturnsCreatedBy(String createdBy) {
 
-        return returnedStockRepository.findAllByCreatedByApprovedIsFalse(createdBy);
+        return returnedStockRepository.findAllByCreatedByAndApprovedIsFalse(createdBy);
     }
 
     @Override

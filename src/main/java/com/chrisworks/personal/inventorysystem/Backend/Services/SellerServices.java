@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 
 import java.util.List;
 
@@ -29,4 +30,5 @@ public interface SellerServices {
     List<Seller> deleteSellerList(List<Seller> sellerList);
 
 
+    List<Seller> fetchSellerByShop(Shop shop);
 }

@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Date;
@@ -25,7 +26,9 @@ public interface ReturnedStockRepository extends JpaRepository<ReturnedStock, Lo
 
     List<ReturnedStock> findAllByApprovedTrue();
 
-    List<ReturnedStock> findAllByCreatedByApprovedIsFalse(String createdBy);
+    List<ReturnedStock> findAllByCreatedByAndApprovedIsFalse(String createdBy);
 
     List<ReturnedStock> findAllByCreatedDateIsBetween(Date fromDate, Date toDate);
+
+    List<ReturnedStock> findAllByShop(Shop shop);
 }

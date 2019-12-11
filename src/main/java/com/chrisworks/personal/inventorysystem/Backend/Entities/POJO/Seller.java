@@ -78,9 +78,9 @@ public class Seller implements UserDetails {
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
-//    private Shop shop;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    private Shop shop;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))

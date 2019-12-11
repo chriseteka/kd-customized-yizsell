@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Date;
@@ -22,7 +23,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     List<Expense> findAllByApprovedTrue();
 
-    List<Expense> findAllByCreatedByAndApprovedByIsFalse(String createdBy);
+    List<Expense> findAllByCreatedByAndApprovedIsFalse(String createdBy);
 
     List<Expense> findAllByExpenseTypeValue(int expenseTypeValue);
+
+    List<Expense> findAllByShop(Shop shop);
 }

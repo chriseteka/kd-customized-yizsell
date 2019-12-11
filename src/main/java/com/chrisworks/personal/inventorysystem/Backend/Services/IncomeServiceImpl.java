@@ -142,7 +142,7 @@ public class IncomeServiceImpl implements IncomeServices {
 
         return shopRepository
                 .findById(shopId)
-                .map(shop -> new ArrayList<>(shop.getIncome()))
+                .map(incomeRepository::findAllByShop)
                 .orElse(null);
     }
 }

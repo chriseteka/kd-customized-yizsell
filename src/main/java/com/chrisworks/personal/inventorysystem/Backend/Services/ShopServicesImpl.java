@@ -34,16 +34,20 @@ public class ShopServicesImpl implements ShopServices {
 
     private final ReturnedStockRepository returnedStockRepository;
 
+    private final SellerRepository sellerRepository;
+
     @Autowired
     public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository,
                             IncomeRepository incomeRepository, GenericService genericService,
-                            ExpenseRepository expenseRepository, ReturnedStockRepository returnedStockRepository) {
+                            ExpenseRepository expenseRepository, ReturnedStockRepository returnedStockRepository,
+                            SellerRepository sellerRepository) {
         this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
         this.incomeRepository = incomeRepository;
         this.genericService = genericService;
         this.expenseRepository = expenseRepository;
         this.returnedStockRepository = returnedStockRepository;
+        this.sellerRepository = sellerRepository;
     }
 
     @Override
@@ -98,8 +102,8 @@ public class ShopServicesImpl implements ShopServices {
                 .map(Warehouse::getWarehouseId)
                 .map(this::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getExpenses)
-                .flatMap(Set::parallelStream)
+                .map(expenseRepository::findAllByShop)
+                .flatMap(List::parallelStream)
                 .filter(expense -> !expense.getApproved())
                 .collect(Collectors.toList());
     }
@@ -129,14 +133,17 @@ public class ShopServicesImpl implements ShopServices {
                 .map(Warehouse::getWarehouseId)
                 .map(this::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getReturnedSales)
-                .flatMap(Set::parallelStream)
+                .map(returnedStockRepository::findAllByShop)
+                .flatMap(List::parallelStream)
                 .filter(returnedStock -> !returnedStock.getApproved())
                 .collect(Collectors.toList());
     }
 
     @Override
     public Shop addShop(Warehouse warehouse, Shop shop) {
+
+        if (shopRepository.findDistinctByShopName(shop.getShopName()) != null) throw new InventoryAPIOperationException
+                ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
 
         Set<Warehouse> warehouseSet = new HashSet<>();
         warehouseSet.add(warehouse);
@@ -150,10 +157,8 @@ public class ShopServicesImpl implements ShopServices {
         if (null == seller) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find seller entity to save", null);
 
-        Set<Seller> allSellers = shop.getSellers();
-        allSellers.add(seller);
-        shop.setSellers(allSellers);
-        shop.setUpdateDate(new Date());
+        seller.setShop(shop);
+        sellerRepository.save(seller);
 
         return shopRepository.save(shop);
     }
@@ -188,8 +193,8 @@ public class ShopServicesImpl implements ShopServices {
                 .map(Warehouse::getWarehouseId)
                 .map(this::fetchAllShopInWarehouse)
                 .flatMap(List::parallelStream)
-                .map(Shop::getIncome)
-                .flatMap(Set::parallelStream)
+                .map(incomeRepository::findAllByShop)
+                .flatMap(List::parallelStream)
                 .filter(income -> !income.getApproved())
                 .collect(Collectors.toList());
     }
@@ -201,11 +206,12 @@ public class ShopServicesImpl implements ShopServices {
 
         shopRepository.findById(shopId).ifPresent(shop -> {
 
-            Set<Seller> allSellers = shop.getSellers();
-            allSellers.addAll(sellerList);
-            shop.setSellers(allSellers);
-            shop.setUpdateDate(new Date());
-            updatedShop.set(shopRepository.save(shop));
+            updatedShop.set(shop);
+            sellerList.forEach(seller -> {
+
+                seller.setShop(shop);
+                sellerRepository.save(seller);
+            });
         });
 
         return updatedShop.get();
@@ -218,10 +224,13 @@ public class ShopServicesImpl implements ShopServices {
 
         shopRepository.findById(shopId).ifPresent(shop -> {
 
-            Set<Seller> sellerSet = shop.getSellers();
-            sellerSet.remove(seller);
-            shop.setSellers(sellerSet);
-            updatedShop.set(shopRepository.save(shop));
+            Seller sellerRetrieved = sellerRepository.findAllByShop(shop)
+                    .stream()
+                    .filter(sellerFoundInShop -> sellerFoundInShop.equals(seller))
+                    .collect(toSingleton());
+
+            sellerRetrieved.setShop(null);
+            sellerRepository.save(sellerRetrieved);
         });
 
         return updatedShop.get();
@@ -234,10 +243,13 @@ public class ShopServicesImpl implements ShopServices {
 
         shopRepository.findById(shopId).ifPresent(shop -> {
 
-            Set<Seller> sellerSet = shop.getSellers();
-            sellerSet.removeAll(sellerList);
-            shop.setSellers(sellerSet);
-            updatedShop.set(shopRepository.save(shop));
+            sellerRepository.findAllByShop(shop)
+                    .stream()
+                    .filter(sellerFoundInShop -> sellerList.contains(sellerFoundInShop))
+                    .forEach(seller -> {
+                        seller.setShop(null);
+                        sellerRepository.save(seller);
+                    });
         });
 
         return updatedShop.get();

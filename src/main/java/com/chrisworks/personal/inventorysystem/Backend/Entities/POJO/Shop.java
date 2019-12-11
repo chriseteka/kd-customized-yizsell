@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -53,19 +54,20 @@ public class Shop {
     @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Set<Warehouse> warehouses = new HashSet<>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
-    private Set<Seller> sellers = new HashSet<>();
+//    @JsonIgnore
+//    @OneToMany(fetch = FetchType.LAZY)
+//    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+//    private Set<Seller> sellers = new HashSet<>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
-    private Set<ReturnedStock> returnedSales = new HashSet<>();
+//    @OneToMany(fetch = FetchType.LAZY)
+//    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "returnedStockId"))
+//    private Set<ReturnedStock> returnedSales = new HashSet<>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
-    private Set<Expense> expenses = new HashSet<>();
+//    @OneToMany(fetch = FetchType.LAZY)
+//    @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "expenseId"))
+//    private Set<Expense> expenses = new HashSet<>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "incomeId"))
-    private Set<Income> income = new HashSet<>();
+//    @OneToMany(fetch = FetchType.LAZY)
+//    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "incomeId"))
+//    private Set<Income> income = new HashSet<>();
 }
