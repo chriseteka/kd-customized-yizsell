@@ -49,7 +49,7 @@ public class Shop {
     private String shopAddress;
 
 //    @JsonIgnore
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
-    private Set<Warehouse> warehouses = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    private Warehouse warehouse;
 }

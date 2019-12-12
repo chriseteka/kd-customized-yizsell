@@ -72,7 +72,7 @@ public class ShopServicesImpl implements ShopServices {
                 InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
 
         return warehouseRepository.findById(warehouseId)
-                .map(shopRepository::findAllByWarehouses)
+                .map(shopRepository::findAllByWarehouse)
                 .orElse(Collections.emptyList());
 
     }
@@ -146,9 +146,7 @@ public class ShopServicesImpl implements ShopServices {
         if (shopRepository.findDistinctByShopName(shop.getShopName()) != null) throw new InventoryAPIOperationException
                 ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
 
-        Set<Warehouse> warehouseSet = new HashSet<>();
-        warehouseSet.add(warehouse);
-        shop.setWarehouses(warehouseSet);
+        shop.setWarehouse(warehouse);
         return shopRepository.save(shop);
     }
 

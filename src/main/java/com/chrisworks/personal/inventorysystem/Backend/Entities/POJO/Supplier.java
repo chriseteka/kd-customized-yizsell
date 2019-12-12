@@ -39,12 +39,12 @@ public class Supplier {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Supplier full name cannot be null")
+//    @NotNull(message = "Supplier full name cannot be null")
     @Size(min = 3, message = "Name must contain at least three characters")
     @Column(name = "supplierFullName", nullable = false)
     private String supplierFullName;
 
-    @NotNull(message = "Supplier phone number cannot be null")
+//    @NotNull(message = "Supplier phone number cannot be null")
     @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
     @Column(name = "supplierPhoneNumber", nullable = false, unique = true)
     private String supplierPhoneNumber;

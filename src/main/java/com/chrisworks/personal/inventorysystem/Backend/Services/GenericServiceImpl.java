@@ -123,8 +123,9 @@ public class GenericServiceImpl implements GenericService {
 
         if (null == stockCategory) stockCategory = addStockCategory(stock.getStockCategory());
 
+        System.out.println(stockSupplier);
         stockSupplier = supplierRepository
-                .findDistinctBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
+                .findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
         if (null == stockSupplier) stockSupplier = addSupplier(stock.getLastRestockPurchasedFrom());
 
@@ -185,7 +186,7 @@ public class GenericServiceImpl implements GenericService {
 
         Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
 
-        stockSupplier = supplierRepository.findDistinctBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
+        stockSupplier = supplierRepository.findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
         if (null == stockSupplier) stockSupplier = addSupplier(newStock.getLastRestockPurchasedFrom());
 
@@ -577,7 +578,7 @@ public class GenericServiceImpl implements GenericService {
         if (authUserType.equals(ACCOUNT_TYPE.SELLER)){
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
-            return new ArrayList<>(sellerFound.getShop().getWarehouses());
+            return new ArrayList<>(Collections.singleton(sellerFound.getShop().getWarehouse()));
         }
 
         return null;
@@ -632,7 +633,7 @@ public class GenericServiceImpl implements GenericService {
 
             Optional<Seller> optionalSeller = sellerRepository.findById(AuthenticatedUserDetails.getUserId());
 
-            optionalSeller.ifPresent(seller -> warehouseList.addAll(seller.getShop().getWarehouses()));
+            optionalSeller.ifPresent(seller -> warehouseList.add(seller.getShop().getWarehouse()));
         }
 
         if (warehouseList.isEmpty()) throw new InventoryAPIResourceNotFoundException

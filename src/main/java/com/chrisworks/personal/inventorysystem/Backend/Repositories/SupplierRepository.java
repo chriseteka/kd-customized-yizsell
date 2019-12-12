@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface SupplierRepository extends JpaRepository<Supplier, Long> {
 
-    Supplier findDistinctBySupplierPhoneNumber(String phoneNumber);
+    Supplier findBySupplierPhoneNumber(String phoneNumber);
 
     List<Supplier> findAllByCreatedBy(String createdBy);
 }
