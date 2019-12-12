@@ -266,6 +266,10 @@ public class GenericServiceImpl implements GenericService {
         if (is(totalToAmountPaidDiff).isPositive()) invoice.setDebt(totalToAmountPaidDiff.abs());
 
         AtomicReference<Stock> atomicStock = new AtomicReference<>();
+
+        //Assign a number to the invoice
+        invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
+
         //Decrement the quantity of stock left for all stock in the customers stock bought list
         invoice.getStockSold().forEach(stockSold -> {
 
@@ -281,9 +285,6 @@ public class GenericServiceImpl implements GenericService {
                 if (stockFound.getStockQuantityRemaining() < stockSold.getQuantitySold()) throw new InventoryAPIOperationException
                         ("Low stock quantity", "The quantity of " + stockFound.getStockName() +
                                 " is limited, and you cannot sell above it.", null);
-
-                //Assign a number to the invoice
-                invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
 
                 //Save all stock bought by the customer as new and independent objects of stockSold, then add them to a set
                 stockSold.setCostPricePerStock(stockFound.getPricePerStockPurchased());
@@ -329,88 +330,95 @@ public class GenericServiceImpl implements GenericService {
         if (returnedStock == null) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find returned stock entity to save", null);
 
-        AtomicReference<ReturnedStock> returnStock = new AtomicReference<>();
+        ReturnedStock returnStock;
 
-        AtomicReference<StockSold> initialStockSold = new AtomicReference<>();
+        //Search invoice repository for the invoice number a return is about to be made with
+        Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
 
-        AtomicReference<StockSold> updatedStockSold = new AtomicReference<>();
+        if (null == invoiceRetrieved) throw new InventoryAPIResourceNotFoundException
+                ("No invoice was found by id", "No invoice with id " + returnedStock.getInvoiceId() + " was found", null);
 
         //Ready warehouses to return stock to
         List<Warehouse> warehouseList = warehouseList();
 
-        Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
+        //search warehouses for the stock about to be returned
+        Stock stockRecordFromWarehouse = warehouseList.stream()
+                .map(warehouse -> stockRepository
+                        .findDistinctByStockNameAndWarehouses(returnedStock.getStockName(), warehouse))
+                .collect(toSingleton());
 
-        if(null != invoiceRetrieved){
+        if (null == stockRecordFromWarehouse) throw new InventoryAPIResourceNotFoundException
+                ("Stock not found", "The stock about to be returned never existed in any of your warehouses", null);
 
-            invoiceRetrieved.getStockSold().forEach(stockSold -> {
+            //Search the invoice retrieved for the stock about to be returned
+            StockSold stockAboutToBeReturned = invoiceRetrieved.getStockSold()
+                    .stream()
+                    .filter(stockSold -> stockSold.getStockName().equalsIgnoreCase(returnedStock.getStockName()))
+                    .collect(toSingleton());
 
-                if (stockSold.getStockName().equalsIgnoreCase(returnedStock.getStockName())) {
+            if (null == stockAboutToBeReturned) throw new InventoryAPIOperationException("Stock doe not exist in the invoice",
+                    "The stock about to be returned does not exist in the list of stocks sold with the invoice", null);
 
-                    //Get the initial stock sold object
-                    initialStockSold.set(stockSold);
+            //Stock sold is greater than stock returned
+            if (stockAboutToBeReturned.getQuantitySold() < returnedStock.getQuantityReturned()) throw new InventoryAPIOperationException
+                    ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
 
-                    //Stock sold is greater than stock returned
-                    if (stockSold.getQuantitySold() < returnedStock.getQuantityReturned()) throw new InventoryAPIOperationException
-                            ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
+            //Save returns
+            returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
+            returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                    .multiply(stockRecordFromWarehouse.getSellingPricePerStock()));
 
-                    Stock stockToReturn = null;
+            //Update stock left after return
+            stockRecordFromWarehouse.setStockRemainingTotalPrice(stockRecordFromWarehouse.getStockRemainingTotalPrice()
+                    .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                            .multiply(stockAboutToBeReturned.getCostPricePerStock())));
+            stockRecordFromWarehouse.setStockQuantityRemaining(returnedStock.getQuantityReturned() +
+                    stockRecordFromWarehouse.getStockQuantityRemaining());
+            stockRecordFromWarehouse.setProfit(stockRecordFromWarehouse.getProfit()
+                    .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                            .multiply(stockRecordFromWarehouse.getSellingPricePerStock())));
+            stockRecordFromWarehouse.setStockSoldTotalPrice(stockRecordFromWarehouse.getStockSoldTotalPrice()
+                    .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                            .multiply(stockAboutToBeReturned.getPricePerStockSold())));
+            stockRecordFromWarehouse.setStockQuantitySold(stockRecordFromWarehouse.getStockQuantitySold() -
+                    returnedStock.getQuantityReturned());
+            stockRecordFromWarehouse.setUpdateDate(new Date());
 
-                    for (Warehouse warehouse : warehouseList) {
+            stockRepository.save(stockRecordFromWarehouse);
 
-                        stockToReturn = stockRepository
-                                .findDistinctByStockNameAndWarehouses(returnedStock.getStockName(), warehouse);
+            //Update stockSold
+            //Reduce quantity of stock from the stock sold table, after find
+            StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
+                    (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
+            initStockSold.setUpdateDate(new Date());
+            initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
 
-                        if (null == stockToReturn) return;
+            Set<StockSold> stockSoldSet = new HashSet<>(invoiceRetrieved.getStockSold());
 
-                        //Save returns
-                        returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-                        returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
-                        returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                .multiply(stockToReturn.getSellingPricePerStock()));
+            if (initStockSold.getQuantitySold() > 0){
 
-                        //Update stock left after return
-                        stockToReturn.setStockRemainingTotalPrice(stockToReturn.getStockRemainingTotalPrice()
-                                .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                        .multiply(stockSold.getCostPricePerStock())));
-                        stockToReturn.setStockQuantityRemaining(returnedStock.getQuantityReturned() +
-                                stockToReturn.getStockQuantityRemaining());
-                        stockToReturn.setProfit(stockToReturn.getProfit()
-                                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                        .multiply(stockToReturn.getSellingPricePerStock())));
-                        stockToReturn.setStockSoldTotalPrice(stockToReturn.getStockSoldTotalPrice()
-                                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                                        .multiply(stockSold.getPricePerStockSold())));
-                        stockToReturn.setStockQuantitySold(stockToReturn.getStockQuantitySold() -
-                                returnedStock.getQuantityReturned());
-                        stockToReturn.setUpdateDate(new Date());
+                stockSoldSet.remove(stockAboutToBeReturned);
+                stockSoldSet.add(initStockSold);
+                invoiceRetrieved.setStockSold(stockSoldSet);
+                invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
+                invoiceRepository.save(invoiceRetrieved);
+            }
+            else{
 
-                        stockRepository.save(stockToReturn);
+                if (invoiceRetrieved.getStockSold().size() == 1){
 
-                        //Update stockSold
-                        //Reduce quantity of stock from the stock sold table, after find
-                        StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
-                                (returnedStock.getInvoiceId(), stockSold.getStockName());
-                        initStockSold.setUpdateDate(new Date());
-                        initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
+                    initStockSold.setQuantitySold(1); //hack to let it pass
+                    invoiceRepository.delete(invoiceRetrieved);
+                }else {
 
-                        if (initStockSold.getQuantitySold() > 0) updatedStockSold.set(stockSoldRepository.save(initStockSold));
-                        else stockSoldRepository.delete(initStockSold);
-                    }
-
-                    //Could not find the stock to return any of the warehouses
-                    if(stockToReturn == null) throw new InventoryAPIResourceNotFoundException
-                            ("Stock not found", "The stock about to be returned never existed in any of your warehouses", null);
+                    initStockSold.setQuantitySold(1); //hack to let it pass
+                    stockSoldSet.remove(stockAboutToBeReturned);
+                    invoiceRetrieved.setStockSold(stockSoldSet);
+                    invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
+                    invoiceRepository.save(invoiceRetrieved);
                 }
-                else throw new InventoryAPIOperationException("Stock doe not exist in the invoice",
-                        "The stock about to be returned does not exist in the list of stocks sold with the invoice", null);
-            });
-
-            //Update Invoice
-            Set<StockSold> stockSoldSet = invoiceRetrieved.getStockSold();
-            stockSoldSet.remove(initialStockSold.get());
-            stockSoldSet.add(updatedStockSold.get());
-            invoiceRetrieved.setStockSold(stockSoldSet);
-            invoiceRepository.save(invoiceRetrieved);
+            }
 
             //Create an Expense of type sales_return and save it
             String expenseDescription = returnedStock.getStockName() + " returned with reason: " + returnedStock.getReasonForReturn();
@@ -424,7 +432,7 @@ public class GenericServiceImpl implements GenericService {
                 returnedStock.setShop(stockReturnedShop);
 
                 addExpense(expenseOnReturn);
-                returnStock.set(returnedStockRepository.save(returnedStock));
+                returnStock = returnedStockRepository.save(returnedStock);
             }else{
 
                 returnedStock.setApproved(true);
@@ -432,13 +440,10 @@ public class GenericServiceImpl implements GenericService {
                 returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
                 addExpense(expenseOnReturn);
-                returnStock.set(returnedStockRepository.save(returnedStock));
+                returnStock = returnedStockRepository.save(returnedStock);
             }
 
-        }else throw new InventoryAPIResourceNotFoundException
-                ("Invoice not found", "Invoice not found for any of your shops or sales history", null);
-
-        return returnStock.get();
+        return returnStock;
     }
 
     @Override

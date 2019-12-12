@@ -19,7 +19,8 @@ public class Utility {
                         throw new IllegalStateException("Could not retrieve a singleton, due to multiple elements retrieved");
                     }
                     if (list.size() == 0){
-                        throw new IllegalStateException("Could not retrieve a singleton due to zero element in the list");
+                        return null;
+//                        throw new IllegalStateException("Could not retrieve a singleton due to zero element in the list");
                     }
                     return list.get(0);
                 }

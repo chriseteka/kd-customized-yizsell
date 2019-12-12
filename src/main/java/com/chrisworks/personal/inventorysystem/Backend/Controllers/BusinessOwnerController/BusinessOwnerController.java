@@ -713,7 +713,7 @@ public class BusinessOwnerController {
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
-                .flatMap(List::parallelStream)
+                .flatMap(List::stream)
                 .filter(shop -> shop.getShopId().equals(shopId))
                 .collect(toSingleton());
 
