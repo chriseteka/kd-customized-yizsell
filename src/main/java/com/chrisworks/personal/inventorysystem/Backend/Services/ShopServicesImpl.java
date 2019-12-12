@@ -282,11 +282,14 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public Shop deleteEntity(Long entityId) {
 
+        AtomicReference<Shop> shopDeleted = new AtomicReference<>(null);
 
-        return shopRepository.findById(entityId).map(shop -> {
+        shopRepository.findById(entityId).ifPresent(shop -> {
 
+            shopDeleted.set(shop);
             shopRepository.delete(shop);
-            return shop;
-        }).orElse(null);
+        });
+
+        return shopDeleted.get();
     }
 }
