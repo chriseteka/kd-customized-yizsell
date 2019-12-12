@@ -40,12 +40,10 @@ public class Expense {
     private Date updateDate = new Date();
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Expense must be greater than zero")
-    @NotNull(message = "Expense amount cannot be null")
     @Column(name = "expenseAmount", nullable = false)
     private BigDecimal expenseAmount;
 
     @Size(min = 3, message = "Expense description must be greater than three characters")
-    @NotNull(message = "Expense description cannot be null")
     @Column(name = "expenseDescription", nullable = false)
     private String expenseDescription;
 
@@ -62,6 +60,7 @@ public class Expense {
     @Column(name = "approvedBy")
     private String approvedBy;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "shopExpenses", joinColumns = @JoinColumn(name = "expenseId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
@@ -98,6 +97,7 @@ public class Expense {
 
     public Expense(int expenseTypeValue, BigDecimal expenseAmount, String expenseDescription) {
 
+        this.expenseTypeVal = String.valueOf(expenseTypeValue);
         this.expenseTypeValue = expenseTypeValue;
         this.expenseAmount = expenseAmount;
         this.expenseDescription = expenseDescription;

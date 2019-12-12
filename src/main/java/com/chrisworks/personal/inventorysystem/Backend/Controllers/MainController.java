@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -129,6 +130,16 @@ public class MainController {
     public ResponseEntity<?> sellStock(@RequestBody @Valid Invoice invoice){
 
         preAuthorizeLoggedInUser();
+
+        if (!invoice.getPaymentModeVal().matches("\\d+")) throw new InventoryAPIDataValidationException
+                ("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300", null);
+
+        invoice.setPaymentModeValue(Integer.parseInt(invoice.getPaymentModeVal()));
+
+        IntStream paymentModeValueStream = Arrays.stream(PAYMENT_MODE.values()).mapToInt(PAYMENT_MODE::getPayment_mode_value);
+
+        if (paymentModeValueStream.noneMatch(value -> value == invoice.getPaymentModeValue()))
+            throw new InventoryAPIDataValidationException("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300", null);
 
         Invoice newInvoice = genericService.sellStock(invoice);
 

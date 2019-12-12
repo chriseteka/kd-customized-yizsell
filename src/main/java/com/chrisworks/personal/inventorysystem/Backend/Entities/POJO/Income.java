@@ -60,6 +60,7 @@ public class Income {
     @Column(name = "approvedBy")
     private String approvedBy;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "incomeId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
@@ -96,6 +97,7 @@ public class Income {
 
     public Income(BigDecimal incomeAmount, int incomeTypeValue, String incomeDescription) {
 
+        this.incomeTypeVal = String.valueOf(incomeTypeValue);
         this.incomeAmount = incomeAmount;
         this.incomeTypeValue = incomeTypeValue;
         this.incomeReference = incomeDescription;

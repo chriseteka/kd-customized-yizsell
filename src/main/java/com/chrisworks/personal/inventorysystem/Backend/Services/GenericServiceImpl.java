@@ -9,14 +9,15 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
+import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
 /**
  * @author Chris_Eteka
@@ -262,7 +263,7 @@ public class GenericServiceImpl implements GenericService {
                 .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));
 
         //If customer under pays for list of stocks in his invoice, record a debt against the invoice.
-        if (totalToAmountPaidDiff.compareTo(BigDecimal.ZERO) >= 0) invoice.setDebt(totalToAmountPaidDiff.abs());
+        if (is(totalToAmountPaidDiff).isPositive()) invoice.setDebt(totalToAmountPaidDiff.abs());
 
         AtomicReference<Stock> atomicStock = new AtomicReference<>();
         //Decrement the quantity of stock left for all stock in the customers stock bought list
@@ -277,19 +278,25 @@ public class GenericServiceImpl implements GenericService {
 
                 Stock stockFound = atomicStock.get();
 
+                if (stockFound.getStockQuantityRemaining() < stockSold.getQuantitySold()) throw new InventoryAPIOperationException
+                        ("Low stock quantity", "The quantity of " + stockFound.getStockName() +
+                                " is limited, and you cannot sell above it.", null);
+
                 //Assign a number to the invoice
                 invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
 
                 //Save all stock bought by the customer as new and independent objects of stockSold, then add them to a set
-                stockSold.setCostPricePerStock(stockFound.getSellingPricePerStock());
+                stockSold.setCostPricePerStock(stockFound.getPricePerStockPurchased());
                 stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
                 stockSoldSet.add(stockSoldRepository.save(stockSold));
 
                 //Decrementing of overall stock in the store starts now, while profit, and stock sold total price increases
                 stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
-                stockFound.setStockSoldTotalPrice(stockFound.getProfit().add(stockSold.getCostPricePerStock()
+                stockFound.setStockSoldTotalPrice(stockFound.getStockSoldTotalPrice().add(stockSold.getCostPricePerStock()
                         .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
                 stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
+                stockFound.setStockRemainingTotalPrice(BigDecimal.valueOf(stockFound.getStockQuantityRemaining())
+                        .multiply(stockFound.getPricePerStockPurchased()));
                 stockFound.setProfit(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice()));
                 stockRepository.save(stockFound);
             }
@@ -302,9 +309,15 @@ public class GenericServiceImpl implements GenericService {
         String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
         addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
 
+        String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();
+
         invoice.getStockSold().clear();
         invoice.setStockSold(stockSoldSet);
         invoice.setCustomerId(customer.get());
+        invoice.setCreatedBy(invoiceGeneratedBy);
+
+        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
+            invoice.setSeller(sellerRepository.findDistinctBySellerFullNameOrSellerEmail(invoiceGeneratedBy, invoiceGeneratedBy));
 
         return invoiceRepository.save(invoice);
     }
@@ -354,7 +367,6 @@ public class GenericServiceImpl implements GenericService {
                         returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
                         returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                                 .multiply(stockToReturn.getSellingPricePerStock()));
-//                        returnStock.set(returnedStockRepository.save(returnedStock));
 
                         //Update stock left after return
                         stockToReturn.setStockRemainingTotalPrice(stockToReturn.getStockRemainingTotalPrice()
@@ -380,13 +392,17 @@ public class GenericServiceImpl implements GenericService {
                                 (returnedStock.getInvoiceId(), stockSold.getStockName());
                         initStockSold.setUpdateDate(new Date());
                         initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
-                        updatedStockSold.set(stockSoldRepository.save(initStockSold));
+
+                        if (initStockSold.getQuantitySold() > 0) updatedStockSold.set(stockSoldRepository.save(initStockSold));
+                        else stockSoldRepository.delete(initStockSold);
                     }
 
                     //Could not find the stock to return any of the warehouses
                     if(stockToReturn == null) throw new InventoryAPIResourceNotFoundException
-                            ("Stock not found", "The stock about to be returned was never existed in any of your warehouses", null);
+                            ("Stock not found", "The stock about to be returned never existed in any of your warehouses", null);
                 }
+                else throw new InventoryAPIOperationException("Stock doe not exist in the invoice",
+                        "The stock about to be returned does not exist in the list of stocks sold with the invoice", null);
             });
 
             //Update Invoice
@@ -397,49 +413,30 @@ public class GenericServiceImpl implements GenericService {
             invoiceRepository.save(invoiceRetrieved);
 
             //Create an Expense of type sales_return and save it
-            String expenseDescription = returnStock.get().getStockName() + " returned with reason: " + returnStock.get().getReasonForReturn();
-            Expense expenseOnReturn = addExpense(new Expense(300, returnStock.get().getStockReturnedCost(), expenseDescription));
-            expenseOnReturn.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            String expenseDescription = returnedStock.getStockName() + " returned with reason: " + returnedStock.getReasonForReturn();
+            Expense expenseOnReturn = new Expense(300, returnedStock.getStockReturnedCost(), expenseDescription);
 
             //Do the following if user is a seller
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SELLER)) {
 
                 //Add the returned stock and new expense created to the shop of that seller
                 Shop stockReturnedShop = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
-
-                expenseOnReturn.setShop(stockReturnedShop);
                 returnedStock.setShop(stockReturnedShop);
 
-                expenseRepository.save(expenseOnReturn);
+                addExpense(expenseOnReturn);
                 returnStock.set(returnedStockRepository.save(returnedStock));
-
-
-//                Set<ReturnedStock> allReturnedSales = new HashSet<>(stockReturnedShop.getReturnedSales());
-//                allReturnedSales.add(returnStock.get());
-//                stockReturnedShop.setReturnedSales(allReturnedSales);
-
-                //Add the newly created expense to the set of expenses incurred in the shop
-//                Set<Expense> allExpensesInShop = stockReturnedShop.getExpenses();
-//                allExpensesInShop.add(expenseOnReturn);
-//                stockReturnedShop.setExpenses(allExpensesInShop);
-
-//                shopRepository.save(stockReturnedShop);
             }else{
-
-                expenseOnReturn.setApproved(true);
-                expenseOnReturn.setApprovedDate(new Date());
-                expenseOnReturn.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
                 returnedStock.setApproved(true);
                 returnedStock.setApprovedDate(new Date());
                 returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
-                expenseRepository.save(expenseOnReturn);
+                addExpense(expenseOnReturn);
                 returnStock.set(returnedStockRepository.save(returnedStock));
             }
 
         }else throw new InventoryAPIResourceNotFoundException
-                ("Invoice not found", "Invoice not found for the returned stock invoice number", null);
+                ("Invoice not found", "Invoice not found for any of your shops or sales history", null);
 
         return returnStock.get();
     }
@@ -454,6 +451,7 @@ public class GenericServiceImpl implements GenericService {
     }
 
     @Override
+    @Transactional
     public Expense addExpense(Expense expense) {
 
         if (null == expense) throw new InventoryAPIOperationException
@@ -471,10 +469,6 @@ public class GenericServiceImpl implements GenericService {
 
             //get the seller's shop, add the expense to it then persist it
             expense.setShop(shopBySellerName(AuthenticatedUserDetails.getUserFullName()));
-//            Set<Expense> shopExpenses = new HashSet<>(distinctShopBySeller.getExpenses());
-//            shopExpenses.add(newExpense);
-//            distinctShopBySeller.setExpenses(shopExpenses);
-//            shopRepository.save(distinctShopBySeller);
 
             return expenseRepository.save(expense);
         }
@@ -500,10 +494,6 @@ public class GenericServiceImpl implements GenericService {
             //get the seller's shop, add the income to it then persist it
             Shop distinctShopBySeller = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
             income.setShop(distinctShopBySeller);
-//            Set<Income> shopIncome = new HashSet<>(distinctShopBySeller.getIncome());
-//            shopIncome.add(newIncome);
-//            distinctShopBySeller.setIncome(shopIncome);
-//            shopRepository.save(distinctShopBySeller);
 
             return incomeRepository.save(income);
         }
@@ -515,7 +505,7 @@ public class GenericServiceImpl implements GenericService {
         if (null == stockId || stockId < 0 || !stockId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("stock id error", "stock id is empty or not a valid number", null);
 
-        if (null == newSellingPrice || newSellingPrice.compareTo(BigDecimal.ZERO) <= 0 || !newSellingPrice.toString().matches("\\d+"))
+        if (null == newSellingPrice || is(newSellingPrice).lte(BigDecimal.ZERO) || !newSellingPrice.toString().matches("\\d+"))
             throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
 
         AtomicReference<Stock> updatedStock = new AtomicReference<>();
@@ -537,7 +527,7 @@ public class GenericServiceImpl implements GenericService {
         if (null == stockName || stockName.isEmpty()) throw new
                 InventoryAPIOperationException("stock name error", "stock name is empty or null", null);
 
-        if (null == newSellingPrice || newSellingPrice.compareTo(BigDecimal.ZERO) <= 0 || !newSellingPrice.toString().matches("\\d+"))
+        if (null == newSellingPrice || is(newSellingPrice).lte(BigDecimal.ZERO) || !newSellingPrice.toString().matches("\\d+"))
             throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
 
         Warehouse warehouse = fetchAuthUserWarehouse(warehouseId);

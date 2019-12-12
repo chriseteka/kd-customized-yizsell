@@ -24,7 +24,7 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     List<Stock> findAllByWarehouses(Warehouse warehouse);
 
-    List<Stock> findAllByWarehousesAndStockQuantityRemainingIsLessThan(Warehouse warehouse, int limit);
+    List<Stock> findAllByWarehousesAndStockQuantityRemainingIsLessThanEqual(Warehouse warehouse, int limit);
 
     List<Stock> findAllByCreatedByAndAndApprovedIsFalse(String createdBy);
 }

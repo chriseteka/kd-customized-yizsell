@@ -1,9 +1,11 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
@@ -137,9 +139,9 @@ public class InvoicesServicesImpl implements InvoiceServices {
         return shopRepository.findById(shopId)
                 .map(shop -> sellerRepository
                         .findAllByShop(shop)
-                .stream()
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
+                .parallelStream()
+                .map(invoiceRepository::findAllBySeller)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList())).orElse(null);
     }
 
@@ -153,5 +155,19 @@ public class InvoicesServicesImpl implements InvoiceServices {
     public List<Invoice> fetchAllInvoiceByPaymentMode(int paymentModeValue) {
 
         return invoiceRepository.findAllByPaymentModeValue(paymentModeValue);
+    }
+
+    @Override
+    public List<Invoice> getInvoicesBySeller(Seller seller) {
+
+        return invoiceRepository.findAllBySeller(seller);
+    }
+
+    @Override
+    public List<Invoice> fetchCustomerAndDebt(Customer customer) {
+
+        if (null == customer) throw new InventoryAPIOperationException("Customer not found", "Customer not found", null);
+
+        return invoiceRepository.findAllByCustomerId(customer);
     }
 }

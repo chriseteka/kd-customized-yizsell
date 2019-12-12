@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,22 +40,18 @@ public class ReturnedStock {
     @Column(name = "updateDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Reason for return cannot be null")
     @Size(min = 3, message = "Reason for return must contain at least three characters")
     @Column(name = "reasonForReturn", nullable = false)
     private String reasonForReturn;
 
-    @NotNull(message = "stock name cannot be null")
     @Size(min = 3, message = "stock name must contain at least three characters")
     @Column(name = "stockName", nullable = false)
     private String stockName;
 
     @Min(value = 1, message = "Quantity returned must be greater than zero")
-    @NotNull(message = "quantity returned cannot be null")
     @Column(name = "quantityReturned", nullable = false)
     private int quantityReturned;
 
-    @NotNull(message = "Invoice id cannot be null")
     @Size(min = 3, message = "invoice id must contain at least three characters")
     @Column(name = "invoiceId", nullable = false)
     private String invoiceId;
@@ -72,8 +69,9 @@ public class ReturnedStock {
     @Column(name = "approvedDate")
     private Date approvedDate;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinTable(name = "returnedSales", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "shopReturns", joinColumns = @JoinColumn(name = "returnedStockId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
     @ManyToOne(fetch = FetchType.LAZY)

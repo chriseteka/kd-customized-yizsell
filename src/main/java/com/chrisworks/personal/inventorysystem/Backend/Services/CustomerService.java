@@ -25,4 +25,6 @@ public interface CustomerService {
     List<Customer> fetchCustomersByShop(Long shopId);
 
     Customer deleteCustomerById(Long customerId);
+
+    Customer fetchCustomerById(Long customerId);
 }

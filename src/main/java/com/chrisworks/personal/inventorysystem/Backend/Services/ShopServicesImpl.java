@@ -87,6 +87,7 @@ public class ShopServicesImpl implements ShopServices {
                 .filter(expense -> expense.getExpenseId().equals(expenseId))
                 .collect(toSingleton());
 
+        expenseFound.setExpenseTypeVal(String.valueOf(expenseFound.getExpenseTypeValue()));
         expenseFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
         expenseFound.setApproved(true);
         expenseFound.setApprovedDate(new Date());
@@ -178,6 +179,7 @@ public class ShopServicesImpl implements ShopServices {
                 .filter(income -> income.getIncomeId().equals(incomeId))
                 .collect(toSingleton());
 
+        incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
         incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
         incomeFound.setApproved(true);
         incomeFound.setApprovedDate(new Date());
@@ -279,6 +281,12 @@ public class ShopServicesImpl implements ShopServices {
 
     @Override
     public Shop deleteEntity(Long entityId) {
-        return null;
+
+
+        return shopRepository.findById(entityId).map(shop -> {
+
+            shopRepository.delete(shop);
+            return shop;
+        }).orElse(null);
     }
 }

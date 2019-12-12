@@ -100,7 +100,7 @@ public class StockServicesImpl implements StockServices {
         return warehouseRepository.findById(warehouseId)
                 .map(warehouse ->
                         stockRepository
-                                .findAllByWarehousesAndStockQuantityRemainingIsLessThan(warehouse, limit))
+                                .findAllByWarehousesAndStockQuantityRemainingIsLessThanEqual(warehouse, limit))
                 .orElse(Collections.emptyList());
     }
 
@@ -167,7 +167,7 @@ public class StockServicesImpl implements StockServices {
     @Override
     public List<Stock> approveStockList(List<Long> stockIdList) {
 
-        return stockIdList.parallelStream()
+        return stockIdList.stream()
                 .map(this::approveStock)
                 .collect(Collectors.toList());
     }

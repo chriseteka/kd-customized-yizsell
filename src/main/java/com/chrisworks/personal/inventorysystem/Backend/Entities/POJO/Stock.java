@@ -47,18 +47,11 @@ public class Stock {
     @JoinTable(name = "stockStockCategory", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
     private StockCategory stockCategory;
 
-//    @NotNull(message = "stock category cannot be null")
-//    @Size(min = 3, message = "stock category must contain at least three characters")
-//    @Column(name = "stockCategory", nullable = false)
-//    private String stockCategory;
-
-    @NotNull(message = "stock name cannot be null")
     @Size(min = 3, message = "stock name must contain at least three characters")
     @Column(name = "stockName", nullable = false)
     private String stockName;
 
     @Min(value = 1, message = "Stock quantity purchased must be greater than zero")
-    @NotNull(message = "stock quantity purchased cannot be null")
     @Column(name = "stockQuantityPurchased", nullable = false)
     private int stockQuantityPurchased;
 
@@ -69,7 +62,6 @@ public class Stock {
     private int stockQuantityRemaining;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Stock purchased total price must be greater than zero")
-    @NotNull(message = "stock purchased total price cannot be null")
     @Column(name = "stockPurchasedTotalPrice", nullable = false)
     private BigDecimal stockPurchasedTotalPrice;
 
@@ -83,7 +75,6 @@ public class Stock {
     private BigDecimal stockRemainingTotalPrice;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Selling price per stock must be greater than zero")
-    @NotNull(message = "selling price per stock cannot be null")
     @Column(name = "sellingPricePerStock", nullable = false)
     private BigDecimal sellingPricePerStock;
 
@@ -114,11 +105,12 @@ public class Stock {
     @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
     private Set<Warehouse> warehouses = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "stockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Set<Supplier> stockPurchasedFrom = new HashSet<>();
 
-    @NotNull(message = "lastRestockPurchasedFrom (supplier) cannot be empty")
+    @JsonIgnore
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "restockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;

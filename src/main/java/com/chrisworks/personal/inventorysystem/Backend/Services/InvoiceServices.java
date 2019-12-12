@@ -1,6 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
 import java.math.BigDecimal;
@@ -27,4 +29,8 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
     List<Invoice> fetchAllInvoiceWithDebt();
 
     List<Invoice> fetchAllInvoiceByPaymentMode(int paymentModeValue);
+
+    List<Invoice> getInvoicesBySeller(Seller seller);
+
+    List<Invoice> fetchCustomerAndDebt(Customer customer);
 }

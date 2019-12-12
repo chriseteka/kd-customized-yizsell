@@ -52,12 +52,4 @@ public class Warehouse {
     @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     @JsonIgnore
     private BusinessOwner businessOwner;
-
-//    @JsonIgnore
-//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "warehouses")
-//    private Set<Shop> shops = new HashSet<>();
-
-//    @JsonIgnore
-//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "warehouses")
-//    private Set<Stock> stocks = new HashSet<>();
 }

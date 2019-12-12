@@ -78,13 +78,10 @@ public class Seller implements UserDetails {
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
-
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
-    private Set<Invoice> invoices = new HashSet<>();
 
     @Basic
     @JsonIgnore

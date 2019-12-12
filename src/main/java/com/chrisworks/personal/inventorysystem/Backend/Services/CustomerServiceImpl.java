@@ -96,8 +96,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .map(shop -> sellerRepository
                         .findAllByShop(shop)
                         .stream()
-                        .map(Seller::getInvoices)
-                        .flatMap(Set::parallelStream)
+                        .map(invoiceRepository::findAllBySeller)
+                        .flatMap(List::parallelStream)
                         .map(Invoice::getCustomerId)
                         .collect(Collectors.toList())).orElse(null);
     }
@@ -114,6 +114,12 @@ public class CustomerServiceImpl implements CustomerService {
         });
 
         return customerDeleted.get();
+    }
+
+    @Override
+    public Customer fetchCustomerById(Long customerId) {
+
+        return customerRepository.findById(customerId).orElse(null);
     }
 
 

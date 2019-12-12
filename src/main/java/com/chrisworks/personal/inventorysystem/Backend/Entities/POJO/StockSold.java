@@ -41,23 +41,19 @@ public class StockSold {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Name of stock sold cannot be null")
     @Size(min = 3, message = "stock name should have at least three characters")
     @Column(name = "stockName", nullable = false)
     private String stockName;
 
-    @NotNull(message = "Category of stock sold cannot be null")
     @Size(min = 3, message = "stock category should have at least three characters")
     @Column(name = "stockCategory", nullable = false)
     private String stockCategory;
 
     @Min(value = 1, message = "Quantity sold must be greater than zero")
-    @NotNull(message = "stock sold quantity cannot be null")
     @Column(name = "quantitySold", nullable = false)
     private int quantitySold;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Price per stock sold must be greater than zero")
-    @NotNull(message = "price per stock sold cannot be null")
     @Column(name = "pricePerStockSold", nullable = false)
     private BigDecimal pricePerStockSold;
 

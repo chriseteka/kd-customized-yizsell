@@ -1,7 +1,9 @@
 package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.math.BigDecimal;
@@ -28,4 +30,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findAllByCreatedDateIsBetween(Date from, Date to);
 
     List<Invoice> findAllByPaymentModeValue(int paymentModeValue);
+
+    List<Invoice> findAllBySeller(Seller seller);
+
+    List<Invoice> findAllByCustomerId(Customer customer);
 }

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
+import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
 /**
  * @author Chris_Eteka
@@ -186,7 +187,7 @@ public class BusinessOwnerController {
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + seller + " to" +
                     " shop with id: " + shopId, null);
 
-        return new ResponseEntity<>(shop, HttpStatus.OK);
+        return new ResponseEntity<>(sellerCreated, HttpStatus.OK);
     }
 
     //Get all warehouses
@@ -318,8 +319,8 @@ public class BusinessOwnerController {
                 .flatMap(List::parallelStream)
                 .map(sellerServices::fetchSellerByShop)
                 .flatMap(List::parallelStream)
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
+                .map(invoiceServices::getInvoicesBySeller)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toSet());
         invoiceList.addAll(invoiceServices.fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
@@ -339,8 +340,8 @@ public class BusinessOwnerController {
                 .flatMap(List::parallelStream)
                 .map(sellerServices::fetchSellerByShop)
                 .flatMap(List::parallelStream)
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
+                .map(invoiceServices::getInvoicesBySeller)
+                .flatMap(List::parallelStream)
                 .map(Invoice::getStockSold)
                 .flatMap(Set::parallelStream)
                 .collect(Collectors.toSet());
@@ -431,15 +432,36 @@ public class BusinessOwnerController {
                 .flatMap(List::parallelStream)
                 .map(sellerServices::fetchSellerByShop)
                 .flatMap(List::parallelStream)
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
-                .filter(invoices -> invoices.getDebt().compareTo(BigDecimal.ONE) >= 1)
+                .map(invoiceServices::getInvoicesBySeller)
+                .flatMap(List::parallelStream)
+                .filter(invoices -> is(invoices.getDebt()).isPositive())
                 .map(Invoice::getCustomerId)
                 .collect(Collectors.toSet());
 
-        debtorsList.addAll(customerService.fetchAllCustomersByCreator(AuthenticatedUserDetails.getUserFullName()));
+        debtorsList.addAll(invoiceServices
+                .fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName())
+                .stream()
+                .filter(invoice -> is(invoice.getDebt()).isPositive())
+                .map(Invoice::getCustomerId)
+                .collect(Collectors.toSet())
+        );
 
         return ResponseEntity.ok(debtorsList);
+    }
+
+    //Get how much a customer(debtor) is owing
+    @GetMapping(path = "/customer/debt")
+    public ResponseEntity<?> fetchCustomerAndDebt(@RequestParam Long customerId){
+
+        preAuthorizeBusinessOwner();
+
+        BigDecimal debtByCustomer = invoiceServices
+                .fetchCustomerAndDebt(customerService.fetchCustomerById(customerId))
+                .stream()
+                .map(Invoice::getDebt)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return ResponseEntity.ok(debtByCustomer);
     }
 
     //Put request, approve stock
@@ -522,7 +544,7 @@ public class BusinessOwnerController {
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allStockByWarehouseId)
-                .flatMap(List::parallelStream)
+                .flatMap(List::stream)
                 .filter(stock -> stock.getStockId().equals(stockId))
                 .collect(toSingleton());
 
@@ -756,8 +778,8 @@ public class BusinessOwnerController {
                 .flatMap(List::parallelStream)
                 .map(sellerServices::fetchSellerByShop)
                 .flatMap(List::parallelStream)
-                .map(Seller::getInvoices)
-                .flatMap(Set::parallelStream)
+                .map(invoiceServices::getInvoicesBySeller)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
         invoiceList.addAll(invoiceServices.fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 

@@ -69,8 +69,6 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "businessOwnerPhoneNumber", nullable = false)
     private String businessOwnerPhoneNumber;
 
-    @NotEmpty(message = "Business owner password cannot be empty")
-    @NotNull(message = "Business owner password cannot be null")
     @Size(min = 4, message = "Business Owner Full Name must be at least four characters")
     @Column(name = "businessOwnerPassword", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -84,15 +82,6 @@ public class BusinessOwner implements UserDetails {
 
     @Column(name = "businessTotalProfit", precision = 2)
     private BigDecimal businessTotalProfit = BigDecimal.ZERO;
-
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "businessOwnerInvoices", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
-    private Set<Invoice> invoices = new HashSet<>();
-
-//    @JsonIgnore
-//    @OneToMany(fetch = FetchType.EAGER, mappedBy = "businessOwner", cascade = CascadeType.ALL)
-//    @JsonIgnoreProperties("businessOwner")
-//    private Set<Warehouse> warehouses = new HashSet<>();
 
     @Basic
     @JsonIgnore

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -46,12 +47,10 @@ public class Invoice {
     private String invoiceNumber;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Invoice amount must be greater than zero")
-    @NotNull(message = "Invoice total amount cannot be null")
     @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal invoiceTotalAmount;
 
     @DecimalMin(value = "0.0", message = "Amount paid must be greater or equal to zero than zero")
-    @NotNull(message = "Amount paid cannot be null")
     @Column(name = "amountPaid", nullable = false)
     private BigDecimal amountPaid;
 
@@ -61,15 +60,16 @@ public class Invoice {
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
-//    private Seller seller;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+    private Seller seller;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
     private Set<StockSold> stockSold = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinTable(name = "customersInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
 
@@ -78,9 +78,14 @@ public class Invoice {
 
     @Basic
     @JsonIgnore
-    @NotNull(message = "Payment mode cannot be null")
     @Column(name = "paymentMode", nullable = false)
     private int paymentModeValue;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotEmpty(message = "Payment type cannot be null")
+    private String paymentModeVal;
+
 
     @Transient
     private PAYMENT_MODE paymentMode;
@@ -96,6 +101,9 @@ public class Invoice {
     void fillPersistent() {
         if (paymentMode != null) {
             this.paymentModeValue = paymentMode.getPayment_mode_value();
+        }
+        if (paymentModeValue > 0) {
+            this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
         }
     }
 }
