@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
@@ -89,6 +90,9 @@ public class GenericServiceImpl implements GenericService {
 
         if (null == supplier) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find supplier entity to save", null);
+
+        if (supplierRepository.findBySupplierPhoneNumber(supplier.getSupplierPhoneNumber()) != null) throw new
+                InventoryAPIDuplicateEntryException("Duplicate entry", "Supplier with same phone number exists", null);
 
         supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
@@ -409,11 +413,9 @@ public class GenericServiceImpl implements GenericService {
 
                 if (invoiceRetrieved.getStockSold().size() == 1){
 
-                    initStockSold.setQuantitySold(1); //hack to let it pass
                     invoiceRepository.delete(invoiceRetrieved);
                 }else {
 
-                    initStockSold.setQuantitySold(1); //hack to let it pass
                     stockSoldSet.remove(stockAboutToBeReturned);
                     invoiceRetrieved.setStockSold(stockSoldSet);
                     invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));

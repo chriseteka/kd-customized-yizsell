@@ -37,7 +37,6 @@ public class StockCategory {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotEmpty(message = "Category name cannot be null")
     @Size(min = 3, message = "Category name must be at least three characters")
     @Column(name = "categoryName", nullable = false)
     private String categoryName;

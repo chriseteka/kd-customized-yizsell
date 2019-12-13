@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
@@ -60,16 +59,15 @@ public class Invoice {
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller seller;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "invoiceId", nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "stockSoldId"))
     private Set<StockSold> stockSold = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "customersInvoices", joinColumns = @JoinColumn(name = "invoiceId"), inverseJoinColumns = @JoinColumn(name = "customerId"))
     private Customer customerId;
 

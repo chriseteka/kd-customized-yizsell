@@ -45,23 +45,19 @@ public class Seller implements UserDetails {
     @Column(name = "sellerFullName", nullable = false)
     private String sellerFullName;
 
-    @NotNull(message = "Seller's email cannot be null")
     @Email(message = "Invalid Email Address Entered")
     @Column(name = "sellerEmail", unique = true, nullable = false)
     private String sellerEmail;
 
-    @NotNull(message = "seller phone number cannot be null")
     @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
     @Column(name = "sellerPhoneNumber", nullable = false)
     private String sellerPhoneNumber;
 
-    @NotNull(message = "Seller password cannot be null")
     @Size(min = 4, message = "Password must contain at least four characters")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "sellerPassword", nullable = false)
     private String sellerPassword;
 
-    @NotNull(message = "Seller address cannot be null")
     @Size(min = 3, message = "Seller address must contain at least three characters")
     @Column(name = "sellerAddress", nullable = false)
     private String sellerAddress;
@@ -78,8 +74,7 @@ public class Seller implements UserDetails {
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 

@@ -103,14 +103,12 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        try {
-            Stock newStock = genericService.addStock(warehouseId, stock);
+        Stock newStock = genericService.addStock(warehouseId, stock);
 
-            if (newStock == null)
-                throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stock, null);
+        if (newStock == null)
+            throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stock, null);
 
-            return new ResponseEntity<>(newStock, HttpStatus.CREATED);
-        }catch(Exception e){ e.printStackTrace(); return null; }
+        return new ResponseEntity<>(newStock, HttpStatus.CREATED);
     }
 
     @PutMapping(path = "restock", consumes = "application/json", produces = "application/json")

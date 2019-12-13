@@ -45,26 +45,18 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "updateDate")
     private Date updateDate = new Date();
 
-    @NotEmpty(message = "Business name cannot be empty")
-    @NotNull(message = "Business name cannot be null")
     @Size(min = 3, message = "Business Name must be at least three characters")
     @Column(name = "businessName", nullable = false)
     private String businessName;
 
-    @NotEmpty(message = "Business owner full name cannot be empty")
-    @NotNull(message = "Business owner full name cannot be null")
     @Size(min = 3, message = "Business Owner Full Name must be at least three characters")
     @Column(name = "businessOwnerFullName", nullable = false)
     private String businessOwnerFullName;
 
-    @NotEmpty(message = "Business owner email cannot be empty")
-    @NotNull(message = "Email cannot be null")
     @Email(message = "Invalid Email Address Entered")
     @Column(name = "businessOwnerEmail", unique = true, nullable = false)
     private String businessOwnerEmail;
 
-    @NotEmpty(message = "Business owner phone number cannot be empty")
-    @NotNull(message = "Business owner phone number cannot be null")
     @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
     @Column(name = "businessOwnerPhoneNumber", nullable = false)
     private String businessOwnerPhoneNumber;

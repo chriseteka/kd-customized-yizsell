@@ -40,7 +40,6 @@ public class Income {
     private Date updateDate = new Date();
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Income amount must be greater than zero")
-    @NotNull(message = "income amount cannot be null")
     @Column(name = "incomeAmount", nullable = false)
     private BigDecimal incomeAmount;
 
@@ -61,7 +60,7 @@ public class Income {
     private String approvedBy;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "incomeId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 

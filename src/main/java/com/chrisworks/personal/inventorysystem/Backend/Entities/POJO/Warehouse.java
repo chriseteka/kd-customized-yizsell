@@ -38,17 +38,15 @@ public class Warehouse {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Warehouse name cannot be null")
     @Size(min = 3, message = "Warehouse name must contain at least two characters")
     @Column(name = "warehouseName", nullable = false, unique = true)
     private String warehouseName;
 
-    @NotNull(message = "Warehouse address cannot be null")
     @Size(min = 3, message = "Address must contain at least two characters")
     @Column(name = "warehouseAddress", nullable = false)
     private String warehouseAddress;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     @JsonIgnore
     private BusinessOwner businessOwner;

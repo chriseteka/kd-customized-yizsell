@@ -1,16 +1,12 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Chris_Eteka
@@ -48,8 +44,7 @@ public class Shop {
     @Column(name = "shopAddress", nullable = false)
     private String shopAddress;
 
-//    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
 }
