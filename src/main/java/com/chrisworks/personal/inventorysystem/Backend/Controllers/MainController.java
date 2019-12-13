@@ -103,7 +103,14 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        Stock newStock = genericService.addStock(warehouseId, stock);
+        Stock newStock;
+
+        try {
+            newStock = genericService.addStock(warehouseId, stock);
+        }catch (Exception e){
+
+            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+        }
 
         if (newStock == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + stock, null);
@@ -141,7 +148,13 @@ public class MainController {
         if (paymentModeValueStream.noneMatch(value -> value == invoice.getPaymentModeValue()))
             throw new InventoryAPIDataValidationException("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300", null);
 
-        Invoice newInvoice = genericService.sellStock(invoice);
+        Invoice newInvoice;
+
+        try {
+            newInvoice = genericService.sellStock(invoice);
+        }catch (Exception e){
+            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+        }
 
         if (newInvoice == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + invoice, null);
@@ -155,7 +168,13 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        ReturnedStock newReturnedStock = genericService.processReturn(returnedStock);
+        ReturnedStock newReturnedStock;
+
+        try {
+            newReturnedStock = genericService.processReturn(returnedStock);
+        }catch(Exception e){
+            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+        }
 
         if (newReturnedStock == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + returnedStock, null);
@@ -252,7 +271,6 @@ public class MainController {
         return ResponseEntity.ok(stockWithNewSellingPrice);
     }
 
-    //Get all customers from invoices or directly created by his seller or him (business owner)
     @GetMapping(path = "customers")
     public ResponseEntity<?> fetchAllCustomers(){
 
@@ -273,7 +291,6 @@ public class MainController {
         return ResponseEntity.ok(customersList);
     }
 
-    //Get all stock category, using created by
     @GetMapping(path = "stockCategory")
     public ResponseEntity<?> fetchAllStockCategory(){
 
@@ -290,7 +307,6 @@ public class MainController {
         return ResponseEntity.ok(stockCategoryList);
     }
 
-    //Get all supplier, using created by
     @GetMapping(path = "suppliers")
     public ResponseEntity<?> fetchAllSuppliers(){
 
@@ -310,7 +326,21 @@ public class MainController {
         return ResponseEntity.ok(supplierList);
     }
 
-    //Get invoice by invoiceNumber
+    @GetMapping(path = "/approved/stock")
+    public ResponseEntity<?> fetchAllApprovedStock(){
+
+        preAuthorizeLoggedInUser();
+
+        List<Stock> approvedStocks = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(stockServices::allApprovedStock)
+                .flatMap(List::parallelStream)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(approvedStocks);
+    }
+
     @GetMapping(path = "invoice/number")
     public ResponseEntity<?> getInvoiceByNumber(@RequestParam String invoiceNumber){
 
@@ -321,7 +351,6 @@ public class MainController {
             return ResponseEntity.ok(invoiceFound);
     }
 
-    //Soon to finish stock
     @GetMapping(path = "finishing/stock")
     public ResponseEntity<?> getSoonToFinishStock(@RequestParam int limit){
 
@@ -337,7 +366,6 @@ public class MainController {
         return ResponseEntity.ok(soonToFinishStock);
     }
 
-    //Soon to finish stock
     @GetMapping(path = "expiring/stock")
     public ResponseEntity<?> getSoonToExpireStock(){
 
@@ -361,7 +389,6 @@ public class MainController {
         return ResponseEntity.ok(soonToExpireStock);
     }
 
-    //Put request, clearDebt
     @PutMapping(path = "clearDebt")
     public ResponseEntity<?> clearDebt(@RequestParam String invoiceNumber, @RequestParam BigDecimal amountPaid){
 

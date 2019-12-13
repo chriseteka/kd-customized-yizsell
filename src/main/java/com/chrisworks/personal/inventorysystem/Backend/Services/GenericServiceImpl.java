@@ -417,6 +417,7 @@ public class GenericServiceImpl implements GenericService {
                 }else {
 
                     stockSoldSet.remove(stockAboutToBeReturned);
+                    stockSoldRepository.delete(initStockSold);
                     invoiceRetrieved.setStockSold(stockSoldSet);
                     invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
                     invoiceRepository.save(invoiceRetrieved);

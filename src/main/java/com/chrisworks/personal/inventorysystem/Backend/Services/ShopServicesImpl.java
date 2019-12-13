@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,12 +81,12 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public Expense approveExpense(Long expenseId) {
 
-        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
-                ("Operation not allowed", "Logged in user cannot perform this operation", null);
-
         Expense expenseFound = allUnApprovedExpense().stream()
                 .filter(expense -> expense.getExpenseId().equals(expenseId))
                 .collect(toSingleton());
+
+        if (expenseFound == null) throw new InventoryAPIResourceNotFoundException
+                ("Expense not found", "Expense with id " + expenseId + " was not found in your list of unapproved expense", null);
 
         expenseFound.setExpenseTypeVal(String.valueOf(expenseFound.getExpenseTypeValue()));
         expenseFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
@@ -112,12 +113,13 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public ReturnedStock approveReturnSales(Long returnSaleId) {
 
-        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
-                ("Operation not allowed", "Logged in user cannot perform this operation", null);
-
         ReturnedStock returnedStockFound = allUnApprovedReturnSales().stream()
                 .filter(returnedStock -> returnedStock.getReturnedStockId().equals(returnSaleId))
                 .collect(toSingleton());
+
+        if (returnedStockFound == null) throw new InventoryAPIResourceNotFoundException
+                ("Returned stock not found", "Returned stock with id: " + returnSaleId + "was not found in your list of" +
+                        " unapproved returned stock", null);
 
         returnedStockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
         returnedStockFound.setApproved(true);
@@ -170,12 +172,12 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public Income approveIncome(Long incomeId) {
 
-        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
-                ("Operation not allowed", "Logged in user cannot perform this operation", null);
-
         Income incomeFound = allUnApprovedIncome().stream()
                 .filter(income -> income.getIncomeId().equals(incomeId))
                 .collect(toSingleton());
+
+        if (incomeFound == null) throw new InventoryAPIResourceNotFoundException
+                ("Income not found", "Income with id: " + incomeId + " was not found in your list of unapproved income", null);
 
         incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
         incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());

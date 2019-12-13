@@ -57,7 +57,7 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "businessOwnerEmail", unique = true, nullable = false)
     private String businessOwnerEmail;
 
-    @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
+    @Size(min = 5, max = 15, message = "Invalid Phone Number Entered")
     @Column(name = "businessOwnerPhoneNumber", nullable = false)
     private String businessOwnerPhoneNumber;
 

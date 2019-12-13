@@ -40,7 +40,6 @@ public class Seller implements UserDetails {
     @Column(name = "updateDate")
     private Date updateDate = new Date();
 
-    @NotNull(message = "Seller full name cannot be null")
     @Size(min = 3, message = "Name must contain at least three characters")
     @Column(name = "sellerFullName", nullable = false)
     private String sellerFullName;
@@ -49,7 +48,7 @@ public class Seller implements UserDetails {
     @Column(name = "sellerEmail", unique = true, nullable = false)
     private String sellerEmail;
 
-    @Pattern(regexp = "\\d{10}|(?:\\d{3}-){2}\\d{4}|\\(\\d{3}\\)\\d{3}-?\\d{4}", message = "Invalid Phone Number Entered")
+    @Size(min = 5, max = 15, message = "Invalid Phone Number Entered")
     @Column(name = "sellerPhoneNumber", nullable = false)
     private String sellerPhoneNumber;
 

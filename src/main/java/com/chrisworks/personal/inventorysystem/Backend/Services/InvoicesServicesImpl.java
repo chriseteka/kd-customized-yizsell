@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -106,6 +105,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
             incomeOnDebtClearance.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
         }
 
+        invoiceFound.setPaymentModeVal(String.valueOf(invoiceFound.getPaymentModeValue()));
         invoiceFound.setUpdateDate(new Date());
         invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
         invoiceFound.setAmountPaid(invoiceFound.getAmountPaid().add(amount));

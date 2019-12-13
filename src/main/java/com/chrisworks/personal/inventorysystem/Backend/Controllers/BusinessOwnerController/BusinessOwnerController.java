@@ -82,7 +82,6 @@ public class BusinessOwnerController {
         return new ResponseEntity<>(businessOwnerAccount, HttpStatus.CREATED);
     }
 
-    //Not tested
     @PostMapping(path = "/updateAccount/id", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> updateProfile(@RequestBody @Valid BusinessOwner businessOwner,
                                            @RequestParam Long businessOwnerId){
@@ -113,8 +112,6 @@ public class BusinessOwnerController {
                         || sellerFound.getSellerEmail().equalsIgnoreCase(seller))
                 .collect(toSingleton())
                 .getShop();
-
-//        Shop shopRetrieved = genericService.shopBySellerName(sellerName);
 
         return shopRetrieved != null ? ResponseEntity.ok(shopRetrieved) : ResponseEntity.notFound().build();
     }
@@ -190,7 +187,6 @@ public class BusinessOwnerController {
         return new ResponseEntity<>(sellerCreated, HttpStatus.OK);
     }
 
-    //Get all warehouses
     @GetMapping(path = "/warehouses")
     public ResponseEntity<?> fetchAllWarehouses(){
 
@@ -199,7 +195,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(genericService.allWarehouseByAuthUserId());
     }
 
-    //Get all shops
     @GetMapping(path = "/shops")
     public ResponseEntity<?> fetchAllShops(){
 
@@ -215,7 +210,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(shopList);
     }
 
-    //Get all Sellers
     @GetMapping(path = "/sellers")
     public ResponseEntity<?> fetchAllSellers(){
 
@@ -233,7 +227,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(sellerList);
     }
 
-    //Get all stock
     @GetMapping(path = "/stock")
     public ResponseEntity<?> fetchAllStock(){
 
@@ -249,7 +242,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(stockList);
     }
 
-    //Get all income
     @GetMapping(path = "/income")
     public ResponseEntity<?> fetchAllIncome(){
 
@@ -268,7 +260,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(incomeList);
     }
 
-    //Get all expenses
     @GetMapping(path = "/expenses")
     public ResponseEntity<?> fetchAllExpenses(){
 
@@ -287,7 +278,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(expenseList);
     }
 
-    //Get all returned stock
     @GetMapping(path = "/return/sales")
     public ResponseEntity<?> fetchAllReturnSales(){
 
@@ -306,7 +296,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(returnedStocks);
     }
 
-    //Get all invoices
     @GetMapping(path = "/invoices")
     public ResponseEntity<?> fetchAllInvoices(){
 
@@ -327,7 +316,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(invoiceList);
     }
 
-    //Get all stock sold from the invoices
     @GetMapping(path = "/stock/sold")
     public ResponseEntity<?> fetchAllStockSold(){
 
@@ -356,7 +344,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(stockSoldList);
     }
 
-    //Get all unapproved stock
     @GetMapping(path = "/stock/unapproved")
     public ResponseEntity<?> fetchAllUnapprovedStock(){
 
@@ -374,7 +361,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(unApprovedStockList);
     }
 
-    //Get all unapproved income
     @GetMapping(path = "/income/unapproved")
     public ResponseEntity<?> fetchAllUnapprovedIncome(){
 
@@ -382,14 +368,9 @@ public class BusinessOwnerController {
 
         List<Income> unApprovedIncomeList = shopServices.allUnApprovedIncome();
 
-//        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
-//            unApprovedIncomeList.addAll(incomeServices
-//                    .fetchAllUnApprovedIncomeByCreator(AuthenticatedUserDetails.getUserFullName()));
-
         return ResponseEntity.ok(unApprovedIncomeList);
     }
 
-    //Get all unapproved expense
     @GetMapping(path = "/expense/unapproved")
     public ResponseEntity<?> fetchAllUnapprovedExpense(){
 
@@ -397,14 +378,9 @@ public class BusinessOwnerController {
 
         List<Expense> allUnApprovedExpense = shopServices.allUnApprovedExpense();
 
-//        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
-//            allUnApprovedExpense.addAll(expenseServices
-//                    .fetchAllUnApprovedExpensesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
-
         return ResponseEntity.ok(allUnApprovedExpense);
     }
 
-    //Get all unapproved returned sales
     @GetMapping(path = "/return/sales/unapproved")
     public ResponseEntity<?> fetchAllUnapprovedReturns(){
 
@@ -412,14 +388,9 @@ public class BusinessOwnerController {
 
         List<ReturnedStock> returnedStockList = shopServices.allUnApprovedReturnSales();
 
-//        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
-//            returnedStockList.addAll(returnedStockServices
-//                    .fetchAllUnapprovedReturnsCreatedBy(AuthenticatedUserDetails.getUserFullName()));
-
         return ResponseEntity.ok(returnedStockList);
     }
 
-    //Get all debtors
     @GetMapping(path = "/debtors")
     public ResponseEntity<?> fetchAllDebtors(){
 
@@ -449,7 +420,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(debtorsList);
     }
 
-    //Get how much a customer(debtor) is owing
     @GetMapping(path = "/customer/debt")
     public ResponseEntity<?> fetchCustomerAndDebt(@RequestParam Long customerId){
 
@@ -464,7 +434,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(debtByCustomer);
     }
 
-    //Put request, approve stock
     @PutMapping(path = "/approve/stock")
     public ResponseEntity<?> approveStock(@RequestParam Long stockId){
 
@@ -478,7 +447,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(approvedStock);
     }
 
-    //Put request, approve stock list
     @PutMapping(path = "/approve/stockList")
     public ResponseEntity<?> approveStockList(@RequestParam List<Long> stockIds){
 
@@ -492,7 +460,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(stockList);
     }
 
-    //Put request, approve income
     @PutMapping(path = "/approve/income")
     public ResponseEntity<?> approveIncome(@RequestParam Long incomeId){
 
@@ -506,7 +473,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(approvedIncome);
     }
 
-    //Put request, approve expense
     @PutMapping(path = "/approve/expense")
     public ResponseEntity<?> approveExpense(@RequestParam Long expenseId){
 
@@ -520,7 +486,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(approvedExpense);
     }
 
-    //Put request, approve returns
     @PutMapping(path = "/approve/return/sale")
     public ResponseEntity<?> approveReturnSale(@RequestParam Long returnSaleId){
 
@@ -534,7 +499,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(returnedStock);
     }
 
-    //Delete a stock
     @DeleteMapping(path = "/delete/stock")
     public ResponseEntity deleteStock(@RequestParam Long stockId){
 
@@ -556,7 +520,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedStock);
     }
 
-    //Delete stock List
     @DeleteMapping(path = "/delete/stockList")
     public ResponseEntity deleteStockList(@RequestParam List<Long> stockIds){
 
@@ -578,7 +541,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedStockList);
     }
 
-    //Delete a seller
     @DeleteMapping(path = "/delete/seller")
     public ResponseEntity<?> deleteSeller(@RequestParam Long sellerId){
 
@@ -602,7 +564,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedSeller);
     }
 
-    //Delete List of sellers
     @DeleteMapping(path = "/delete/sellerList")
     public ResponseEntity<?> deleteSellerList(@RequestParam List<Long> sellerIds){
 
@@ -626,7 +587,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedSellerList);
     }
 
-    //Delete warehouse
     @DeleteMapping(path = "/delete/warehouse")
     public ResponseEntity<?> deleteWarehouse(@RequestParam Long warehouseId){
 
@@ -645,7 +605,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedWarehouse);
     }
 
-    //Delete income
     @DeleteMapping(path = "/delete/income")
     public ResponseEntity<?> deleteIncome(@RequestParam Long incomeId){
 
@@ -674,7 +633,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(incomeDeleted);
     }
 
-    //Delete expense
     @DeleteMapping(path = "/delete/expense")
     public ResponseEntity<?> deleteExpense(@RequestParam Long expenseId){
 
@@ -703,7 +661,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedEntity);
     }
 
-    //DeleteShop
     @DeleteMapping(path = "/delete/shop")
     public ResponseEntity<?> deleteShop(@RequestParam Long shopId){
 
@@ -725,7 +682,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedShop);
     }
 
-    //Delete stock category
     @DeleteMapping(path = "/delete/stockCategory")
     public ResponseEntity<?> deleteStockCategory(@RequestParam Long stockCategoryId){
 
@@ -736,7 +692,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(stockCategoryDeleted);
     }
 
-    //Delete returned sales
     @DeleteMapping(path = "/delete/returnedSales")
     public ResponseEntity<?> deleteReturnSale(@RequestParam Long returnedStockId){
 
@@ -765,7 +720,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedReturnedStock);
     }
 
-    //Delete invoice
     @DeleteMapping(path = "/delete/invoice")
     public ResponseEntity<?> deleteInvoice(@RequestParam Long invoiceId){
 
@@ -796,7 +750,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedInvoice);
     }
 
-    //Delete supplier
     @DeleteMapping(path = "/delete/supplier")
     public ResponseEntity<?> deleteSupplier(@RequestParam Long supplierId){
 
@@ -807,7 +760,6 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(supplierToDelete);
     }
 
-    //Delete customer
     @DeleteMapping(path = "/delete/customer")
     public ResponseEntity<?> deleteCustomer(@RequestParam Long customerId){
 
@@ -830,7 +782,7 @@ public class BusinessOwnerController {
                 .collect(toSingleton());
 
         if (null == customerToDelete) throw new InventoryAPIOperationException
-                ("Operation not allowed", "Customer with id " + customerId + " was not found in any of your shops", null);
+                ("Customer not found", "Customer with id " + customerId + " was not found in any of your shops", null);
 
         Customer deletedCustomer = customerService.deleteCustomerById(customerId);
 

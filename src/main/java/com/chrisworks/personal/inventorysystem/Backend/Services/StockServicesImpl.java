@@ -6,6 +6,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCatego
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.StockCategoryRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.StockRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SupplierRepository;
@@ -145,9 +146,6 @@ public class StockServicesImpl implements StockServices {
     @Override
     public Stock approveStock(Long stockId) {
 
-        if (ACCOUNT_TYPE.SELLER.equals(AuthenticatedUserDetails.getAccount_type())) throw new InventoryAPIOperationException
-                ("Operation not allowed", "Logged in user cannot perform this operation", null);
-
         Stock stockFound = genericService.allWarehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
@@ -155,6 +153,9 @@ public class StockServicesImpl implements StockServices {
                 .flatMap(List::parallelStream)
                 .filter(stock -> stock.getStockId().equals(stockId))
                 .collect(toSingleton());
+
+        if (stockFound == null) throw new InventoryAPIResourceNotFoundException
+                ("Stock not found", "Stock with id: " + stockId + " was not found in your list of unapproveed stock", null);
 
         stockFound.setUpdateDate(new Date());
         stockFound.setApproved(true);
