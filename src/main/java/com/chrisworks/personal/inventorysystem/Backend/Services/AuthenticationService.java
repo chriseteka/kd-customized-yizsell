@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.VerificationToken;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
@@ -9,4 +11,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  */
 public interface AuthenticationService extends UserDetailsService {
 
+    void createVerificationToken(BusinessOwner user, String token);
+
+    VerificationToken getVerificationToken(String token);
+
+    BusinessOwner updateVerifiedBusinessOwner(BusinessOwner businessOwner);
+
+    BusinessOwner validateAndVerifyBusinessOwnerEmail(String token);
 }

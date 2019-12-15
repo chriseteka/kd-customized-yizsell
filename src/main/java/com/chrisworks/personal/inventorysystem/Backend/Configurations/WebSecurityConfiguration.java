@@ -1,9 +1,13 @@
 package com.chrisworks.personal.inventorysystem.Backend.Configurations;
 
 import com.chrisworks.personal.inventorysystem.Backend.Services.AuthenticationService;
+import com.sendgrid.SendGrid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+//import org.springframework.mail.javamail.JavaMailSender;
+//import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -14,6 +18,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+//import java.util.Properties;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.SIGN_IN_URL;
 import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.SIGN_UP_URL;
@@ -79,5 +85,10 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 ).permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+    }
+
+    @Bean
+    public SendGrid getSendGrid(){
+        return new SendGrid("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");
     }
 }

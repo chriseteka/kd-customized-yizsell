@@ -77,6 +77,9 @@ public class Seller implements UserDetails {
     @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
+    @Column(name = "isActive")
+    private Boolean isActive = true;
+
     @Basic
     @JsonIgnore
     @Column(name = "accountType", updatable = false)

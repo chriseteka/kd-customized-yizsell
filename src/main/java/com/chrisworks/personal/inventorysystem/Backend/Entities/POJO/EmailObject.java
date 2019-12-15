@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -15,19 +16,17 @@ import javax.validation.constraints.NotNull;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Mail {
+public class EmailObject {
 
-    @NotNull(message = "message title cannot be null")
-    private String messageTitle;
-
-    @NotNull(message = "message title cannot be null")
     @Email(message = "Invalid message sender, please check sender's email address")
     private String messageSender;
 
-    @NotNull(message = "message title cannot be null")
     @Email(message = "Invalid message receiver, please check receiver's email address")
     private String messageReceiver;
 
-    @NotNull(message = "message title cannot be null")
+    @NotEmpty(message = "message title cannot be empty")
+    private String messageTitle;
+
+    @NotEmpty(message = "message title cannot be empty")
     private String messageBody;
 }

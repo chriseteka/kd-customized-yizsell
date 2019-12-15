@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import org.springframework.web.context.request.WebRequest;
 
 /**
  * @author Chris_Eteka
@@ -10,13 +11,13 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 public interface BusinessOwnerServices{
 
     //Services peculiar to business owner
-    BusinessOwner createAccount(BusinessOwner businessOwner);
+    BusinessOwner createAccount(BusinessOwner businessOwner, WebRequest request);
 
     BusinessOwner updateAccount(Long businessOwnerId, BusinessOwner updates);
 
-    Boolean approveIncome(Long incomeId);
+    Seller activateSeller(Long sellerId);
 
-    Boolean approveExpense(Long expenseId);
+    Seller deactivateSeller(Long sellerId);
 
-    Boolean approveReturn(Long returnedStockId);
+    Seller updateSeller(Long sellerId, Seller sellerUpdates);
 }

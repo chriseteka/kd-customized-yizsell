@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -25,5 +27,15 @@ public class Utility {
                     return list.get(0);
                 }
         );
+    }
+
+    public static Date futureDate(int noOfDaysFromToday){
+
+        Date date = new Date();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, noOfDaysFromToday);
+
+        return calendar.getTime();
     }
 }
