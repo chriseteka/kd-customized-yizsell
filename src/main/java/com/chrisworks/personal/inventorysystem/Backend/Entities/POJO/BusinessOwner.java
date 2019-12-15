@@ -13,6 +13,7 @@ import javax.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 import static javax.persistence.GenerationType.AUTO;
 import static javax.persistence.TemporalType.DATE;
 import static javax.persistence.TemporalType.TIME;
@@ -74,6 +75,18 @@ public class BusinessOwner implements UserDetails {
 
     @Column(name = "businessTotalProfit", precision = 2)
     private BigDecimal businessTotalProfit = BigDecimal.ZERO;
+
+    //Hash this before storage to the database
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Temporal(DATE)
+    @Column(name = "expirationDate")
+    private Date expirationDate = futureDate(30);
+
+    @Column(name = "isActive")
+    private Boolean isActive = false;
+
+    @Column(name = "verified")
+    private boolean verified = false;
 
     @Basic
     @JsonIgnore

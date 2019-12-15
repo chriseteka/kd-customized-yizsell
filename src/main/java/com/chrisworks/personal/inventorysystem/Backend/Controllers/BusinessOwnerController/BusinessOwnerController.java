@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
@@ -72,9 +73,9 @@ public class BusinessOwnerController {
     }
 
     @PostMapping(path = "/createAccount", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> createAccount(@RequestBody @Valid BusinessOwner businessOwner){
+    public ResponseEntity<?> createAccount(@RequestBody @Valid BusinessOwner businessOwner, WebRequest request){
 
-        BusinessOwner businessOwnerAccount = businessOwnerServices.createAccount(businessOwner);
+        BusinessOwner businessOwnerAccount = businessOwnerServices.createAccount(businessOwner, request);
 
         if (businessOwnerAccount == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + businessOwner, null);
@@ -176,6 +177,7 @@ public class BusinessOwnerController {
         if (shopFound == null)throw new InventoryAPIOperationException
                 ("Data not saved", "Could not find a shop with the id: " + shopId + " in your list of shops", null);
 
+        //Fix adding sellers twice
         Seller sellerCreated = sellerServices.createSeller(seller);
 
         Shop shop = shopServices.addSellerToShop(shopFound, sellerCreated);
@@ -787,6 +789,69 @@ public class BusinessOwnerController {
         Customer deletedCustomer = customerService.deleteCustomerById(customerId);
 
         return ResponseEntity.ok(deletedCustomer);
+    }
+
+    //Activate or deactivate a seller
+    @PutMapping(path = "/activate/deactivate/seller")
+    public ResponseEntity<?> activateSeller(@RequestParam Long sellerId){
+
+        preAuthorizeBusinessOwner();
+
+        Seller sellerFound = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::stream)
+                .filter(seller -> seller.getSellerId().equals(sellerId))
+                .collect(toSingleton());
+
+        if (null == sellerFound)throw new InventoryAPIOperationException
+                ("Seller not found", "Seller with id: " + sellerId + " was not found in you list of inactive sellers", null);
+
+        if (!sellerFound.getIsActive()) {
+
+            Seller sellerActivated = businessOwnerServices.activateSeller(sellerId);
+
+            if (null == sellerActivated) throw new InventoryAPIOperationException
+                    ("Seller not activated", "Seller could not be activated, please try again", null);
+
+            return ResponseEntity.ok(sellerActivated);
+        }else{
+
+            Seller sellerDeactivated = businessOwnerServices.deactivateSeller(sellerId);
+
+            if (null == sellerDeactivated) throw new InventoryAPIOperationException
+                    ("Seller not deactivated", "Seller could not be deactivated, please try again", null);
+
+            return ResponseEntity.ok(sellerDeactivated);
+        }
+    }
+
+    //Change a seller password
+    @PostMapping(path = "/updateSeller", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> changeSellerPassword(@RequestParam Long sellerId, @RequestBody @Valid Seller sellerUpdates){
+
+        Seller sellerFound = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap(List::parallelStream)
+                .map(sellerServices::fetchSellerByShop)
+                .flatMap(List::stream)
+                .filter(seller -> seller.getSellerId().equals(sellerId))
+                .collect(toSingleton());
+
+        if (null == sellerFound)throw new InventoryAPIOperationException
+                ("Seller not found", "Seller with id: " + sellerId + " was not found in you list of sellers", null);
+
+        Seller updatedSeller = businessOwnerServices.updateSeller(sellerId, sellerUpdates);
+
+        if (null == updatedSeller)throw new InventoryAPIOperationException
+                ("Seller password not changed", "Seller password could not be changed, please try again", null);
+
+        return ResponseEntity.ok(updatedSeller);
     }
 
     //Method used to confirm that logged in user is of type business owner

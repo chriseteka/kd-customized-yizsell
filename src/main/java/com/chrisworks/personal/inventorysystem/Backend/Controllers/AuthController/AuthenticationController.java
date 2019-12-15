@@ -5,6 +5,8 @@ import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthControlle
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.Services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,16 +29,18 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthenticationController {
 
-//    private final AuthenticationService authenticationService;
+    private final AuthenticationService authenticationService;
 
     private final JwtTokenProvider tokenProvider;
 
     private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public AuthenticationController(JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager) {
+    public AuthenticationController(JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager,
+                                    AuthenticationService authenticationService) {
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping(path = "/signIn", consumes = "application/json", produces = "application/json")
@@ -65,5 +69,16 @@ public class AuthenticationController {
 
 
         return ResponseEntity.ok(new ResponseObject(true, token));
+    }
+
+    @PutMapping(path = "/registrationConfirm")
+    public ResponseEntity<?> confirmBusinessOwnerRegistrationEmail(@RequestParam String token) {
+
+        BusinessOwner verifiedBusinessOwner = authenticationService.validateAndVerifyBusinessOwnerEmail(token);
+
+        if (null == verifiedBusinessOwner) throw new InventoryAPIOperationException
+                ("Business Owner not verified", "Business Owner not verified", null);
+
+        return ResponseEntity.ok(verifiedBusinessOwner);
     }
 }

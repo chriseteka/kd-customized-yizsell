@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
@@ -291,6 +292,25 @@ public class MainController {
         return ResponseEntity.ok(customersList);
     }
 
+    @GetMapping(path = "shop/customers")
+    public ResponseEntity<?> fetchCustomersByShop(@RequestParam Long shopId){
+
+        preAuthorizeLoggedInUser();
+
+        List<Customer> customersByShop = genericService.allWarehouseByAuthUserId()
+                .stream()
+                .map(Warehouse::getWarehouseId)
+                .map(shopServices::fetchAllShopInWarehouse)
+                .flatMap((List::parallelStream))
+                .map(Shop::getShopId)
+                .filter(shopFoundId -> shopFoundId.equals(shopId))
+                .map(customerService::fetchCustomersByShop)
+                .flatMap(List::parallelStream)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(customersByShop);
+    }
+
     @GetMapping(path = "stockCategory")
     public ResponseEntity<?> fetchAllStockCategory(){
 
@@ -371,18 +391,11 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        Date date = new Date();
-        Calendar c = Calendar.getInstance();
-        c.setTime(date);
-        c.add(Calendar.DATE, 60);
-        date = c.getTime();
-
-        Date finalDate = date;
-
         List<Stock> soonToExpireStock = genericService.allWarehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
-                .map(warehouseId -> stockServices.allSoonToExpireStock(warehouseId, finalDate))
+                .map(warehouseId -> stockServices
+                        .allSoonToExpireStock(warehouseId, futureDate(60)))
                 .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
 

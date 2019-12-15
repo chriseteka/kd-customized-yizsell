@@ -7,9 +7,13 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.OnRegistrationCompleteEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.WebRequest;
 
 import java.util.Date;
 import java.util.Optional;
@@ -25,31 +29,25 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     private BusinessOwnerRepository businessOwnerRepository;
 
-    private ReturnedStockRepository returnedStockRepository;
-
-    private ExpenseRepository expenseRepository;
-
-    private IncomeRepository incomeRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     private SellerRepository sellerRepository;
 
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    public BusinessOwnerServicesImpl(BusinessOwnerRepository businessOwnerRepository, ReturnedStockRepository returnedStockRepository,
-                                     ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
+    public BusinessOwnerServicesImpl(BusinessOwnerRepository businessOwnerRepository, ApplicationEventPublisher eventPublisher,
                                      BCryptPasswordEncoder passwordEncoder, SellerRepository sellerRepository) {
 
         this.businessOwnerRepository = businessOwnerRepository;
-        this.returnedStockRepository = returnedStockRepository;
-        this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
+        this.eventPublisher = eventPublisher;
         this.passwordEncoder = passwordEncoder;
         this.sellerRepository = sellerRepository;
     }
 
+    @Transactional
     @Override
-    public BusinessOwner createAccount(BusinessOwner businessOwner) {
+    public BusinessOwner createAccount(BusinessOwner businessOwner, WebRequest request) {
 
         if (businessOwnerRepository.findDistinctByBusinessOwnerEmail(businessOwner.getBusinessOwnerEmail()) != null) throw new
                 InventoryAPIDuplicateEntryException("Email already exist", "A business account already exist with the email address: " +
@@ -62,55 +60,53 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
         businessOwner.setBusinessOwnerPassword
                 (passwordEncoder.encode(businessOwner.getBusinessOwnerPassword()));
 
-        return businessOwnerRepository.save(businessOwner);
+        BusinessOwner businessOwnerCreated = businessOwnerRepository.save(businessOwner);
+
+        try {
+            eventPublisher.publishEvent(new OnRegistrationCompleteEvent(businessOwnerCreated));
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+        }
+
+        return businessOwnerCreated;
     }
 
     @Override
-    public Boolean approveIncome(Long incomeId) {
+    public Seller activateSeller(Long sellerId) {
 
-        AtomicReference<Boolean> incomeApprovedFlag = new AtomicReference<>();
+        return sellerRepository.findById(sellerId).map(seller -> {
 
-        incomeRepository.findById(incomeId).ifPresent(income -> {
-
-            income.setApproved(true);
-            income.setUpdateDate(new Date());
-            income.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-            incomeApprovedFlag.set(incomeRepository.save(income) != null);
-        });
-
-        return incomeApprovedFlag.get();
+            seller.setIsActive(true);
+            return sellerRepository.save(seller);
+        }).orElse(null);
     }
 
     @Override
-    public Boolean approveExpense(Long expenseId) {
+    public Seller deactivateSeller(Long sellerId) {
 
-        AtomicReference<Boolean> expenseApprovedFlag = new AtomicReference<>();
+        return sellerRepository.findById(sellerId).map(seller -> {
 
-        expenseRepository.findById(expenseId).ifPresent(expense -> {
-
-            expense.setUpdateDate(new Date());
-            expense.setApproved(true);
-            expense.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-            expenseApprovedFlag.set(expenseRepository.save(expense) != null);
-        });
-
-        return expenseApprovedFlag.get();
+            seller.setIsActive(false);
+            return sellerRepository.save(seller);
+        }).orElse(null);
     }
 
     @Override
-    public Boolean approveReturn(Long returnedStockId) {
+    public Seller updateSeller(Long sellerId, Seller sellerUpdates) {
 
-        AtomicReference<Boolean> returnApprovedFlag = new AtomicReference<>();
+        return sellerRepository.findById(sellerId).map(seller -> {
 
-        returnedStockRepository.findById(returnedStockId).ifPresent(returnedStock -> {
-
-            returnedStock.setUpdateDate(new Date());
-            returnedStock.setApproved(true);
-            returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-            returnApprovedFlag.set(returnedStockRepository.save(returnedStock) != null);
-        });
-
-        return returnApprovedFlag.get();
+            seller.setSellerPassword(sellerUpdates.getSellerPassword() != null ?
+                    passwordEncoder.encode(sellerUpdates.getPassword()) : seller.getSellerPassword());
+            seller.setSellerFullName(sellerUpdates.getSellerFullName());
+            seller.setSellerPhoneNumber(sellerUpdates.getSellerPhoneNumber());
+            seller.setSellerAddress(sellerUpdates.getSellerAddress());
+            seller.setSellerEmail(sellerUpdates.getSellerEmail());
+            seller.setUpdateDate(new Date());
+            return sellerRepository.save(seller);
+        }).orElse(null);
     }
 
     @Override
