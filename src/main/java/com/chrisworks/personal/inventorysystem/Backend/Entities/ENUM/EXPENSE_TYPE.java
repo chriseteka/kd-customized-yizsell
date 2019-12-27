@@ -15,7 +15,9 @@ public enum EXPENSE_TYPE {
 
     RETURNED_SALE(300),
 
-    OTHERS(400);
+    STOCK_WAYBILL(400),
+
+    OTHERS(500);
 
     private int expense_type_value;
 

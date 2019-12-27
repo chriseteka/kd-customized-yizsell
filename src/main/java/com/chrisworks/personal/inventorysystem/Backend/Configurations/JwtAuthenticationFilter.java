@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
                 new AuthenticatedUserDetails(tokenProvider.userIdFromJwt(jwt), tokenProvider.userEmailFromJwt(jwt),
-                        tokenProvider.userAccountTypeJwt(jwt));
+                        tokenProvider.userAccountTypeJwt(jwt), tokenProvider.hasWarehouseFromJwt(jwt));
             }
 
         }catch (Exception ex){

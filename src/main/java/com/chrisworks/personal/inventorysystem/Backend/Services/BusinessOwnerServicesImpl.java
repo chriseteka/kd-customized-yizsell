@@ -1,7 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
-import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -35,14 +35,21 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     private final BCryptPasswordEncoder passwordEncoder;
 
+    private ShopRepository shopRepository;
+
+    private WarehouseRepository warehouseRepository;
+
     @Autowired
     public BusinessOwnerServicesImpl(BusinessOwnerRepository businessOwnerRepository, ApplicationEventPublisher eventPublisher,
-                                     BCryptPasswordEncoder passwordEncoder, SellerRepository sellerRepository) {
+                                     BCryptPasswordEncoder passwordEncoder, SellerRepository sellerRepository,
+                                     ShopRepository shopRepository, WarehouseRepository warehouseRepository) {
 
         this.businessOwnerRepository = businessOwnerRepository;
         this.eventPublisher = eventPublisher;
         this.passwordEncoder = passwordEncoder;
         this.sellerRepository = sellerRepository;
+        this.shopRepository = shopRepository;
+        this.warehouseRepository = warehouseRepository;
     }
 
     @Transactional
@@ -62,6 +69,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
         BusinessOwner businessOwnerCreated = businessOwnerRepository.save(businessOwner);
 
+        //Initiate confirm account action after successful registration of a business owner
         try {
             eventPublisher.publishEvent(new OnRegistrationCompleteEvent(businessOwnerCreated));
         } catch (Exception e) {
@@ -78,6 +86,9 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
             seller.setIsActive(true);
             return sellerRepository.save(seller);
         }).orElse(null);
@@ -87,6 +98,9 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     public Seller deactivateSeller(Long sellerId) {
 
         return sellerRepository.findById(sellerId).map(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
 
             seller.setIsActive(false);
             return sellerRepository.save(seller);
@@ -98,6 +112,9 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
             seller.setSellerPassword(sellerUpdates.getSellerPassword() != null ?
                     passwordEncoder.encode(sellerUpdates.getPassword()) : seller.getSellerPassword());
             seller.setSellerFullName(sellerUpdates.getSellerFullName());
@@ -106,6 +123,118 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
             seller.setSellerEmail(sellerUpdates.getSellerEmail());
             seller.setUpdateDate(new Date());
             return sellerRepository.save(seller);
+        }).orElse(null);
+    }
+
+    @Override
+    public Seller assignSellerToShop(Long sellerId, Long shopId) {
+
+        return sellerRepository.findById(sellerId).map(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
+            if (!seller.getIsActive()) throw new InventoryAPIOperationException
+                    ("Seller inactive", "Activate seller before assigning to a shop", null);
+
+            if(seller.getWarehouse() != null) throw new InventoryAPIOperationException
+                    ("Seller already in warehouse", "Seller has been assigned to a warehouse already", null);
+
+            return shopRepository.findById(shopId).map(shop -> {
+
+                if (!shop.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
+                        ("Shop not owned by you", "Cannot assign shop that is not owned by you", null);
+
+                seller.setUpdateDate(new Date());
+                seller.setShop(shop);
+                seller.setAccountType(ACCOUNT_TYPE.SHOP_SELLER);
+                return sellerRepository.save(seller);
+
+            }).orElse(null);
+        }).orElse(null);
+    }
+
+    @Override
+    public Seller assignSellerToWarehouse(Long sellerId, Long warehouseId) {
+
+        return sellerRepository.findById(sellerId).map(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
+            if (!seller.getIsActive()) throw new InventoryAPIOperationException
+                    ("Seller inactive", "Activate seller before assigning to a shop", null);
+
+            if (seller.getShop() != null) throw new InventoryAPIOperationException
+                    ("Seller already has a shop", "Seller already has a shop and cannot be assigned to a warehouse", null);
+
+            return warehouseRepository.findById(warehouseId).map(warehouse -> {
+
+                if (!warehouse.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
+                        ("Warehouse not owned by you", "Cannot assign warehouse that is not owned by you", null);
+
+                seller.setUpdateDate(new Date());
+                seller.setWarehouse(warehouse);
+                seller.setAccountType(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT);
+                return sellerRepository.save(seller);
+
+            }).orElse(null);
+        }).orElse(null);
+    }
+
+    @Override
+    public Seller unAssignSellerFromShop(Long sellerId, Long shopId) {
+
+        return sellerRepository.findById(sellerId).map(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
+            if (!seller.getIsActive()) throw new InventoryAPIOperationException
+                    ("Seller inactive", "Activate seller before assigning to a shop", null);
+
+            if (seller.getShop() == null) throw new InventoryAPIOperationException
+                    ("Seller has no shop assigned", "No shop was assigned to this seller", null);
+
+            return shopRepository.findById(shopId).map(shop -> {
+
+                if (!shop.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
+                        ("Shop not owned by you", "Cannot assign shop that is not owned by you", null);
+
+                seller.setUpdateDate(new Date());
+                seller.setShop(null);
+                seller.setAccountType(null);
+                return sellerRepository.save(seller);
+
+            }).orElse(null);
+        }).orElse(null);
+    }
+
+    @Override
+    public Seller unAssignSellerFromWarehouse(Long sellerId, Long warehouseId) {
+
+        return sellerRepository.findById(sellerId).map(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
+
+            if (!seller.getIsActive()) throw new InventoryAPIOperationException
+                    ("Seller inactive", "Activate seller before assigning to a shop", null);
+
+            if (seller.getWarehouse() == null) throw new InventoryAPIOperationException
+                    ("Seller has no warehouse assigned", "No warehouse was assigned to this seller", null);
+
+            return warehouseRepository.findById(warehouseId).map(warehouse -> {
+
+                if (!warehouse.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
+                        ("Warehouse not owned by you", "Cannot assign warehouse that is not owned by you", null);
+
+                seller.setUpdateDate(new Date());
+                seller.setWarehouse(null);
+                seller.setAccountType(null);
+                return sellerRepository.save(seller);
+
+            }).orElse(null);
         }).orElse(null);
     }
 

@@ -18,4 +18,10 @@ public interface AuthenticationService extends UserDetailsService {
     BusinessOwner updateVerifiedBusinessOwner(BusinessOwner businessOwner);
 
     BusinessOwner validateAndVerifyBusinessOwnerEmail(String token);
+
+    Boolean createPasswordResetToken(String email);
+
+    BusinessOwner getPasswordResetToken(String resetToken);
+
+    BusinessOwner resetBusinessOwnerPassword(String resetToken, String newPassword);
 }

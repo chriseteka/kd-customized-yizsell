@@ -19,7 +19,7 @@ import java.util.Date;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "warehouses")
+@Table(name = "warehouse")
 public class Warehouse {
 
     @Id
@@ -45,6 +45,9 @@ public class Warehouse {
     @Size(min = 3, message = "Address must contain at least two characters")
     @Column(name = "warehouseAddress", nullable = false)
     private String warehouseAddress;
+
+    @Column(name = "createdBy", nullable = false)
+    private String createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))

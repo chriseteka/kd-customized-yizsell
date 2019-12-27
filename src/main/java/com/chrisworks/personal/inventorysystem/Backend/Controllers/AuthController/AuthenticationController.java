@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController;
 
 import com.chrisworks.personal.inventorysystem.Backend.Configurations.JwtTokenProvider;
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.PasswordResetObject;
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.RequestObject;
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
@@ -80,5 +81,37 @@ public class AuthenticationController {
                 ("Business Owner not verified", "Business Owner not verified", null);
 
         return ResponseEntity.ok(verifiedBusinessOwner);
+    }
+
+    @PutMapping(path = "/reset/password")
+    public ResponseEntity<?> resetBusinessOwnerPasswordRequest(@RequestParam String email){
+
+        Boolean passwordResetInitiated = authenticationService.createPasswordResetToken(email);
+
+        return ResponseEntity.ok(passwordResetInitiated);
+    }
+
+    @GetMapping(path = "/reset/password")
+    public ResponseEntity<?> verifyResetPasswordToken(@RequestParam String resetToken){
+
+        BusinessOwner businessOwnerByPasswordResetToken = authenticationService.getPasswordResetToken(resetToken);
+
+        if (businessOwnerByPasswordResetToken == null) throw new InventoryAPIOperationException
+                ("Business Owner not found", "Business Owner not found, try again later", null);
+
+        return ResponseEntity.ok(businessOwnerByPasswordResetToken);
+    }
+
+    @PutMapping(path = "/complete/password/reset")
+    public ResponseEntity<?> completePasswordReset(@RequestParam String resetToken,
+                                                   @RequestBody @Valid PasswordResetObject passwordResetObject){
+
+        BusinessOwner businessOwnerPassReset = authenticationService
+                .resetBusinessOwnerPassword(resetToken, passwordResetObject.getNewPassword());
+
+        if (null == businessOwnerPassReset) throw new InventoryAPIOperationException
+                ("Password reset could not complete", "Password reset did not complete, try again later", null);
+
+        return ResponseEntity.ok(businessOwnerPassReset);
     }
 }

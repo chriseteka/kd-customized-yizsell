@@ -3,15 +3,18 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 
 /**
@@ -24,17 +27,14 @@ public class SellerServiceImpl implements SellerServices {
 
     private final SellerRepository sellerRepository;
 
-    private final ShopRepository shopRepository;
-
     private final BusinessOwnerRepository businessOwnerRepository;
 
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    public SellerServiceImpl(SellerRepository sellerRepository, ShopRepository shopRepository,
-                             BCryptPasswordEncoder passwordEncoder, BusinessOwnerRepository businessOwnerRepository) {
+    public SellerServiceImpl(SellerRepository sellerRepository, BCryptPasswordEncoder passwordEncoder,
+                             BusinessOwnerRepository businessOwnerRepository) {
         this.sellerRepository = sellerRepository;
-        this.shopRepository = shopRepository;
         this.passwordEncoder = passwordEncoder;
         this.businessOwnerRepository = businessOwnerRepository;
     }
@@ -50,6 +50,8 @@ public class SellerServiceImpl implements SellerServices {
                 InventoryAPIDuplicateEntryException("Email already exist", "A business account already exist with the email address: " +
                 seller.getSellerEmail(), null);
 
+        seller.setIsActive(true);
+        seller.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
         seller.setSellerPassword
                 (passwordEncoder.encode(seller.getSellerPassword()));
 
@@ -62,64 +64,113 @@ public class SellerServiceImpl implements SellerServices {
         if (null == sellerId || sellerId < 0 || !sellerId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("seller id error", "seller id is empty or not a valid number", null);
 
-        return sellerRepository.findById(sellerId).orElse(null);
+        return sellerRepository.findById(sellerId)
+                .map(seller -> {
+
+                    if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                        throw new InventoryAPIOperationException("Not your seller", "Seller with id: " + sellerId +
+                                " was not created by you", null);
+                    return seller;
+                }).orElse(null);
     }
 
     @Override
-    public Seller fetchSellerByName(String sellerName) {
+    public Seller fetchSellerByNameOrEmail(String sellerName) {
 
-        return sellerRepository.findDistinctBySellerFullNameOrSellerEmail(sellerName, sellerName);
+        Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(sellerName, sellerName);
+
+        if (sellerFound == null) throw new InventoryAPIResourceNotFoundException("Seller not found", "No seller" +
+                " with the name/email: " + sellerName + " was found", null);
+
+        if (!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            throw new InventoryAPIOperationException("Not your seller", "Seller with name/email: " + sellerName +
+                    " was not created by you", null);
+
+        return sellerFound;
     }
 
     @Override
-    public List<Seller> allSellers(List<Long> warehouseIds) {
+    public List<Seller> allSellersByWarehouseId(Long warehouseId) {
 
-        return sellerRepository.findAll();
+        return sellerRepository.findAll()
+                .stream()
+                .filter(seller -> seller.getWarehouse() != null
+                        && seller.getWarehouse().getWarehouseId().equals(warehouseId)
+                        && seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Seller> allSellersInShop(Long shopId) {
+    public List<Seller> allSellersByShopId(Long shopId) {
 
-        return shopRepository
-                .findById(shopId)
-                .map(this::fetchSellerByShop)
-                .orElse(null);
+        return sellerRepository.findAll()
+                .stream()
+                .filter(seller -> seller.getShop() != null
+                        && seller.getShop().getShopId().equals(shopId)
+                        && seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
     }
 
     @Override
     public Seller deleteSeller(Long sellerId) {
 
-        AtomicReference<Seller> sellerToDelete = new AtomicReference<>();
+        return sellerRepository.findById(sellerId).map(seller -> {
 
-        sellerRepository.findById(sellerId).ifPresent(seller -> {
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Not your seller", "Seller with id: " + sellerId +
+                        " was not created by you", null);
 
-            sellerToDelete.set(seller);
             sellerRepository.delete(seller);
-        });
-
-        return sellerToDelete.get();
+            return seller;
+        }).orElse(null);
     }
 
     @Override
     public List<Seller> deleteSellerList(List<Seller> sellerList) {
 
-        sellerRepository.deleteAll(sellerList);
+        List<Seller> deletedSellers = new ArrayList<>();
 
-        return sellerList;
+        sellerList.forEach(seller -> deletedSellers.add(deleteSeller(seller.getSellerId())));
+
+        return deletedSellers;
     }
 
     @Override
     public List<Seller> fetchSellerByShop(Shop shop) {
 
-        return sellerRepository.findAllByShop(shop);
+        return sellerRepository.findAllByShop(shop)
+                .stream()
+                .filter(seller -> seller.getCreatedBy()
+                        .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Seller> fetchSellerByWarehouse(Warehouse warehouse) {
+
+        return sellerRepository.findAllByWarehouse(warehouse)
+                .stream()
+                .filter(seller -> seller.getCreatedBy()
+                        .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Seller> fetchSellers() {
+
+        return sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
     }
 
     @Override
     public Seller updateSeller(Long sellerId, Seller sellerUpdates) {
 
-        AtomicReference<Seller> updatedSeller = new AtomicReference<>();
+        AtomicReference<Seller> updatedSeller = new AtomicReference<>(null);
 
         sellerRepository.findById(sellerId).ifPresent(seller -> {
+
+            if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Not your seller", "Seller with id: " + sellerId +
+                        " was not created by you", null);
 
             seller.setSellerAddress(sellerUpdates.getSellerAddress() != null ?
                     sellerUpdates.getSellerAddress() : seller.getSellerAddress());

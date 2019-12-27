@@ -20,4 +20,14 @@ public interface BusinessOwnerServices{
     Seller deactivateSeller(Long sellerId);
 
     Seller updateSeller(Long sellerId, Seller sellerUpdates);
+
+    //By assigning a seller to a shop, it makes the seller account type to be a shop_seller
+    Seller assignSellerToShop(Long sellerId, Long shopId);
+
+    Seller unAssignSellerFromShop(Long sellerId, Long shopId);
+
+    //By assigning a seller to a warehouse, it makes the seller account type to be warehouse_attendant
+    Seller assignSellerToWarehouse(Long sellerId, Long warehouseId);
+
+    Seller unAssignSellerFromWarehouse(Long sellerId, Long warehouseId);
 }

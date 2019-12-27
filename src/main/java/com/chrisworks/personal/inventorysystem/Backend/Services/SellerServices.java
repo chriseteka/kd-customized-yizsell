@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 
 import java.util.List;
 
@@ -17,11 +18,11 @@ public interface SellerServices {
 
     Seller fetchSellerById(Long sellerId);
 
-    Seller fetchSellerByName(String sellerName);
+    Seller fetchSellerByNameOrEmail(String sellerName);
 
-    List<Seller> allSellers(List<Long> warehouseIds);
+    List<Seller> allSellersByWarehouseId(Long warehouseId);
 
-    List<Seller> allSellersInShop(Long shopId);
+    List<Seller> allSellersByShopId(Long shopId);
 
     Seller updateSeller(Long sellerId, Seller sellerUpdates);
 
@@ -29,6 +30,9 @@ public interface SellerServices {
 
     List<Seller> deleteSellerList(List<Seller> sellerList);
 
-
     List<Seller> fetchSellerByShop(Shop shop);
+
+    List<Seller> fetchSellerByWarehouse(Warehouse warehouse);
+
+    List<Seller> fetchSellers();
 }

@@ -102,7 +102,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Shop shopRetrieved = genericService.allWarehouseByAuthUserId()
+        Shop shopRetrieved = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -122,7 +122,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Warehouse warehouseAdded = warehouseServices.addWarehouse(businessOwnerId, warehouse);
+        Warehouse warehouseAdded = warehouseServices.createWarehouse(businessOwnerId, warehouse);
 
         if (warehouseAdded == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + warehouse, null);
@@ -140,15 +140,15 @@ public class BusinessOwnerController {
         if (warehouseById == null)throw new InventoryAPIOperationException
                 ("Data not saved", "Could not find a warehouse with the id: " + warehouseId, null);
 
-        Warehouse warehouseFound = genericService.allWarehouseByAuthUserId()
+        Warehouse warehouseFound = genericService.warehouseByAuthUserId()
                 .stream()
                 .filter(warehouse -> warehouse.equals(warehouseById))
                 .collect(toSingleton());
 
         if (warehouseFound == null)throw new InventoryAPIOperationException
-                ("Data not saved", "Could not find a warehouse with the id: " + warehouseId + " in your list of warehouses", null);
+                ("Data not saved", "Could not find a warehouse with the id: " + warehouseId + " in your list of warehouse", null);
 
-        Shop shopAdded = shopServices.addShop(warehouseFound, shop);
+        Shop shopAdded = shopServices.createShop(warehouseFound, shop);
 
         if (shopAdded == null)
             throw new InventoryAPIOperationException("Data not saved", "Could not save entity: " + shop, null);
@@ -166,7 +166,7 @@ public class BusinessOwnerController {
         if (shopById == null)throw new InventoryAPIOperationException
                 ("Data not saved", "Could not find a shop with the id: " + shopId, null);
 
-        Shop shopFound = genericService.allWarehouseByAuthUserId()
+        Shop shopFound = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -194,7 +194,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        return ResponseEntity.ok(genericService.allWarehouseByAuthUserId());
+        return ResponseEntity.ok(genericService.warehouseByAuthUserId());
     }
 
     @GetMapping(path = "/shops")
@@ -202,7 +202,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Shop> shopList = genericService.allWarehouseByAuthUserId()
+        List<Shop> shopList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -217,7 +217,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Seller> sellerList = genericService.allWarehouseByAuthUserId()
+        List<Seller> sellerList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -234,7 +234,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Stock> stockList = genericService.allWarehouseByAuthUserId()
+        List<Stock> stockList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allStockByWarehouseId)
@@ -249,7 +249,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<Income> incomeList = genericService.allWarehouseByAuthUserId()
+        Set<Income> incomeList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -267,7 +267,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<Expense> expenseList = genericService.allWarehouseByAuthUserId()
+        Set<Expense> expenseList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -285,7 +285,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<ReturnedStock> returnedStocks = genericService.allWarehouseByAuthUserId()
+        Set<ReturnedStock> returnedStocks = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -303,7 +303,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<Invoice> invoiceList = genericService.allWarehouseByAuthUserId()
+        Set<Invoice> invoiceList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -323,7 +323,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<StockSold> stockSoldList = genericService.allWarehouseByAuthUserId()
+        Set<StockSold> stockSoldList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -351,7 +351,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<Stock> unApprovedStockList = genericService.allWarehouseByAuthUserId()
+        Set<Stock> unApprovedStockList = genericService.warehouseByAuthUserId()
                 .parallelStream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::unApprovedStock)
@@ -398,7 +398,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Set<Customer> debtorsList = genericService.allWarehouseByAuthUserId()
+        Set<Customer> debtorsList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -506,7 +506,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Stock stockRetrieved = genericService.allWarehouseByAuthUserId()
+        Stock stockRetrieved = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allStockByWarehouseId)
@@ -515,7 +515,7 @@ public class BusinessOwnerController {
                 .collect(toSingleton());
 
         if (null == stockRetrieved) throw new InventoryAPIOperationException
-                ("Stock to delete not found", "Stock with id " + stockId + " was not found in any of your warehouses", null);
+                ("Stock to delete not found", "Stock with id " + stockId + " was not found in any of your warehouse", null);
 
         Stock deletedStock = stockServices.deleteEntity(stockId);
 
@@ -527,7 +527,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Stock> stocksToDeleteFromWarehouse = genericService.allWarehouseByAuthUserId()
+        List<Stock> stocksToDeleteFromWarehouse = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allStockByWarehouseId)
@@ -536,7 +536,7 @@ public class BusinessOwnerController {
                 .collect(Collectors.toList());
 
         if (stocksToDeleteFromWarehouse.isEmpty()) throw new InventoryAPIOperationException
-                ("Stock list to delete not found", "Stock List about to deleted were not found in any of your warehouses", null);
+                ("Stock list to delete not found", "Stock List about to deleted were not found in any of your warehouse", null);
 
         List<Stock> deletedStockList = stockServices.deleteStockList(stocksToDeleteFromWarehouse);
 
@@ -548,7 +548,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Seller sellerToDelete = genericService.allWarehouseByAuthUserId()
+        Seller sellerToDelete = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -571,7 +571,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Seller> sellersToDeleteFromShop = genericService.allWarehouseByAuthUserId()
+        List<Seller> sellersToDeleteFromShop = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -594,7 +594,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Warehouse warehouseToDelete = genericService.allWarehouseByAuthUserId()
+        Warehouse warehouseToDelete = genericService.warehouseByAuthUserId()
                 .stream()
                 .filter(warehouse -> warehouse.getWarehouseId().equals(warehouseId))
                 .collect(toSingleton());
@@ -612,7 +612,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Income> incomeList = genericService.allWarehouseByAuthUserId()
+        List<Income> incomeList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -640,7 +640,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Expense> expenseList = genericService.allWarehouseByAuthUserId()
+        List<Expense> expenseList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -668,7 +668,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        Shop shopToDelete = genericService.allWarehouseByAuthUserId()
+        Shop shopToDelete = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -699,7 +699,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<ReturnedStock> returnedStocks = genericService.allWarehouseByAuthUserId()
+        List<ReturnedStock> returnedStocks = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -727,7 +727,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Invoice> invoiceList = genericService.allWarehouseByAuthUserId()
+        List<Invoice> invoiceList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -767,7 +767,7 @@ public class BusinessOwnerController {
 
         preAuthorizeBusinessOwner();
 
-        List<Customer> customersList = genericService.allWarehouseByAuthUserId()
+        List<Customer> customersList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -791,13 +791,12 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(deletedCustomer);
     }
 
-    //Activate or deactivate a seller
     @PutMapping(path = "/activate/deactivate/seller")
     public ResponseEntity<?> activateSeller(@RequestParam Long sellerId){
 
         preAuthorizeBusinessOwner();
 
-        Seller sellerFound = genericService.allWarehouseByAuthUserId()
+        Seller sellerFound = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -829,11 +828,10 @@ public class BusinessOwnerController {
         }
     }
 
-    //Change a seller password
     @PostMapping(path = "/updateSeller", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> changeSellerPassword(@RequestParam Long sellerId, @RequestBody @Valid Seller sellerUpdates){
+    public ResponseEntity<?> updateSeller(@RequestParam Long sellerId, @RequestBody @Valid Seller sellerUpdates){
 
-        Seller sellerFound = genericService.allWarehouseByAuthUserId()
+        Seller sellerFound = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)

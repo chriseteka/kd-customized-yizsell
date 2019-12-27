@@ -277,7 +277,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        Set<Customer> customersList = genericService.allWarehouseByAuthUserId()
+        Set<Customer> customersList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -297,7 +297,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        List<Customer> customersByShop = genericService.allWarehouseByAuthUserId()
+        List<Customer> customersByShop = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)
@@ -316,7 +316,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        List<StockCategory> stockCategoryList = genericService.allWarehouseByAuthUserId()
+        List<StockCategory> stockCategoryList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getBusinessOwner)
                 .map(BusinessOwner::getBusinessOwnerEmail)
@@ -332,7 +332,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        Set<Supplier> supplierList = genericService.allWarehouseByAuthUserId()
+        Set<Supplier> supplierList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allStockByWarehouseId)
@@ -351,7 +351,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        List<Stock> approvedStocks = genericService.allWarehouseByAuthUserId()
+        List<Stock> approvedStocks = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(stockServices::allApprovedStock)
@@ -376,7 +376,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        List<Stock> soonToFinishStock = genericService.allWarehouseByAuthUserId()
+        List<Stock> soonToFinishStock = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(warehouseId -> stockServices.allSoonToFinishStock(warehouseId, limit))
@@ -391,7 +391,7 @@ public class MainController {
 
         preAuthorizeLoggedInUser();
 
-        List<Stock> soonToExpireStock = genericService.allWarehouseByAuthUserId()
+        List<Stock> soonToExpireStock = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(warehouseId -> stockServices
@@ -417,7 +417,7 @@ public class MainController {
     //Retrieve invoice using the invoice number
     private Invoice findInvoiceByNumber(String invoiceNumber) {
 
-        Set<Invoice> invoiceList = genericService.allWarehouseByAuthUserId()
+        Set<Invoice> invoiceList = genericService.warehouseByAuthUserId()
                 .stream()
                 .map(Warehouse::getWarehouseId)
                 .map(shopServices::fetchAllShopInWarehouse)

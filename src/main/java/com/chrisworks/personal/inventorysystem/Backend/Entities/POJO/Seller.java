@@ -73,20 +73,30 @@ public class Seller implements UserDetails {
     @Temporal(TemporalType.TIME)
     private Date lastLogoutTime;
 
+    //Seller can be assigned to a shop
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
+    //Seller can be assigned to a warehouse but not both
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "sellersInWarehouse", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    private Warehouse warehouse;
+
     @Column(name = "isActive")
     private Boolean isActive = true;
+
+    @Column(name = "createdBy", nullable = false)
+    private String createdBy;
 
     @Basic
     @JsonIgnore
     @Column(name = "accountType", updatable = false)
     private int accountTypeValue;
 
+    //Seller can be a WAREHOUSE_ATTENDANT or a SHOP_SELLER
     @Transient
-    private ACCOUNT_TYPE accountType = ACCOUNT_TYPE.SELLER;
+    private ACCOUNT_TYPE accountType;
 
     @PostLoad
     void fillTransient() {
@@ -104,7 +114,7 @@ public class Seller implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(ACCOUNT_TYPE.SELLER::toString);
+        return Collections.singleton(ACCOUNT_TYPE.SHOP_SELLER::toString);
     }
 
     @Override

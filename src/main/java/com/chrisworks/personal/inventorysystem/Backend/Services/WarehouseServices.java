@@ -2,6 +2,8 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 
+import java.util.List;
+
 
 /**
  * @author Chris_Eteka
@@ -10,15 +12,13 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
  */
 public interface WarehouseServices {
 
-    Warehouse addWarehouse(Long businessOwnerId, Warehouse warehouse);
+    Warehouse createWarehouse(Long businessOwnerId, Warehouse warehouse);
 
     Warehouse updateWarehouse(Long warehouseId, Warehouse warehouseUpdates);
 
     Warehouse warehouseById(Long warehouseId);
 
-//    Warehouse addShopToWarehouse(Long warehouseId, Shop shop);
-//
-//    Warehouse addShopListToWarehouse(Long warehouseId, List<Shop> shopList);
+    List<Warehouse> fetchAllWarehouse();
 
-    Warehouse deleteWarehouse(Warehouse warehouseToDelete);
+    Warehouse deleteWarehouse(Long warehouseId);
 }

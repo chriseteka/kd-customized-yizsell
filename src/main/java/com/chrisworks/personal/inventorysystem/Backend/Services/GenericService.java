@@ -24,29 +24,17 @@ public interface GenericService {
 
     StockCategory addStockCategory(StockCategory stockCategory);
 
-    Stock addStock(Long warehouseId, Stock stock);
-
-    Stock reStock(Long warehouseId, Long stockId, Stock newStock);
-
-    Invoice sellStock(Invoice invoice);
-
-    ReturnedStock processReturn(ReturnedStock returnedStock);
-
-    List<ReturnedStock> processReturnList(List<ReturnedStock> returnedStock);
-
     Expense addExpense(Expense expense);
 
     Income addIncome(Income income);
 
-    Stock changeStockSellingPriceById(Long stockId, BigDecimal newSellingPrice);
-
-    Stock changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice);
-
     Shop shopBySellerName(String sellerName);
 
-    List<Warehouse> allWarehouseByAuthUserId();
+    List<Warehouse> warehouseByAuthUserId();
+
+    List<Shop> shopByAuthUserId();
 
     List<Supplier> fetchSuppliersByCreator(String createdBy);
 
-    List<StockCategory> fetchAllStockCategoryByCreator(String businessOwnerMail);
+    List<StockCategory> fetchAllStockCategoryByCreator(String createdBy);
 }

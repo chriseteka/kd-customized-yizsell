@@ -80,6 +80,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                         "/**/*.html",
                         "/**/*.css",
                         "/**/*.js",
+                        SIGN_IN_URL + "/**", //Allow forgot password and password reset token urls
                         SIGN_IN_URL, //Allow authentication (sign in) url
                         SIGN_UP_URL //Allow Business Owner sign up url
                 ).permitAll()

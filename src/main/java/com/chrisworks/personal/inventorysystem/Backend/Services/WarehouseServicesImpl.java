@@ -10,7 +10,9 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -30,45 +32,15 @@ public class WarehouseServicesImpl implements WarehouseServices {
         this.businessOwnerRepository = businessOwnerRepository;
     }
 
-//    @Override
-//    public Warehouse addShopToWarehouse(Long warehouseId, Shop newShop) {
-//
-//        AtomicReference<Warehouse> updatedWarehouse = new AtomicReference<>();
-//
-//        warehouseRepository.findById(warehouseId).ifPresent(warehouse -> {
-//
-//            Set<Shop> allShops = warehouse.getShops();
-//            allShops.add(newShop);
-//            warehouse.setShops(allShops);
-//            warehouse.setUpdateDate(new Date());
-//            updatedWarehouse.set(warehouseRepository.save(warehouse));
-//        });
-//        return updatedWarehouse.get();
-//    }
-//
-//    @Override
-//    public Warehouse addShopListToWarehouse(Long warehouseId, List<Shop> shopList) {
-//
-//        AtomicReference<Warehouse> updatedWarehouse = new AtomicReference<>();
-//
-//        warehouseRepository.findById(warehouseId).ifPresent(warehouse -> {
-//
-//            Set<Shop> allShops = warehouse.getShops();
-//            allShops.addAll(shopList);
-//            warehouse.setShops(allShops);
-//            warehouse.setUpdateDate(new Date());
-//            updatedWarehouse.set(warehouseRepository.save(warehouse));
-//        });
-//
-//        return updatedWarehouse.get();
-//    }
-
     @Override
     public Warehouse updateWarehouse(Long warehouseId, Warehouse warehouseUpdates) {
 
         AtomicReference<Warehouse> updatedWarehouse = new AtomicReference<>();
 
         warehouseRepository.findById(warehouseId).ifPresent(warehouse -> {
+
+            if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your warehouse", "Warehouse not created by you", null);
 
             warehouse.setUpdateDate(new Date());
             warehouse.setWarehouseAddress(warehouseUpdates.getWarehouseAddress());
@@ -81,19 +53,41 @@ public class WarehouseServicesImpl implements WarehouseServices {
     @Override
     public Warehouse warehouseById(Long warehouseId) {
 
-        return warehouseRepository.findById(warehouseId).orElse(null);
+        return warehouseRepository.findById(warehouseId)
+                .map(warehouse -> {
+
+                    if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                            InventoryAPIOperationException("Not your warehouse", "Warehouse not created by you", null);
+
+                    return warehouse;
+                }).orElse(null);
     }
 
     @Override
-    public Warehouse deleteWarehouse(Warehouse warehouseToDelete) {
+    public List<Warehouse> fetchAllWarehouse() {
 
-        warehouseRepository.delete(warehouseToDelete);
-
-        return warehouseToDelete;
+        return warehouseRepository.findAll()
+                .stream()
+                .filter(warehouse -> warehouse.getCreatedBy()
+                        .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Warehouse addWarehouse(Long businessOwnerId, Warehouse warehouse) {
+    public Warehouse deleteWarehouse(Long warehouseId) {
+
+        return warehouseRepository.findById(warehouseId).map(warehouse -> {
+
+            if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your warehouse", "Warehouse not created by you", null);
+
+            warehouseRepository.delete(warehouse);
+            return warehouse;
+        }).orElse(null);
+    }
+
+    @Override
+    public Warehouse createWarehouse(Long businessOwnerId, Warehouse warehouse) {
 
         if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("business owner id error", "business owner id is empty or not a valid number", null);
