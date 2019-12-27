@@ -14,5 +14,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Customer findDistinctByCustomerPhoneNumber(String phoneNumber);
 
+    Customer findDistinctByCustomerEmail(String customerEmail);
+
     List<Customer> findAllByCreatedBy(String createdBy);
 }

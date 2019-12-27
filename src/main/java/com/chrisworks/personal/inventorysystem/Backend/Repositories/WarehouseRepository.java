@@ -16,4 +16,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findAllByBusinessOwner(BusinessOwner businessOwner);
 
     Warehouse findDistinctByWarehouseName(String warehouseName);
+
+    List<Warehouse> findAllByCreatedBy(String createdBy);
 }

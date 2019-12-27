@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
 
 @Component
 public class RegistrationListener implements ApplicationListener<OnRegistrationCompleteEvent> {
@@ -40,7 +39,7 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
 
         String recipientAddress = businessOwner.getBusinessOwnerEmail();
         String subject = "Registration Confirmation";
-        String message = "Confirm your registration by copying following token and pasting where required: \n";
+        String message = "Confirm your registration by copying the following token and pasting where required: ";
         String body = message + token;
 
         EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body);

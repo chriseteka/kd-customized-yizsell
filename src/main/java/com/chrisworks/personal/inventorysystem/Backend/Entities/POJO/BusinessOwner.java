@@ -86,7 +86,11 @@ public class BusinessOwner implements UserDetails {
     private Boolean isActive = false;
 
     @Column(name = "verified")
-    private boolean verified = false;
+    private Boolean verified = false;
+
+    @NotEmpty(message = "Boolean hasWarehouse cannot be empty, value must be true or false")
+    @Column(name = "hasWarehouse")
+    private Boolean hasWarehouse = false;
 
     @Basic
     @JsonIgnore

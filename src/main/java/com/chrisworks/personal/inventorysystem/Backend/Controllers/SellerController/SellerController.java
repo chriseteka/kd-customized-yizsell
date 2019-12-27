@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -47,7 +46,7 @@ public class SellerController {
     @GetMapping(path = "/seller/name")
     public ResponseEntity<?> fetchSellerByName(@RequestParam String sellerName){
 
-        Seller seller = sellerServices.fetchSellerByName(sellerName);
+        Seller seller = sellerServices.fetchSellerByNameOrEmail(sellerName);
 
         return seller != null ? ResponseEntity.ok(seller) : ResponseEntity.notFound().build();
     }
@@ -55,8 +54,8 @@ public class SellerController {
 //    @GetMapping(path = "/sellers")
 //    public ResponseEntity<?> fetchAllSellers(){
 //
-//        List<Seller> allSellers = sellerServices.allSellers();
+//        List<Seller> allSellersByWarehouseId = sellerServices.allSellersByWarehouseId();
 //
-//        return (allSellers != null && !allSellers.isEmpty()) ? ResponseEntity.ok(allSellers) : ResponseEntity.notFound().build();
+//        return (allSellersByWarehouseId != null && !allSellersByWarehouseId.isEmpty()) ? ResponseEntity.ok(allSellersByWarehouseId) : ResponseEntity.notFound().build();
 //    }
 }

@@ -21,10 +21,10 @@ import java.util.Set;
  * @email chriseteka@gmail.com
  */
 @Data
-@Entity
+//@Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "Stocks")
+//@Table(name = "Stocks")
 public class Stock {
 
     @Id
@@ -99,11 +99,6 @@ public class Stock {
 
     @Column(name = "approvedBy")
     private String approvedBy;
-
-    @JsonIgnore
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
-    private Set<Warehouse> warehouses = new HashSet<>();
 
     @JsonIgnore
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})

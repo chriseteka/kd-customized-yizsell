@@ -22,6 +22,8 @@ public class AuthenticatedUserDetails {
 
     private static ACCOUNT_TYPE account_type;
 
+    private static Boolean hasWarehouse = false;
+
     public static String getUserFullName() {
         return userFullName;
     }
@@ -32,10 +34,13 @@ public class AuthenticatedUserDetails {
 
     public static ACCOUNT_TYPE getAccount_type(){ return account_type; }
 
-    public AuthenticatedUserDetails(Long userId, String fullName, ACCOUNT_TYPE account_type) {
+    public static Boolean getHasWarehouse(){ return hasWarehouse; }
+
+    public AuthenticatedUserDetails(Long userId, String fullName, ACCOUNT_TYPE account_type, Boolean hasWarehouse) {
 
         AuthenticatedUserDetails.userId = userId;
         AuthenticatedUserDetails.userFullName = fullName;
         AuthenticatedUserDetails.account_type = account_type;
+        AuthenticatedUserDetails.hasWarehouse = hasWarehouse;
     }
 }

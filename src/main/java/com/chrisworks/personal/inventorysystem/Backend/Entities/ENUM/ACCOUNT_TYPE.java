@@ -6,7 +6,9 @@ public enum ACCOUNT_TYPE {
 
     BUSINESS_OWNER(100),
 
-    SELLER(200);
+    WAREHOUSE_ATTENDANT(200),
+
+    SHOP_SELLER(300);
 
     private int account_type_value;
 

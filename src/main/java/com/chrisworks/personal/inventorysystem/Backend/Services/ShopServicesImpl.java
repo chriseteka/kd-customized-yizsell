@@ -1,9 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
-import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +11,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -25,30 +22,43 @@ public class ShopServicesImpl implements ShopServices {
 
     private final ShopRepository shopRepository;
 
-    private final IncomeRepository incomeRepository;
-
-    private final GenericService genericService;
-
-    private final WarehouseRepository warehouseRepository;
-
-    private final ExpenseRepository expenseRepository;
-
-    private final ReturnedStockRepository returnedStockRepository;
-
-    private final SellerRepository sellerRepository;
+    private final BusinessOwnerRepository businessOwnerRepository;
 
     @Autowired
-    public ShopServicesImpl(ShopRepository shopRepository, WarehouseRepository warehouseRepository,
-                            IncomeRepository incomeRepository, GenericService genericService,
-                            ExpenseRepository expenseRepository, ReturnedStockRepository returnedStockRepository,
-                            SellerRepository sellerRepository) {
+    public ShopServicesImpl(ShopRepository shopRepository,
+                            BusinessOwnerRepository businessOwnerRepository) {
         this.shopRepository = shopRepository;
-        this.warehouseRepository = warehouseRepository;
-        this.incomeRepository = incomeRepository;
-        this.genericService = genericService;
-        this.expenseRepository = expenseRepository;
-        this.returnedStockRepository = returnedStockRepository;
-        this.sellerRepository = sellerRepository;
+        this.businessOwnerRepository = businessOwnerRepository;
+    }
+
+    @Override
+    public Shop createShop(Long businessOwnerId, Shop shop) {
+
+        Optional<BusinessOwner> businessOwner = businessOwnerRepository.findById(businessOwnerId);
+
+        if (!businessOwner.isPresent()) throw new InventoryAPIOperationException
+                ("Unknown user", "Could not detect the user trying to create a new shop", null);
+
+        if (shopRepository.findDistinctByShopName(shop.getShopName()) != null) throw new InventoryAPIOperationException
+                ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
+
+        shop.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        shop.setBusinessOwner(businessOwner.get());
+        return shopRepository.save(shop);
+    }
+
+    @Override
+    public Shop findShopById(Long shopId) {
+        return shopRepository.findById(shopId)
+                .map(shop -> {
+
+                    if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                        throw new InventoryAPIOperationException
+                                ("shop is not yours", "This shop was not created by you", null);
+
+                    return shop;
+                })
+                .orElse(null);
     }
 
     @Override
@@ -57,6 +67,10 @@ public class ShopServicesImpl implements ShopServices {
         AtomicReference<Shop> updatedShop = new AtomicReference<>();
 
         shopRepository.findById(shopId).ifPresent(shop -> {
+
+            if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException
+                        ("shop is not yours", "This shop was not created by you", null);
 
             shop.setUpdateDate(shopUpdates.getUpdateDate());
             shop.setShopAddress(shopUpdates.getShopAddress());
@@ -67,229 +81,120 @@ public class ShopServicesImpl implements ShopServices {
     }
 
     @Override
-    public List<Shop> fetchAllShopInWarehouse(Long warehouseId) {
+    public List<Shop> fetchAllShops() {
 
-        if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
-                InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
-
-        return warehouseRepository.findById(warehouseId)
-                .map(shopRepository::findAllByWarehouse)
-                .orElse(Collections.emptyList());
-
-    }
-
-    @Override
-    public Expense approveExpense(Long expenseId) {
-
-        Expense expenseFound = allUnApprovedExpense().stream()
-                .filter(expense -> expense.getExpenseId().equals(expenseId))
-                .collect(toSingleton());
-
-        if (expenseFound == null) throw new InventoryAPIResourceNotFoundException
-                ("Expense not found", "Expense with id " + expenseId + " was not found in your list of unapproved expense", null);
-
-        expenseFound.setExpenseTypeVal(String.valueOf(expenseFound.getExpenseTypeValue()));
-        expenseFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        expenseFound.setApproved(true);
-        expenseFound.setApprovedDate(new Date());
-
-        return expenseRepository.save(expenseFound);
-    }
-
-    @Override
-    public List<Expense> allUnApprovedExpense() {
-
-        return genericService.allWarehouseByAuthUserId()
+        return shopRepository.findAll()
                 .stream()
-                .map(Warehouse::getWarehouseId)
-                .map(this::fetchAllShopInWarehouse)
-                .flatMap(List::parallelStream)
-                .map(expenseRepository::findAllByShop)
-                .flatMap(List::parallelStream)
-                .filter(expense -> !expense.getApproved())
+                .filter(shop -> shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ReturnedStock approveReturnSales(Long returnSaleId) {
+    public Shop deleteShop(Long shopId) {
 
-        ReturnedStock returnedStockFound = allUnApprovedReturnSales().stream()
-                .filter(returnedStock -> returnedStock.getReturnedStockId().equals(returnSaleId))
-                .collect(toSingleton());
+        return shopRepository.findById(shopId).map(shop -> {
 
-        if (returnedStockFound == null) throw new InventoryAPIResourceNotFoundException
-                ("Returned stock not found", "Returned stock with id: " + returnSaleId + "was not found in your list of" +
-                        " unapproved returned stock", null);
+            if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                    InventoryAPIOperationException("Not your seller", "Seller not created by you", null);
 
-        returnedStockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        returnedStockFound.setApproved(true);
-        returnedStockFound.setApprovedDate(new Date());
-
-        return returnedStockRepository.save(returnedStockFound);
-    }
-
-    @Override
-    public List<ReturnedStock> allUnApprovedReturnSales() {
-
-        return genericService.allWarehouseByAuthUserId()
-                .stream()
-                .map(Warehouse::getWarehouseId)
-                .map(this::fetchAllShopInWarehouse)
-                .flatMap(List::parallelStream)
-                .map(returnedStockRepository::findAllByShop)
-                .flatMap(List::parallelStream)
-                .filter(returnedStock -> !returnedStock.getApproved())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Shop addShop(Warehouse warehouse, Shop shop) {
-
-        if (shopRepository.findDistinctByShopName(shop.getShopName()) != null) throw new InventoryAPIOperationException
-                ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
-
-        shop.setWarehouse(warehouse);
-        return shopRepository.save(shop);
-    }
-
-    @Override
-    public Shop addSellerToShop(Shop shop, Seller seller) {
-
-        if (null == seller) throw new InventoryAPIOperationException
-                ("could not find an entity to save", "Could not find seller entity to save", null);
-
-        seller.setShop(shop);
-        sellerRepository.save(seller);
-
-        return shopRepository.save(shop);
-    }
-
-    @Override
-    public Shop findShopById(Long shopId) {
-        return shopRepository.findById(shopId).orElse(null);
-    }
-
-    @Override
-    public Income approveIncome(Long incomeId) {
-
-        Income incomeFound = allUnApprovedIncome().stream()
-                .filter(income -> income.getIncomeId().equals(incomeId))
-                .collect(toSingleton());
-
-        if (incomeFound == null) throw new InventoryAPIResourceNotFoundException
-                ("Income not found", "Income with id: " + incomeId + " was not found in your list of unapproved income", null);
-
-        incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
-        incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        incomeFound.setApproved(true);
-        incomeFound.setApprovedDate(new Date());
-
-        return incomeRepository.save(incomeFound);
-    }
-
-    @Override
-    public List<Income> allUnApprovedIncome() {
-
-        return genericService.allWarehouseByAuthUserId()
-                .stream()
-                .map(Warehouse::getWarehouseId)
-                .map(this::fetchAllShopInWarehouse)
-                .flatMap(List::parallelStream)
-                .map(incomeRepository::findAllByShop)
-                .flatMap(List::parallelStream)
-                .filter(income -> !income.getApproved())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Shop addSellerListToShop(Long shopId, List<Seller> sellerList) {
-
-        AtomicReference<Shop> updatedShop = new AtomicReference<>();
-
-        shopRepository.findById(shopId).ifPresent(shop -> {
-
-            updatedShop.set(shop);
-            sellerList.forEach(seller -> {
-
-                seller.setShop(shop);
-                sellerRepository.save(seller);
-            });
-        });
-
-        return updatedShop.get();
-    }
-
-    @Override
-    public Shop removeSellerFromShop(Long shopId, Seller seller) {
-
-        AtomicReference<Shop> updatedShop = new AtomicReference<>();
-
-        shopRepository.findById(shopId).ifPresent(shop -> {
-
-            Seller sellerRetrieved = sellerRepository.findAllByShop(shop)
-                    .stream()
-                    .filter(sellerFoundInShop -> sellerFoundInShop.equals(seller))
-                    .collect(toSingleton());
-
-            sellerRetrieved.setShop(null);
-            sellerRepository.save(sellerRetrieved);
-        });
-
-        return updatedShop.get();
-    }
-
-    @Override
-    public Shop removeSellersFromShop(Long shopId, List<Seller> sellerList) {
-
-        AtomicReference<Shop> updatedShop = new AtomicReference<>();
-
-        shopRepository.findById(shopId).ifPresent(shop -> {
-
-            sellerRepository.findAllByShop(shop)
-                    .stream()
-                    .filter(sellerFoundInShop -> sellerList.contains(sellerFoundInShop))
-                    .forEach(seller -> {
-                        seller.setShop(null);
-                        sellerRepository.save(seller);
-                    });
-        });
-
-        return updatedShop.get();
-    }
-
-    @Override
-    public Shop createEntity(Shop shop) {
-
-//        addShop(shop);
-        return null;
-    }
-
-    @Override
-    public Shop updateEntity(Long entityId, Shop shop) {
-        return null;
-    }
-
-    @Override
-    public Shop getSingleEntity(Long entityId) {
-        return null;
-    }
-
-    @Override
-    public List<Shop> getEntityList() {
-        return null;
-    }
-
-    @Override
-    public Shop deleteEntity(Long entityId) {
-
-        AtomicReference<Shop> shopDeleted = new AtomicReference<>(null);
-
-        shopRepository.findById(entityId).ifPresent(shop -> {
-
-            shopDeleted.set(shop);
             shopRepository.delete(shop);
-        });
-
-        return shopDeleted.get();
+            return shop;
+        }).orElse(null);
     }
+
+//    @Override
+//    public Expense approveExpense(Long expenseId) {
+//
+//        Expense expenseFound = allUnApprovedExpense().stream()
+//                .filter(expense -> expense.getExpenseId().equals(expenseId))
+//                .collect(toSingleton());
+//
+//        if (expenseFound == null) throw new InventoryAPIResourceNotFoundException
+//                ("Expense not found", "Expense with id " + expenseId + " was not found in your list of unapproved expense", null);
+//
+//        expenseFound.setExpenseTypeVal(String.valueOf(expenseFound.getExpenseTypeValue()));
+//        expenseFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+//        expenseFound.setApproved(true);
+//        expenseFound.setApprovedDate(new Date());
+//
+//        return expenseRepository.save(expenseFound);
+//    }
+
+//    @Override
+//    public List<Expense> allUnApprovedExpense() {
+//
+//        return genericService.warehouseByAuthUserId()
+//                .stream()
+//                .map(Warehouse::getWarehouseId)
+//                .map(this::fetchAllShopInWarehouse)
+//                .flatMap(List::parallelStream)
+//                .map(expenseRepository::findAllByShop)
+//                .flatMap(List::parallelStream)
+//                .filter(expense -> !expense.getApproved())
+//                .collect(Collectors.toList());
+//    }
+
+//    @Override
+//    public ReturnedStock approveReturnSales(Long returnSaleId) {
+//
+//        ReturnedStock returnedStockFound = allUnApprovedReturnSales().stream()
+//                .filter(returnedStock -> returnedStock.getReturnedStockId().equals(returnSaleId))
+//                .collect(toSingleton());
+//
+//        if (returnedStockFound == null) throw new InventoryAPIResourceNotFoundException
+//                ("Returned stock not found", "Returned stock with id: " + returnSaleId + "was not found in your list of" +
+//                        " unapproved returned stock", null);
+//
+//        returnedStockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+//        returnedStockFound.setApproved(true);
+//        returnedStockFound.setApprovedDate(new Date());
+//
+//        return returnedStockRepository.save(returnedStockFound);
+//    }
+
+//    @Override
+//    public List<ReturnedStock> allUnApprovedReturnSales() {
+//
+//        return genericService.warehouseByAuthUserId()
+//                .stream()
+//                .map(Warehouse::getWarehouseId)
+//                .map(this::fetchAllShopInWarehouse)
+//                .flatMap(List::parallelStream)
+//                .map(returnedStockRepository::findAllByShop)
+//                .flatMap(List::parallelStream)
+//                .filter(returnedStock -> !returnedStock.getApproved())
+//                .collect(Collectors.toList());
+//    }
+
+//    @Override
+//    public Income approveIncome(Long incomeId) {
+//
+//        Income incomeFound = allUnApprovedIncome().stream()
+//                .filter(income -> income.getIncomeId().equals(incomeId))
+//                .collect(toSingleton());
+//
+//        if (incomeFound == null) throw new InventoryAPIResourceNotFoundException
+//                ("Income not found", "Income with id: " + incomeId + " was not found in your list of unapproved income", null);
+//
+//        incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
+//        incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+//        incomeFound.setApproved(true);
+//        incomeFound.setApprovedDate(new Date());
+//
+//        return incomeRepository.save(incomeFound);
+//    }
+
+//    @Override
+//    public List<Income> allUnApprovedIncome() {
+//
+//        return genericService.warehouseByAuthUserId()
+//                .stream()
+//                .map(Warehouse::getWarehouseId)
+//                .map(this::fetchAllShopInWarehouse)
+//                .flatMap(List::parallelStream)
+//                .map(incomeRepository::findAllByShop)
+//                .flatMap(List::parallelStream)
+//                .filter(income -> !income.getApproved())
+//                .collect(Collectors.toList());
+//    }
 }

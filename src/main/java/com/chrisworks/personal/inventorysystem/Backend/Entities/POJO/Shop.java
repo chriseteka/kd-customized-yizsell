@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,7 +45,15 @@ public class Shop {
     @Column(name = "shopAddress", nullable = false)
     private String shopAddress;
 
+    @Column(name = "createdBy", nullable = false)
+    private String createdBy;
+
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
-    private Warehouse warehouse;
+    @JoinTable(name = "businessOwnerShops", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JsonIgnore
+    private BusinessOwner businessOwner;
+
+//    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+//    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+//    private Warehouse warehouse;
 }

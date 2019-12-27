@@ -15,5 +15,5 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
 
     Shop findDistinctByShopName(String shopName);
 
-    List<Shop> findAllByWarehouse(Warehouse warehouse);
+    List<Shop> findAllByCreatedBy(String createdBy);
 }
