@@ -84,6 +84,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     @Override
     public Seller activateSeller(Long sellerId) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         return sellerRepository.findById(sellerId).map(seller -> {
 
             if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -97,6 +101,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     @Override
     public Seller deactivateSeller(Long sellerId) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         return sellerRepository.findById(sellerId).map(seller -> {
 
             if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -109,6 +117,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     @Override
     public Seller updateSeller(Long sellerId, Seller sellerUpdates) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
@@ -128,6 +140,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     @Override
     public Seller assignSellerToShop(Long sellerId, Long shopId) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
@@ -157,6 +173,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     @Override
     public Seller assignSellerToWarehouse(Long sellerId, Long warehouseId) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         return sellerRepository.findById(sellerId).map(seller -> {
 
             if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -185,6 +205,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
     @Override
     public Seller unAssignSellerFromShop(Long sellerId, Long shopId) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         return sellerRepository.findById(sellerId).map(seller -> {
 
             if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -199,7 +223,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
             return shopRepository.findById(shopId).map(shop -> {
 
                 if (!shop.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
-                        ("Shop not owned by you", "Cannot assign shop that is not owned by you", null);
+                        ("Shop not owned by you", "Cannot unassign shop that is not owned by you", null);
 
                 seller.setUpdateDate(new Date());
                 seller.setShop(null);
@@ -212,6 +236,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     @Override
     public Seller unAssignSellerFromWarehouse(Long sellerId, Long warehouseId) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
@@ -227,7 +255,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
             return warehouseRepository.findById(warehouseId).map(warehouse -> {
 
                 if (!warehouse.getCreatedBy().equalsIgnoreCase(seller.getCreatedBy())) throw new InventoryAPIOperationException
-                        ("Warehouse not owned by you", "Cannot assign warehouse that is not owned by you", null);
+                        ("Warehouse not owned by you", "Cannot unassign warehouse that is not owned by you", null);
 
                 seller.setUpdateDate(new Date());
                 seller.setWarehouse(null);
@@ -240,6 +268,10 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     @Override
     public BusinessOwner updateAccount(Long businessOwnerId, BusinessOwner businessOwnerUpdates) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("business owner id error", "business owner id is empty or not a valid number", null);

@@ -12,9 +12,13 @@ import java.util.List;
  */
 public interface CustomerService {
 
+    Customer createCustomer(Customer customer);
+
     Customer fetchCustomerByPhoneNumber(String customerPhoneNumber);
 
     List<Customer> fetchAllCustomersByCreator(String createdBy);
+
+    List<Customer> fetchAllCustomers();
 
     List<Customer> fetchAllCustomersWithDebt(BigDecimal debtLimit);
 

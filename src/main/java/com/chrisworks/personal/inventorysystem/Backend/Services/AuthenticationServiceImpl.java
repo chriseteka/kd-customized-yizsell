@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 
 
@@ -113,6 +114,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         BusinessOwner businessOwner = verificationToken.getBusinessOwner();
 
+//        businessOwner.isEnabled()
         businessOwner.setIsActive(true);
         businessOwner.setVerified(true);
         return this.updateVerifiedBusinessOwner(businessOwner);
@@ -139,9 +141,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String message = "Reset your password by copying the following token and pasting where required: ";
         String body = message + passwordResetToken;
 
-        EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body);
+        EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
 
-        mailServices.sendEmail(emailObject);
+        mailServices.sendAutomatedEmail(emailObject);
 
         return true;
     }

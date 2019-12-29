@@ -21,4 +21,6 @@ public interface WarehouseServices {
     List<Warehouse> fetchAllWarehouse();
 
     Warehouse deleteWarehouse(Long warehouseId);
+
+    Warehouse fetchWarehouseByWarehouseAttendant(String warehouseAttendantName);
 }

@@ -14,6 +14,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -115,3 +117,15 @@ public class AuthenticationController {
         return ResponseEntity.ok(businessOwnerPassReset);
     }
 }
+
+//class DefaultPreAuthenticationChecks implements UserDetailsChecker {
+//
+//    @Override
+//    public void check(UserDetails user) {
+//        if (!user.isEnabled()) {
+//
+//            throw new InventoryAPIOperationException("Account is not verified",
+//                    "Your account is not verified yet, check your email for verification code", null);
+//        }
+//    }
+//}

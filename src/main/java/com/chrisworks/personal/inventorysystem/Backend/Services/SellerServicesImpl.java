@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * @email chriseteka@gmail.com
  */
 @Service
-public class SellerServiceImpl implements SellerServices {
+public class SellerServicesImpl implements SellerServices {
 
     private final SellerRepository sellerRepository;
 
@@ -31,16 +31,23 @@ public class SellerServiceImpl implements SellerServices {
 
     private final BCryptPasswordEncoder passwordEncoder;
 
+    private final GenericService genericService;
+
     @Autowired
-    public SellerServiceImpl(SellerRepository sellerRepository, BCryptPasswordEncoder passwordEncoder,
-                             BusinessOwnerRepository businessOwnerRepository) {
+    public SellerServicesImpl(SellerRepository sellerRepository, BCryptPasswordEncoder passwordEncoder,
+                              BusinessOwnerRepository businessOwnerRepository, GenericService genericService) {
         this.sellerRepository = sellerRepository;
         this.passwordEncoder = passwordEncoder;
         this.businessOwnerRepository = businessOwnerRepository;
+        this.genericService = genericService;
     }
 
     @Override
     public Seller createSeller(Seller seller) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         if (sellerRepository.findDistinctBySellerEmail(seller.getSellerEmail()) != null) throw new
                 InventoryAPIDuplicateEntryException("Email already exist", "A seller account already exist with the email address: " +
@@ -61,6 +68,10 @@ public class SellerServiceImpl implements SellerServices {
     @Override
     public Seller fetchSellerById(Long sellerId) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         if (null == sellerId || sellerId < 0 || !sellerId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("seller id error", "seller id is empty or not a valid number", null);
 
@@ -77,6 +88,10 @@ public class SellerServiceImpl implements SellerServices {
     @Override
     public Seller fetchSellerByNameOrEmail(String sellerName) {
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
         Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(sellerName, sellerName);
 
         if (sellerFound == null) throw new InventoryAPIResourceNotFoundException("Seller not found", "No seller" +
@@ -90,29 +105,31 @@ public class SellerServiceImpl implements SellerServices {
     }
 
     @Override
-    public List<Seller> allSellersByWarehouseId(Long warehouseId) {
+    public List<Seller> fetchAllWarehouseAttendantByWarehouseId(Long warehouseId) {
 
-        return sellerRepository.findAll()
+        return genericService.sellersByAuthUserId()
                 .stream()
-                .filter(seller -> seller.getWarehouse() != null
-                        && seller.getWarehouse().getWarehouseId().equals(warehouseId)
-                        && seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .filter(warehouseAttendant -> warehouseAttendant.getWarehouse() != null
+                        && warehouseAttendant.getWarehouse().getWarehouseId().equals(warehouseId))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Seller> allSellersByShopId(Long shopId) {
+    public List<Seller> fetchAllShopSellersByShopId(Long shopId) {
 
-        return sellerRepository.findAll()
+        return genericService.sellersByAuthUserId()
                 .stream()
                 .filter(seller -> seller.getShop() != null
-                        && seller.getShop().getShopId().equals(shopId)
-                        && seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                        && seller.getShop().getShopId().equals(shopId))
                 .collect(Collectors.toList());
     }
 
     @Override
     public Seller deleteSeller(Long sellerId) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findById(sellerId).map(seller -> {
 
@@ -136,37 +153,39 @@ public class SellerServiceImpl implements SellerServices {
     }
 
     @Override
-    public List<Seller> fetchSellerByShop(Shop shop) {
+    public List<Seller> fetchShopSellersByShop(Shop shop) {
 
-        return sellerRepository.findAllByShop(shop)
+        return genericService.shopByAuthUserId()
                 .stream()
-                .filter(seller -> seller.getCreatedBy()
-                        .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .map(sellerRepository::findAllByShop)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Seller> fetchSellerByWarehouse(Warehouse warehouse) {
+    public List<Seller> fetchWarehouseAttendantsByWarehouse(Warehouse warehouse) {
 
-        return sellerRepository.findAllByWarehouse(warehouse)
+        return genericService.warehouseByAuthUserId()
                 .stream()
-                .filter(seller -> seller.getCreatedBy()
-                        .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .map(sellerRepository::findAllByWarehouse)
+                .flatMap(List::parallelStream)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Seller> fetchSellers() {
 
-        return sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        return genericService.sellersByAuthUserId();
     }
 
     @Override
     public Seller updateSeller(Long sellerId, Seller sellerUpdates) {
 
-        AtomicReference<Seller> updatedSeller = new AtomicReference<>(null);
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
-        sellerRepository.findById(sellerId).ifPresent(seller -> {
+        return sellerRepository.findById(sellerId).map(seller -> {
 
             if (!seller.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                 throw new InventoryAPIOperationException("Not your seller", "Seller with id: " + sellerId +
@@ -178,9 +197,8 @@ public class SellerServiceImpl implements SellerServices {
                     sellerUpdates.getSellerFullName() : seller.getSellerFullName());
             seller.setSellerPhoneNumber(sellerUpdates.getSellerPhoneNumber() != null ?
                     sellerUpdates.getSellerPhoneNumber() : seller.getSellerPhoneNumber());
-            updatedSeller.set(sellerRepository.save(seller));
-        });
 
-        return updatedSeller.get();
+            return sellerRepository.save(seller);
+        }).orElse(null);
     }
 }

@@ -1,9 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -18,6 +15,8 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 
     Invoice clearDebt(String invoiceNumber, BigDecimal amount);
 
+    Invoice fetchInvoiceByInvoiceNumber(String invoiceNumber);
+
     List<Invoice> fetchAllInvoicesCreatedBy(String createdBy);
 
     List<Invoice> fetchAllInvoiceCreatedOn(Date createdOn);
@@ -30,7 +29,7 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 
     List<Invoice> fetchAllInvoiceByPaymentMode(int paymentModeValue);
 
-    List<Invoice> getInvoicesBySeller(Seller seller);
+    List<Invoice> getInvoicesBySeller(Long sellerId);
 
-    List<Invoice> fetchCustomerAndDebt(Customer customer);
+    List<Invoice> fetchInvoicesByCustomer(Long customerId);
 }

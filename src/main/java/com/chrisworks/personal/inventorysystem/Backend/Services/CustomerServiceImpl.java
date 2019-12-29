@@ -1,15 +1,15 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,25 +20,31 @@ import java.util.stream.Collectors;
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
-    private CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository;
 
-    private ReturnedStockRepository returnedStockRepository;
+    private final ReturnedStockRepository returnedStockRepository;
 
-    private InvoiceRepository invoiceRepository;
+    private final InvoiceRepository invoiceRepository;
 
-    private ShopRepository shopRepository;
+    private final SellerRepository sellerRepository;
 
-    private SellerRepository sellerRepository;
+    private final GenericService genericService;
 
     @Autowired
     public CustomerServiceImpl(CustomerRepository customerRepository, ReturnedStockRepository returnedStockRepository,
-                               InvoiceRepository invoiceRepository, ShopRepository shopRepository,
-                               SellerRepository sellerRepository) {
+                               InvoiceRepository invoiceRepository, SellerRepository sellerRepository,
+                               GenericService genericService) {
         this.customerRepository = customerRepository;
         this.returnedStockRepository = returnedStockRepository;
         this.invoiceRepository = invoiceRepository;
-        this.shopRepository = shopRepository;
         this.sellerRepository = sellerRepository;
+        this.genericService = genericService;
+    }
+
+    @Override
+    public Customer createCustomer(Customer customer) {
+
+        return genericService.addCustomer(customer);
     }
 
     @Override
@@ -54,25 +60,114 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public List<Customer> fetchAllCustomers() {
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        Set<Customer> customerSet = new HashSet<>(Collections.emptySet());
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
+            customerSet = genericService
+                    .shopByAuthUserId()
+                    .stream()
+                    .map(sellerRepository::findAllByShop)
+                    .flatMap(List::parallelStream)
+                    .map(invoiceRepository::findAllBySeller)
+                    .flatMap(List::parallelStream)
+                    .map(Invoice::getCustomerId)
+                    .collect(Collectors.toSet());
+        }
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+            customerSet = genericService.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .map(customerRepository::findAllByCreatedBy)
+                    .flatMap(List::parallelStream)
+                    .collect(Collectors.toSet());
+        }
+        customerSet.addAll(customerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+
+        return new ArrayList<>(customerSet);
+    }
+
+    @Override
     public List<Customer> fetchAllCustomersWithDebt(BigDecimal debtLimit) {
 
-        return invoiceRepository.findAllByDebtGreaterThan(debtLimit)
-                .stream().map(Invoice::getCustomerId).collect(Collectors.toList());
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Not allowed", "Logged in user cannot perform this operation", null);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+            return genericService.sellersByAuthUserId().stream()
+                    .filter(seller -> seller.getShop() != null)
+                    .map(seller -> invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, debtLimit))
+                    .flatMap(List::parallelStream)
+                    .map(Invoice::getCustomerId)
+                    .collect(Collectors.toList());
+
+        }
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)){
+
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+
+            if (null == seller || seller.getShop() == null) throw new InventoryAPIOperationException("Seller not found",
+                    "Cannot retrieve debtors for this seller, seller may have not been assigned to a shop or does not exist", null);
+
+            return invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, debtLimit)
+                    .stream()
+                    .map(Invoice::getCustomerId)
+                    .collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 
     @Override
     public List<Customer> fetchAllCustomersWithReturnedPurchases() {
 
-        return returnedStockRepository.findAll()
-                .stream().map(ReturnedStock::getCustomerId).collect(Collectors.toList());
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Not allowed", "Logged in user cannot perform this operation", null);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+            return genericService.sellersByAuthUserId().stream()
+                    .filter(seller -> seller.getShop() != null)
+                    .map(Seller::getShop)
+                    .map(returnedStockRepository::findAllByShop)
+                    .flatMap(List::parallelStream)
+                    .map(ReturnedStock::getCustomerId)
+                    .collect(Collectors.toList());
+
+        }
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)){
+
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+
+            if (null == seller || seller.getShop() == null) throw new InventoryAPIOperationException("Seller not found",
+                    "Cannot retrieve debtors for this seller, seller may have not been assigned to a shop or does not exist", null);
+
+            return returnedStockRepository.findAllByShop(seller.getShop())
+                    .stream()
+                    .map(ReturnedStock::getCustomerId)
+                    .collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 
     @Override
     public Customer updateCustomerDetails(Long customerId, Customer customerUpdates) {
 
-        AtomicReference<Customer> updatedCustomer = new AtomicReference<>();
+        return customerRepository.findById(customerId).map(customer -> {
 
-        customerRepository.findById(customerId).ifPresent(customer -> {
+            if (!customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Operation not allowed",
+                        "You are not allowed to update a customer not created by you", null);
 
             customer.setCustomerFullName(customerUpdates.getCustomerFullName() != null ?
                     customerUpdates.getCustomerFullName() : customer.getCustomerFullName());
@@ -83,37 +178,46 @@ public class CustomerServiceImpl implements CustomerService {
             customer.setCustomerFullName(customerUpdates.getCustomerPhoneNumber() != null ?
                     customerUpdates.getCustomerPhoneNumber() : customer.getCustomerPhoneNumber());
 
-            updatedCustomer.set(customerRepository.save(customer));
-        });
+            return customerRepository.save(customer);
+        }).orElse(null);
 
-        return updatedCustomer.get();
     }
 
     @Override
     public List<Customer> fetchCustomersByShop(Long shopId) {
 
-        return shopRepository.findById(shopId)
-                .map(shop -> sellerRepository
-                        .findAllByShop(shop)
-                        .stream()
-                        .map(invoiceRepository::findAllBySeller)
-                        .flatMap(List::parallelStream)
-                        .map(Invoice::getCustomerId)
-                        .collect(Collectors.toList())).orElse(null);
+        if (AuthenticatedUserDetails.getAccount_type() == null
+                || AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        return genericService.shopByAuthUserId()
+                .stream()
+                .filter(shop -> shop.getShopId().equals(shopId))
+                .map(sellerRepository::findAllByShop)
+                .flatMap(List::parallelStream)
+                .map(invoiceRepository::findAllBySeller)
+                .flatMap(List::parallelStream)
+                .map(Invoice::getCustomerId)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Customer deleteCustomerById(Long customerId) {
 
-        AtomicReference<Customer> customerDeleted = new AtomicReference<>(null);
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
-        customerRepository.findById(customerId).ifPresent(customer -> {
+        return customerRepository.findById(customerId).map(customer -> {
 
-            customerDeleted.set(customer);
+            if (!customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Operation not allowed",
+                        "You are not allowed to update a customer not created by you", null);
+
             customerRepository.delete(customer);
-        });
-
-        return customerDeleted.get();
+            return customer;
+        }).orElse(null);
     }
 
     @Override
@@ -121,6 +225,4 @@ public class CustomerServiceImpl implements CustomerService {
 
         return customerRepository.findById(customerId).orElse(null);
     }
-
-
 }

@@ -377,7 +377,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
             existingStock.setLastRestockPurchasedFrom(stockSupplier);
 
-            return reStockToWarehouse(warehouse.getWarehouseId(), existingStock.getStockId(), stockToAdd);
+            return reStockToWarehouse(warehouse.getWarehouseId(), existingStock.getWarehouseStockId(), stockToAdd);
         }
 
         Set<Supplier> supplierSet = new HashSet<>();

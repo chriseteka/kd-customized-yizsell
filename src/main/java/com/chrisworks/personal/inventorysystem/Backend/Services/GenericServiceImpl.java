@@ -9,9 +9,11 @@ import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * @author Chris_Eteka
@@ -99,7 +101,6 @@ public class GenericServiceImpl implements GenericService {
     }
 
     @Override
-    @Transactional
     public Expense addExpense(Expense expense) {
 
         if (null == expense) throw new InventoryAPIOperationException
@@ -112,18 +113,15 @@ public class GenericServiceImpl implements GenericService {
             expense.setApproved(true);
             expense.setApprovedDate(new Date());
             expense.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-            return expenseRepository.save(expense);
-        }else{
+        }
 
-            //get the seller's shop, add the expense to it then persist it
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
             expense.setShop(shopBySellerName(AuthenticatedUserDetails.getUserFullName()));
 
-            return expenseRepository.save(expense);
-        }
+        return expenseRepository.save(expense);
     }
 
     @Override
-    @Transactional
     public Income addIncome(Income income) {
 
         if (null == income) throw new InventoryAPIOperationException
@@ -136,19 +134,20 @@ public class GenericServiceImpl implements GenericService {
             income.setApproved(true);
             income.setApprovedDate(new Date());
             income.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-            return incomeRepository.save(income);
-        }else{
-
-            //get the seller's shop, add the income to it then persist it
-            Shop distinctShopBySeller = shopBySellerName(AuthenticatedUserDetails.getUserFullName());
-            income.setShop(distinctShopBySeller);
-
-            return incomeRepository.save(income);
         }
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
+            income.setShop(shopBySellerName(AuthenticatedUserDetails.getUserFullName()));
+
+        return incomeRepository.save(income);
     }
 
     @Override
     public Shop shopBySellerName(String sellerName) {
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         if (null == sellerName || sellerName.isEmpty()) throw new
                 InventoryAPIOperationException("seller name error", "seller name is empty or null", null);
@@ -158,11 +157,49 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
                 ("Seller not retrieved", "Seller with name: " + sellerName + " was not found.", null);
 
+        if(!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            throw new InventoryAPIOperationException("Not allowed",
+                    "You cannot view details of a seller not created by you", null);
+
+        if (null == sellerFound.getShop()) throw new InventoryAPIResourceNotFoundException
+                ("Seller does not have a shop", "Seller has not been assigned to any shop", null);
+
         return sellerFound.getShop();
     }
 
     @Override
+    public Warehouse warehouseByWarehouseAttendantName(String warehouseAttendantName) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        if (null == warehouseAttendantName || warehouseAttendantName.isEmpty())
+            throw new InventoryAPIOperationException("Warehouse attendant name error",
+                    "Warehouse attendant name is empty or null", null);
+
+        Seller sellerFound = sellerRepository
+                .findDistinctBySellerFullNameOrSellerEmail(warehouseAttendantName, warehouseAttendantName);
+
+        if (null == sellerFound) throw new InventoryAPIResourceNotFoundException("Warehouse attendant not retrieved",
+                "Warehouse attendant with name: " + warehouseAttendantName + " was not found.", null);
+
+        if(!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            throw new InventoryAPIOperationException("Not allowed",
+                    "You cannot view details of a warehouse attendant not created by you", null);
+
+        if (null == sellerFound.getWarehouse()) throw new InventoryAPIResourceNotFoundException
+                ("Seller does not have a warehouse", "Seller has not been assigned to any warehouse", null);
+
+        return sellerFound.getWarehouse();
+    }
+
+    @Override
     public List<Warehouse> warehouseByAuthUserId() {
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
 
         Long authUserId = AuthenticatedUserDetails.getUserId();
 
@@ -198,13 +235,24 @@ public class GenericServiceImpl implements GenericService {
 
         if (authUserType.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             return shopRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        if (authUserType.equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)){
+        if (authUserType.equals(ACCOUNT_TYPE.SHOP_SELLER)){
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
             return new ArrayList<>(Collections.singleton(sellerFound.getShop()));
         }
 
-        return null;
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Seller> sellersByAuthUserId() {
+
+        if (AuthenticatedUserDetails.getAccount_type() == null ||
+                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        return sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
     }
 
     @Override

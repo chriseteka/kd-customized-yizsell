@@ -21,15 +21,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     Invoice findDistinctByInvoiceNumberAndDebtGreaterThan(String invoiceId, BigDecimal debtLimit);
 
-    List<Invoice> findAllByDebtGreaterThan(BigDecimal debtLimit);
+    List<Invoice> findAllBySellerAndDebtGreaterThan(Seller seller, BigDecimal debtLimit);
 
     List<Invoice> findAllByCreatedBy(String createdBy);
-
-    List<Invoice> findAllByCreatedDate(Date createdDate);
-
-    List<Invoice> findAllByCreatedDateIsBetween(Date from, Date to);
-
-    List<Invoice> findAllByPaymentModeValue(int paymentModeValue);
 
     List<Invoice> findAllBySeller(Seller seller);
 

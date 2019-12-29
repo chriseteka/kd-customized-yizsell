@@ -317,7 +317,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             existingStock.setLastRestockPurchasedFrom(stockSupplier);
 
-            return reStockToShop(shop.getShopId(), existingStock.getStockId(), stockToAdd);
+            return reStockToShop(shop.getShopId(), existingStock.getShopStockId(), stockToAdd);
         }
 
         Set<Supplier> supplierSet = new HashSet<>();
@@ -453,6 +453,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                             " is limited, and you cannot sell above it.", null);
 
             stockSold.setCostPricePerStock(stockFound.getPricePerStockPurchased());
+            stockSold.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
             stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
             stockSoldSet.add(stockSoldRepository.save(stockSold));
 

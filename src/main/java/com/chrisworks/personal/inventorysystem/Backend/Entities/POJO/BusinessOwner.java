@@ -88,7 +88,6 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "verified")
     private Boolean verified = false;
 
-    @NotEmpty(message = "Boolean hasWarehouse cannot be empty, value must be true or false")
     @Column(name = "hasWarehouse")
     private Boolean hasWarehouse = false;
 
@@ -99,6 +98,12 @@ public class BusinessOwner implements UserDetails {
 
     @Transient
     private ACCOUNT_TYPE accountType = ACCOUNT_TYPE.BUSINESS_OWNER;
+
+    @Transient
+    private Boolean isTrialAccount = true;
+
+    @Transient
+    private String subscription;
 
     @PostLoad
     void fillTransient() {
@@ -111,6 +116,14 @@ public class BusinessOwner implements UserDetails {
     void fillPersistent() {
         if (accountType != null) {
             this.accountTypeValue = accountType.getAccount_type_value();
+        }
+        if(!isTrialAccount){
+            if (subscription.equalsIgnoreCase("THREE"))
+                this.expirationDate = futureDate(95);
+            if (subscription.equalsIgnoreCase("SIX"))
+                this.expirationDate = futureDate(185);
+            if (subscription.equalsIgnoreCase("TWELVE"))
+                this.expirationDate = futureDate(366);
         }
     }
 

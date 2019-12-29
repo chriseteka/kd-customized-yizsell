@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EmailObject;
+import com.sendgrid.Response;
 
 /**
  * @author Chris_Eteka
@@ -12,5 +13,7 @@ public interface MailServices {
     //EmailObject invoices as stock are sold to the business owner
     //Allow business owner mail suppliers and customers
 
-    void sendEmail(EmailObject emailObject);
+    void sendAutomatedEmail(EmailObject emailObject);
+
+    Response sendEmailToAnyUser(EmailObject emailObject);
 }
