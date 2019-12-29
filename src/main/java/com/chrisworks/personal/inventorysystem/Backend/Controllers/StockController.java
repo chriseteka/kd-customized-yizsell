@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Controllers.StockController;
+package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;

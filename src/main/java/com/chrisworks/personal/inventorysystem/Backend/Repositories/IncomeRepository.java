@@ -15,17 +15,7 @@ import java.util.List;
  */
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
-    List<Income> findAllByCreatedDateIsBetween(Date from, Date to);
-
     List<Income> findAllByCreatedBy(String createdBy);
-
-    List<Income> findAllByCreatedDate(Date createdDate);
-
-    List<Income> findAllByApprovedTrue();
-
-    List<Income> findAllByIncomeTypeValue(int incomeTypeValue);
-
-    List<Income> findAllByCreatedByAndApprovedIsFalse(String createdBy);
 
     List<Income> findAllByShop(Shop shop);
 }

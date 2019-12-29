@@ -170,6 +170,7 @@ public class WaybillServicesImpl implements WaybillServices {
             //Create an expense for transporting stock from warehouse to shop requesting for waybill
             String expenseDesc = "Expense on transporting waybill with id: " + waybillInvoiceNumber;
             Expense expenseOnWaybill = new Expense(400, expense, expenseDesc);
+            expenseOnWaybill.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
             expenseOnWaybill.setShop(waybillInvoice.getShop());
             expenseRepository.save(expenseOnWaybill);
 
@@ -609,8 +610,10 @@ public class WaybillServicesImpl implements WaybillServices {
 
                     List<Seller> sellers = sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
-                    boolean anyMatch = sellers.stream()
-                            .anyMatch(seller -> seller.getSellerEmail().equalsIgnoreCase(waybillInvoice.getCreatedBy()));
+                    boolean anyMatch = sellers
+                            .stream()
+                            .map(Seller::getSellerEmail)
+                            .anyMatch(sellerName -> sellerName.equalsIgnoreCase(waybillInvoice.getCreatedBy()));
 
                     if (anyMatch) waybillInvoiceRepository.delete(waybillInvoice);
                     else throw new InventoryAPIOperationException("Not allowed", "Operation not allowed, waybill was not created by " +

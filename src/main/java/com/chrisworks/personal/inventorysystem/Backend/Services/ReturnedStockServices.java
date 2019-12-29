@@ -19,9 +19,15 @@ public interface ReturnedStockServices {
 
     List<ReturnedStock> fetchAllApprovedReturns();
 
+    List<ReturnedStock> fetchAllReturnedStocks();
+
     List<ReturnedStock> fetchAllUnapprovedReturnsCreatedBy(String createdBy);
 
     List<ReturnedStock> fetchAllReturnsWithin(Date startDate, Date toDate);
 
     ReturnedStock deleteReturnedStock(Long returnedStockId);
+
+    ReturnedStock approveReturnSales(Long returnSaleId);
+
+    List<ReturnedStock> fetchAllUnApprovedReturnSales();
 }

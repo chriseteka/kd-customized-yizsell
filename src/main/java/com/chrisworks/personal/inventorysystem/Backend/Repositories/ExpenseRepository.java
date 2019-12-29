@@ -15,17 +15,7 @@ import java.util.List;
  */
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    List<Expense> findAllByCreatedDateIsBetween(Date from, Date to);
-
     List<Expense> findAllByCreatedBy(String createdBy);
-
-    List<Expense> findAllByCreatedDate(Date createdDate);
-
-    List<Expense> findAllByApprovedTrue();
-
-    List<Expense> findAllByCreatedByAndApprovedIsFalse(String createdBy);
-
-    List<Expense> findAllByExpenseTypeValue(int expenseTypeValue);
 
     List<Expense> findAllByShop(Shop shop);
 }

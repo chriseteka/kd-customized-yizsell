@@ -44,6 +44,6 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
 
         EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body);
 
-        mailServices.sendEmail(emailObject);
+        mailServices.sendAutomatedEmail(emailObject);
     }
 }

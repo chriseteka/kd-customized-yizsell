@@ -64,6 +64,9 @@ public class StockSold {
     @Column(name = "stockSoldInvoiceId")
     private String stockSoldInvoiceId;
 
+    @Column(name = "createdBy")
+    private String createdBy;
+
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinTable(name = "stockSoldInInvoice", joinColumns = @JoinColumn(name = "stockSoldId"), inverseJoinColumns = @JoinColumn(name = "invoiceId"))
 //    private Invoice invoice;

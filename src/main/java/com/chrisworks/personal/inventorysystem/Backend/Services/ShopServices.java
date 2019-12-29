@@ -21,18 +21,4 @@ public interface ShopServices {
     List<Shop> fetchAllShops();
 
     Shop deleteShop(Long shopId);
-
-//    Income approveIncome(Long incomeId);
-
-//    List<Income> allUnApprovedIncome();
-
-//    List<Shop> fetchAllShopInWarehouse(Long warehouseId);
-
-//    Expense approveExpense(Long expenseId);
-
-//    List<Expense> allUnApprovedExpense();
-
-//    ReturnedStock approveReturnSales(Long returnSaleId);
-
-//    List<ReturnedStock> allUnApprovedReturnSales();
 }

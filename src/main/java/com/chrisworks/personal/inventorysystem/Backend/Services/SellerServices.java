@@ -20,9 +20,9 @@ public interface SellerServices {
 
     Seller fetchSellerByNameOrEmail(String sellerName);
 
-    List<Seller> allSellersByWarehouseId(Long warehouseId);
+    List<Seller> fetchAllWarehouseAttendantByWarehouseId(Long warehouseId);
 
-    List<Seller> allSellersByShopId(Long shopId);
+    List<Seller> fetchAllShopSellersByShopId(Long shopId);
 
     Seller updateSeller(Long sellerId, Seller sellerUpdates);
 
@@ -30,9 +30,9 @@ public interface SellerServices {
 
     List<Seller> deleteSellerList(List<Seller> sellerList);
 
-    List<Seller> fetchSellerByShop(Shop shop);
+    List<Seller> fetchShopSellersByShop(Shop shop);
 
-    List<Seller> fetchSellerByWarehouse(Warehouse warehouse);
+    List<Seller> fetchWarehouseAttendantsByWarehouse(Warehouse warehouse);
 
     List<Seller> fetchSellers();
 }
