@@ -77,7 +77,7 @@ public class BusinessOwner implements UserDetails {
     private BigDecimal businessTotalProfit = BigDecimal.ZERO;
 
     //Hash this before storage to the database
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Temporal(DATE)
     @Column(name = "expirationDate")
     private Date expirationDate = futureDate(30);
@@ -99,7 +99,7 @@ public class BusinessOwner implements UserDetails {
     @Transient
     private ACCOUNT_TYPE accountType = ACCOUNT_TYPE.BUSINESS_OWNER;
 
-    @Transient
+    @Column(name = "isTrialAccount")
     private Boolean isTrialAccount = true;
 
     @Transient
@@ -118,12 +118,18 @@ public class BusinessOwner implements UserDetails {
             this.accountTypeValue = accountType.getAccount_type_value();
         }
         if(!isTrialAccount){
-            if (subscription.equalsIgnoreCase("THREE"))
+            if (subscription.equalsIgnoreCase("THREE")) {
                 this.expirationDate = futureDate(95);
-            if (subscription.equalsIgnoreCase("SIX"))
+                this.isTrialAccount = false;
+            }
+            if (subscription.equalsIgnoreCase("SIX")){
                 this.expirationDate = futureDate(185);
-            if (subscription.equalsIgnoreCase("TWELVE"))
+                this.isTrialAccount = false;
+            }
+            if (subscription.equalsIgnoreCase("TWELVE")){
                 this.expirationDate = futureDate(366);
+                this.isTrialAccount = false;
+            }
         }
     }
 

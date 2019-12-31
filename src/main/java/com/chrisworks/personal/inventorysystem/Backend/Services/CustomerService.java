@@ -31,4 +31,6 @@ public interface CustomerService {
     Customer deleteCustomerById(Long customerId);
 
     Customer fetchCustomerById(Long customerId);
+
+    BigDecimal fetchCustomerDebt(Long customerId);
 }

@@ -44,11 +44,11 @@ public class Customer {
     private String customerFullName;
 
     @Size(min = 5, max = 15, message = "Invalid Phone Number Entered")
-    @Column(name = "customerPhoneNumber", nullable = false, unique = true)
+    @Column(name = "customerPhoneNumber", nullable = false)
     private String customerPhoneNumber;
 
     @Email(message = "Invalid Email Address Entered")
-    @Column(name = "customerEmail", unique = true)
+    @Column(name = "customerEmail")
     private String customerEmail;
 
     @Column(name = "createdBy")

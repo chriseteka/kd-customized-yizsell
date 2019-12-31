@@ -16,22 +16,16 @@ import java.util.List;
  */
 public interface ShopStockServices {
 
-    //Create and then add stock to shop using the shop id passed
     ShopStocks createStockInShop(Long shopId, ShopStocks stock);
 
-    //Fetch all stock using authenticated user's details
     List<ShopStocks> allStockByShopId(Long shopId);
 
-    //Fetch all stock that will soon finish
     List<ShopStocks> allSoonToFinishStock(Long shopId, int limit);
 
-    //Fetch all stock that will soon expire
     List<ShopStocks> allSoonToExpireStock(Long shopId, Date expiryDateInterval);
 
-    //Fetch all approved stock for seller to sell
     List<ShopStocks> allApprovedStock(Long shopId);
 
-    //Fetch all unapproved stock
     List<ShopStocks> allUnApprovedStock(Long shopId);
 
     List<ShopStocks> allUnApprovedStockByCreator(String createdBy);

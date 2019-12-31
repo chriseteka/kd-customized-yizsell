@@ -1,6 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.ExpenseServices;
@@ -9,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping("/expense")
@@ -25,6 +29,17 @@ public class ExpenseController {
 
     @PostMapping(path = "/create", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createExpense(@RequestBody @Valid Expense expense){
+
+        if (!expense.getExpenseTypeVal().matches("\\d+")) throw new InventoryAPIDataValidationException
+                ("Expense Type value error", "Expense Type value must be any of these: 100, 200, 300, 400, 500", null);
+
+        expense.setExpenseTypeValue(Integer.parseInt(expense.getExpenseTypeVal()));
+
+        IntStream expenseValueStream = Arrays.stream(EXPENSE_TYPE.values()).mapToInt(EXPENSE_TYPE::getExpense_type_value);
+
+        if (expenseValueStream.noneMatch(value -> value == expense.getExpenseTypeValue()))
+            throw new InventoryAPIDataValidationException("Expense Type value error",
+                    "Expense Type value must be any of these: 100, 200, 300, 400, 500", null);
 
         Expense expenseCreated = expenseServices.createEntity(expense);
 

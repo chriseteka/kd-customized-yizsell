@@ -31,7 +31,7 @@ public class VerificationToken {
     private String token;
 
     @OneToOne(targetEntity = BusinessOwner.class, fetch = FetchType.EAGER)
-    @JoinTable(name = "businessOwnerTokens", joinColumns = @JoinColumn(name = "tokenId"), inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
+    @JoinTable(name = "businessOwnerVerificationTokens", joinColumns = @JoinColumn(name = "tokenId"), inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
     private BusinessOwner businessOwner;
 
     private Date expiryDate = calculateExpiryDate();

@@ -5,6 +5,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthControlle
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EmailObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
@@ -113,6 +114,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 InventoryAPIOperationException("Verification token expired", "Verification token expired", null);
 
         BusinessOwner businessOwner = verificationToken.getBusinessOwner();
+
+        if(businessOwner.getVerified())throw new InventoryAPIDuplicateEntryException("Account already verified",
+                "Your account is already verified, please log in to view your dashboard", null);
 
 //        businessOwner.isEnabled()
         businessOwner.setIsActive(true);
