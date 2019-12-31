@@ -87,8 +87,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public void createVerificationToken(BusinessOwner user, String token) {
 
+        VerificationToken verificationToken = tokenRepository.findDistinctByBusinessOwner(user);
+
+        if (verificationToken != null) tokenRepository.delete(verificationToken);
+
         VerificationToken generatedToken = new VerificationToken(user, token);
         tokenRepository.save(generatedToken);
+    }
+
+    @Override
+    public Boolean resendVerificationToken(Long businessOwnerId) {
+
+        return businessOwnerRepository.findById(businessOwnerId)
+                .map(businessOwner -> {
+
+                    VerificationToken verificationToken = tokenRepository.findDistinctByBusinessOwner(businessOwner);
+
+                    if (null == verificationToken)
+                        throw new InventoryAPIOperationException("Could not get verification token",
+                                    "Could not get a verification token for the business owner id passed, try again", null);
+
+                    String recipientAddress = businessOwner.getBusinessOwnerEmail();
+                    String subject = "Registration Confirmation";
+                    String message = "Confirm your registration by copying the following token and pasting where required: ";
+                    String body = message + verificationToken;
+
+                    EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
+
+                    mailServices.sendAutomatedEmail(emailObject);
+
+                    return true;
+                }).orElse(null);
     }
 
     @Override
@@ -133,6 +162,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (null == businessOwner) throw new InventoryAPIResourceNotFoundException
                 ("Business Owner not found", "No business owner with email: " + email + " was found in the system", null);
 
+        PasswordResetToken token = passwordResetRepository.findDistinctByBusinessOwner(businessOwner);
+
+        if (null != token) passwordResetRepository.delete(token);
+
         String passwordResetToken = String.valueOf(System.currentTimeMillis()).substring(6, 12);
 
         PasswordResetToken resetToken = passwordResetRepository.save(new PasswordResetToken(businessOwner, passwordResetToken));
@@ -150,6 +183,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         mailServices.sendAutomatedEmail(emailObject);
 
         return true;
+    }
+
+    @Override
+    public Boolean resendPasswordResetToken(Long businessOwnerId) {
+
+        return businessOwnerRepository.findById(businessOwnerId)
+                .map(businessOwner -> {
+
+                    PasswordResetToken resetToken = passwordResetRepository.findDistinctByBusinessOwner(businessOwner);
+
+                    if (null == resetToken)
+                        throw new InventoryAPIOperationException("Could not get password reset token",
+                                "Could not get a password reset token for the business owner id passed, try again", null);
+
+                    String recipientAddress = businessOwner.getBusinessOwnerEmail();
+                    String subject = "Password Reset Notification";
+                    String message = "Reset your password by copying the following token and pasting where required: ";
+                    String body = message + resetToken;
+
+                    EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
+
+                    mailServices.sendAutomatedEmail(emailObject);
+
+                    return true;
+                }).orElse(null);
     }
 
     @Override

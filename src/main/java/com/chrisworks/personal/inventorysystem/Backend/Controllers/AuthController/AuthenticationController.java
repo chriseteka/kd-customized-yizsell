@@ -14,8 +14,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -115,6 +113,28 @@ public class AuthenticationController {
                 ("Password reset could not complete", "Password reset did not complete, try again later", null);
 
         return ResponseEntity.ok(businessOwnerPassReset);
+    }
+
+    @GetMapping(path = "/resend/verificationToken/byId")
+    public ResponseEntity<?> resendBusinessOwnerVerificationToken(@RequestParam Long businessOwnerId){
+
+        Boolean isSent = authenticationService.resendVerificationToken(businessOwnerId);
+
+        if (!isSent) throw new InventoryAPIOperationException("Verification token not sent",
+                "Could not resend verification token, review your inputs and try again", null);
+
+        return ResponseEntity.ok(true);
+    }
+
+    @GetMapping(path = "/resend/passResetToken/byId")
+    public ResponseEntity<?> resendBusinessOwnerPasswordResetToken(@RequestParam Long businessOwnerId){
+
+        Boolean isSent = authenticationService.resendPasswordResetToken(businessOwnerId);
+
+        if (!isSent) throw new InventoryAPIOperationException("Password reset token not sent",
+                "Could not resend password reset token, review your inputs and try again", null);
+
+        return ResponseEntity.ok(true);
     }
 }
 

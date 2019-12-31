@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController;
+package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
 

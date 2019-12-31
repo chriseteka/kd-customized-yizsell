@@ -67,59 +67,62 @@ public class WaybillServicesImpl implements WaybillServices {
         return warehouseRepository.findById(warehouseId).map(warehouse ->
                 sellerRepository.findById(AuthenticatedUserDetails.getUserId()).map(seller -> {
 
-            if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
-                throw new InventoryAPIOperationException("Warehouse not yours",
-                        "You cannot request for stock in a warehouse not created by your owner", null);
+                    if (null == seller.getShop()) throw new InventoryAPIOperationException("Seller has no shop",
+                            "Seller has no shop and cannot request for stocks from any warehouse", null);
 
-            List<WarehouseStocks> warehouseStocks = warehouseStockRepository.findAll();
+                    if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
+                        throw new InventoryAPIOperationException("Warehouse not yours",
+                                "You cannot request for stock in a warehouse not created by your owner", null);
 
-            if (warehouseStocks.isEmpty()) throw new InventoryAPIResourceNotFoundException
-                    ("Could not find stocks", "No stock was found in the specified warehouse", null);
+                    List<WarehouseStocks> warehouseStocks = warehouseStockRepository.findAll();
 
-            AtomicReference<Set<WaybilledStocks>> waybilledStocks = new AtomicReference<>(Collections.emptySet());
-            AtomicReference<BigDecimal> waybillInvoiceAmount = new AtomicReference<>(BigDecimal.ZERO);
+                    if (warehouseStocks.isEmpty()) throw new InventoryAPIResourceNotFoundException
+                            ("Could not find stocks", "No stock was found in the specified warehouse", null);
 
-            stocks.forEach(order ->
-                    waybilledStocks.set(
-                            warehouseStocks
-                            .stream()
-                            .map(stockFound -> {
-                                if (stockFound.getStockName().equalsIgnoreCase(order.getStockName())
-                                        && stockFound.getPossibleQuantityRemaining() <= order.getQuantity()) {
+                    AtomicReference<Set<WaybilledStocks>> waybilledStocks = new AtomicReference<>(Collections.emptySet());
+                    AtomicReference<BigDecimal> waybillInvoiceAmount = new AtomicReference<>(BigDecimal.ZERO);
 
-                                    stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
-                                            - order.getQuantity());
-                                    warehouseStockRepository.save(stockFound);
-                                    waybillInvoiceAmount.set(waybillInvoiceAmount.get()
-                                            .add((BigDecimal.valueOf(order.getQuantity())
-                                                    .multiply(stockFound.getPricePerStockPurchased()))));
-                                    return new WaybilledStocks(order.getStockName(),
-                                            stockFound.getStockCategory().getCategoryName(), order.getQuantity(),
-                                            stockFound.getSellingPricePerStock(), stockFound.getPricePerStockPurchased(),
-                                            stockFound.getExpiryDate(), stockFound.getStockBarCodeId(),
-                                            stockFound.getLastRestockPurchasedFrom());
-                                }
-                                else throw new InventoryAPIResourceNotFoundException("Could not find stock",
-                                        order.getStockName() + " in your list of orders was not found in the specified" +
-                                                " warehouse or the quantity remaining is below your demands", null);
-                            }).collect(Collectors.toSet())
-                    )
-            );
+                    stocks.forEach(order ->
+                            waybilledStocks.set(
+                                    warehouseStocks
+                                    .stream()
+                                    .map(stockFound -> {
+                                        if (stockFound.getStockName().equalsIgnoreCase(order.getStockName())
+                                                && stockFound.getPossibleQuantityRemaining() <= order.getQuantity()) {
 
-            if (waybilledStocks.get().isEmpty()) throw new InventoryAPIResourceNotFoundException
-                    ("Orders not found", "Your orders were not found in the warehouse specified", null);
+                                            stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
+                                                    - order.getQuantity());
+                                            warehouseStockRepository.save(stockFound);
+                                            waybillInvoiceAmount.set(waybillInvoiceAmount.get()
+                                                    .add((BigDecimal.valueOf(order.getQuantity())
+                                                            .multiply(stockFound.getPricePerStockPurchased()))));
+                                            return new WaybilledStocks(order.getStockName(),
+                                                    stockFound.getStockCategory().getCategoryName(), order.getQuantity(),
+                                                    stockFound.getSellingPricePerStock(), stockFound.getPricePerStockPurchased(),
+                                                    stockFound.getExpiryDate(), stockFound.getStockBarCodeId(),
+                                                    stockFound.getLastRestockPurchasedFrom());
+                                        }
+                                        else throw new InventoryAPIResourceNotFoundException("Could not find stock",
+                                                order.getStockName() + " in your list of orders was not found in the specified" +
+                                                        " warehouse or the quantity remaining is below your demands", null);
+                                    }).collect(Collectors.toSet())
+                            )
+                    );
 
-            WaybillInvoice waybillInvoice = new WaybillInvoice();
+                    if (waybilledStocks.get().isEmpty()) throw new InventoryAPIResourceNotFoundException
+                            ("Orders not found", "Your orders were not found in the warehouse specified", null);
 
-            waybillInvoice.setShop(seller.getShop());
-            waybillInvoice.setSellerRequesting(seller);
-            waybillInvoice.setWarehouse(warehouse);
-            waybillInvoice.setWaybilledStocks(waybilledStocks.get());
-            waybillInvoice.setWaybillInvoiceTotalAmount(waybillInvoiceAmount.get());
-            waybillInvoice.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-            waybillInvoice.setWaybillInvoiceNumber(UniqueIdentifier.waybillInvoiceUID());
+                    WaybillInvoice waybillInvoice = new WaybillInvoice();
 
-            return waybillInvoiceRepository.save(waybillInvoice);
+                    waybillInvoice.setShop(seller.getShop());
+                    waybillInvoice.setSellerRequesting(seller);
+                    waybillInvoice.setWarehouse(warehouse);
+                    waybillInvoice.setWaybilledStocks(waybilledStocks.get());
+                    waybillInvoice.setWaybillInvoiceTotalAmount(waybillInvoiceAmount.get());
+                    waybillInvoice.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    waybillInvoice.setWaybillInvoiceNumber(UniqueIdentifier.waybillInvoiceUID());
+
+                    return waybillInvoiceRepository.save(waybillInvoice);
         }).orElse(null)).orElse(null);
     }
 
@@ -145,6 +148,9 @@ public class WaybillServicesImpl implements WaybillServices {
 
         return warehouseRepository.findById(warehouseId).map(warehouse ->
                 sellerRepository.findById(AuthenticatedUserDetails.getUserId()).map(seller -> {
+
+                    if (null == seller.getWarehouse()) throw new InventoryAPIOperationException("Seller has no warehouse",
+                            "Seller has no warehouse and cannot confirm and ship ware bills from any warehouse", null);
 
             if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
                 throw new InventoryAPIOperationException("Warehouse not yours",
