@@ -70,13 +70,13 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
         BusinessOwner businessOwnerCreated = businessOwnerRepository.save(businessOwner);
 
         //Initiate confirm account action after successful registration of a business owner
-        try {
+//        try {
             eventPublisher.publishEvent(new OnRegistrationCompleteEvent(businessOwnerCreated));
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
-        }
+//        } catch (Exception e) {
+//
+//            e.printStackTrace();
+//            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+//        }
 
         return businessOwnerCreated;
     }

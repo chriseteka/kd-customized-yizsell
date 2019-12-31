@@ -3,7 +3,6 @@ package com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Exce
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionResponse.ErrorDetailsObject;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionResponse.ExceptionResponse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.*;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

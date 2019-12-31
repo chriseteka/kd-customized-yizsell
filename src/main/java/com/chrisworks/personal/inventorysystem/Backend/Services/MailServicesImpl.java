@@ -80,7 +80,6 @@ public class MailServicesImpl implements MailServices {
             response = this.sendGridClient.api(request);
         } catch (IOException ex) {
 
-            ex.printStackTrace();
             throw new InventoryAPIOperationException("Network error",
                     "Network error, please check your internet connection", null);
         }
