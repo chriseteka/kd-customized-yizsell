@@ -292,7 +292,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
     }
 
     @Override
-    public List<Invoice> getInvoicesBySeller(Long sellerId) {
+    public List<Invoice> fetchAllInvoicesBySeller(Long sellerId) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null
                 || !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))

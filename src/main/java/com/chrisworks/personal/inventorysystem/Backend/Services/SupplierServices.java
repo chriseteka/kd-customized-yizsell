@@ -1,7 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
+
+import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -9,4 +10,10 @@ import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
  * @email chriseteka@gmail.com
  */
 public interface SupplierServices extends CRUDServices<Supplier> {
+
+    Supplier fetchSupplierByPhoneNumber(String phoneNumber);
+
+    Supplier fetchSupplierByName(String supplierName);
+
+    List<Supplier> fetchSupplierByCreator(String createdBy);
 }

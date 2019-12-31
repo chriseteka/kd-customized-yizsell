@@ -83,15 +83,22 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                     InventoryAPIOperationException
                                     ("Not your Shop", "Shop does not belong to your creator", null);
 
+                            if (shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
+                                    ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
+                                            " first request a waybill from any of the business owner warehouses", null);
+
                             return addStockToShop(stock, shop);
                         }).orElse(null);
             }
-            else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
-                    && AuthenticatedUserDetails.getHasWarehouse()){
+            else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
 
                 if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
                         InventoryAPIOperationException("Not your Shop", "Shop you are about to add a stock" +
                         " does not belong to you, cannot proceed with this operation", null);
+
+                if (AuthenticatedUserDetails.getHasWarehouse()) throw new InventoryAPIOperationException
+                        ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
+                                " first request a waybill from any of the business owner warehouses", null);
 
                 return addStockToShop(stock, shop);
             }
@@ -186,6 +193,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
                             .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                         throw new InventoryAPIOperationException("Not allowed", "Stock not found in yor warehouse", null);
 
+                    if (stockFound.getApproved()) throw new InventoryAPIOperationException("Stock already approved",
+                            "Stock with id: " + stockId + " has already been approved by you", null);
+
                     stockFound.setUpdateDate(new Date());
                     stockFound.setApproved(true);
                     stockFound.setApprovedDate(new Date());
@@ -236,18 +246,22 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (null == newStock) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find stock entity to save", null);
 
-        return shopRepository.findById(shopId).map(warehouse -> {
+        return shopRepository.findById(shopId).map(shop -> {
+
+            if (shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
+                    ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
+                            " first request a waybill from any of the business owner warehouses", null);
 
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
                     && !sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails
-                    .getUserFullName()).getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
+                    .getUserFullName()).getCreatedBy().equalsIgnoreCase(shop.getCreatedBy()))
                 throw new InventoryAPIOperationException
-                        ("Not your warehouse", "Warehouse does not belong to your creator", null);
+                        ("Not your shop", "Warehouse does not belong to your creator", null);
 
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
-                    && !warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
-                throw new InventoryAPIOperationException("Not your warehouse", "You cannot add stock to" +
-                        " this warehouse because it was not created by you", null);
+                    && !shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Not your shop", "You cannot add stock to" +
+                        " this shop because it was not created by you", null);
 
             Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
 
@@ -348,37 +362,39 @@ public class ShopStockServicesImpl implements ShopStockServices {
     @Override
     public ShopStocks changeStockSellingPriceByStockId(Long stockId, BigDecimal newSellingPrice) {
 
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user cannot perform this operation", null);
+
         if (null == stockId || stockId < 0 || !stockId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("stock id error", "stock id is empty or not a valid number", null);
 
         if (null == newSellingPrice || is(newSellingPrice).lte(BigDecimal.ZERO) || !newSellingPrice.toString().matches("\\d+"))
             throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
 
-        AtomicReference<ShopStocks> updatedStock = new AtomicReference<>();
-
-        shopStocksRepository.findById(stockId).ifPresent(stock -> {
+        return shopStocksRepository.findById(stockId).map(stock -> {
 
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
                     && !stock.getShop().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                 throw new InventoryAPIOperationException("Not allowed",
                         "You cannot change selling price of a stock not found in your shop", null);
 
-            if(!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+            if(AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
                 && !sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName()).getShop()
                     .equals(stock.getShop())) throw new InventoryAPIOperationException("Not allowed",
                     "You cannot change selling price of a stock not found in your shop", null);
 
-            updatedStock.set(shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice)));
-        });
-
-        return updatedStock.get();
+            return shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
+        }).orElse(null);
     }
 
     @Override
-    public ShopStocks changeStockSellingPriceByShopIdAndStockName(Long shopId, String stockName, BigDecimal newSellingPrice) {
+    public ShopStocks changeStockSellingPriceByShopIdAndStockName(Long shopId, String stockName,
+                                                                  BigDecimal newSellingPrice) {
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Not allowed", "Operation not allowed", null);
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user cannot perform this operation", null);
 
         if (null == shopId || shopId < 0 || !shopId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
@@ -388,6 +404,24 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         if (null == newSellingPrice || is(newSellingPrice).lte(BigDecimal.ZERO) || !newSellingPrice.toString().matches("\\d+"))
             throw new InventoryAPIOperationException("selling price error", "selling price is empty or not a valid number", null);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+            return shopRepository.findById(shopId).map(shop -> {
+
+                if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                        InventoryAPIOperationException("Operation not allowed",
+                        "You cannot change sellig price of a stock in a shop not created by you", null);
+
+                ShopStocks stockRetrieved = shopStocksRepository.findDistinctByStockNameAndShop(stockName, shop);
+
+                if(stockRetrieved == null) throw new InventoryAPIResourceNotFoundException("Not found",
+                        "Stock with name: " + stockName + " was not found in your shop", null);
+
+                return shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+
+            }).orElse(null);
+        }
 
         Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
 

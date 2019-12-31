@@ -13,7 +13,6 @@ import java.util.List;
  */
 public interface SellerServices {
 
-    //Services peculiar to sellers only
     Seller createSeller(Seller seller);
 
     Seller fetchSellerById(Long sellerId);
@@ -28,11 +27,11 @@ public interface SellerServices {
 
     Seller deleteSeller(Long sellerId);
 
-    List<Seller> deleteSellerList(List<Seller> sellerList);
+    List<Seller> deleteSellerList(List<Long> sellerIds);
 
-    List<Seller> fetchShopSellersByShop(Shop shop);
+    List<Seller> fetchShopSellersByLoggedInUser();
 
-    List<Seller> fetchWarehouseAttendantsByWarehouse(Warehouse warehouse);
+    List<Seller> fetchWarehouseAttendantsByLoggedInUser();
 
     List<Seller> fetchSellers();
 }

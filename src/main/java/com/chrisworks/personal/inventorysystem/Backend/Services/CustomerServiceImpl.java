@@ -12,6 +12,9 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
+import static ir.cafebabe.math.utils.BigDecimalUtils.is;
+
 /**
  * @author Chris_Eteka
  * @since 11/28/2019
@@ -44,19 +47,34 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Customer createCustomer(Customer customer) {
 
+        boolean match = fetchAllCustomers()
+                .stream()
+                .anyMatch(customerFound -> customerFound.getCustomerPhoneNumber()
+                        .equalsIgnoreCase(customer.getCustomerPhoneNumber()));
+
+        if (match) throw new InventoryAPIOperationException("Customer already exist",
+                "Customer already exist in your shop/business with the phone number: " + customer.getCustomerPhoneNumber()
+                        + ", hence it cannot add it to this business' list of customers.", null);
+
         return genericService.addCustomer(customer);
     }
 
     @Override
     public Customer fetchCustomerByPhoneNumber(String customerPhoneNumber) {
 
-        return customerRepository.findDistinctByCustomerPhoneNumber(customerPhoneNumber);
+        return fetchAllCustomers()
+                .stream()
+                .filter(customer -> customer.getCustomerPhoneNumber().equals(customerPhoneNumber))
+                .collect(toSingleton());
     }
 
     @Override
     public List<Customer> fetchAllCustomersByCreator(String createdBy) {
 
-        return customerRepository.findAllByCreatedBy(createdBy);
+        return fetchAllCustomers()
+                .stream()
+                .filter(customer -> customer.getCreatedBy().equalsIgnoreCase(createdBy))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -68,27 +86,33 @@ public class CustomerServiceImpl implements CustomerService {
 
         Set<Customer> customerSet = new HashSet<>(Collections.emptySet());
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
-            customerSet = genericService
-                    .shopByAuthUserId()
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)){
+
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            customerSet.addAll(sellerList
                     .stream()
-                    .map(sellerRepository::findAllByShop)
+                    .filter(s -> s.getShop() != null)
+                    .map(Seller::getSellerEmail)
+                    .map(customerRepository::findAllByCreatedBy)
                     .flatMap(List::parallelStream)
-                    .map(invoiceRepository::findAllBySeller)
-                    .flatMap(List::parallelStream)
-                    .map(Invoice::getCustomerId)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList()));
+            customerSet.addAll(customerRepository.findAllByCreatedBy(seller.getCreatedBy()));
         }
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
-            customerSet = genericService.sellersByAuthUserId()
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+            customerSet.addAll(genericService.sellersByAuthUserId()
                     .stream()
                     .map(Seller::getSellerEmail)
                     .map(customerRepository::findAllByCreatedBy)
                     .flatMap(List::parallelStream)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList()));
+
+            customerSet.addAll(customerRepository
+                    .findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
         }
-        customerSet.addAll(customerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
 
         return new ArrayList<>(customerSet);
     }
@@ -99,15 +123,22 @@ public class CustomerServiceImpl implements CustomerService {
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Not allowed", "Logged in user cannot perform this operation", null);
 
+        Set<Customer> customersWithDebt = new HashSet<>(Collections.emptySet());
+
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
 
-            return genericService.sellersByAuthUserId().stream()
+            customersWithDebt.addAll(genericService.sellersByAuthUserId().stream()
                     .filter(seller -> seller.getShop() != null)
                     .map(seller -> invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, debtLimit))
                     .flatMap(List::parallelStream)
                     .map(Invoice::getCustomerId)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
 
+            customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName())
+                    .stream()
+                    .filter(invoice -> is(invoice.getDebt()).gte(debtLimit))
+                    .map(Invoice::getCustomerId)
+                    .collect(Collectors.toList()));
         }
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)){
@@ -117,13 +148,22 @@ public class CustomerServiceImpl implements CustomerService {
             if (null == seller || seller.getShop() == null) throw new InventoryAPIOperationException("Seller not found",
                     "Cannot retrieve debtors for this seller, seller may have not been assigned to a shop or does not exist", null);
 
-            return invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, debtLimit)
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            customersWithDebt.addAll(sellerList
                     .stream()
+                    .map(s -> invoiceRepository.findAllBySellerAndDebtGreaterThan(s, debtLimit))
+                    .flatMap(List::parallelStream)
                     .map(Invoice::getCustomerId)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
+            customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(seller.getCreatedBy())
+                    .stream()
+                    .filter(invoice -> is(invoice.getDebt()).gte(debtLimit))
+                    .map(Invoice::getCustomerId)
+                    .collect(Collectors.toList()));
         }
 
-        return Collections.emptyList();
+        return new ArrayList<>(customersWithDebt);
     }
 
     @Override
@@ -165,9 +205,22 @@ public class CustomerServiceImpl implements CustomerService {
 
         return customerRepository.findById(customerId).map(customer -> {
 
-            if (!customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                    && !customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                 throw new InventoryAPIOperationException("Operation not allowed",
                         "You are not allowed to update a customer not created by you", null);
+
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+
+                boolean match = genericService.sellersByAuthUserId()
+                        .stream()
+                        .map(Seller::getSellerEmail)
+                        .anyMatch(sellerName -> sellerName.equalsIgnoreCase(customer.getCreatedBy()));
+
+                if (!match && !customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                    throw new InventoryAPIOperationException("Operation not allowed",
+                            "You cannot update a customer not created by you or any of your sellers.", null);
+            }
 
             customer.setCustomerFullName(customerUpdates.getCustomerFullName() != null ?
                     customerUpdates.getCustomerFullName() : customer.getCustomerFullName());
@@ -211,9 +264,20 @@ public class CustomerServiceImpl implements CustomerService {
 
         return customerRepository.findById(customerId).map(customer -> {
 
-            if (!customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            if (customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
+
+                customerRepository.delete(customer);
+                return customer;
+            }
+
+            boolean match = genericService.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .anyMatch(sellerName -> sellerName.equalsIgnoreCase(customer.getCreatedBy()));
+
+            if (!match && !customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                 throw new InventoryAPIOperationException("Operation not allowed",
-                        "You are not allowed to update a customer not created by you", null);
+                        "You cannot delete a customer not created by you or any of your sellers.", null);
 
             customerRepository.delete(customer);
             return customer;
@@ -223,6 +287,19 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Customer fetchCustomerById(Long customerId) {
 
-        return customerRepository.findById(customerId).orElse(null);
+        return fetchAllCustomers()
+                .stream()
+                .filter(customer -> customer.getCustomerId().equals(customerId))
+                .collect(toSingleton());
+    }
+
+    @Override
+    public BigDecimal fetchCustomerDebt(Long customerId) {
+
+        return invoiceRepository
+                .findAllByCustomerId(fetchCustomerById(customerId))
+                .stream()
+                .map(Invoice::getDebt)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

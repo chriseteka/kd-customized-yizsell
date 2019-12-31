@@ -63,14 +63,6 @@ public class GenericServiceImpl implements GenericService {
         if (null == customer) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find customer entity to save", null);
 
-        if (customerRepository.findDistinctByCustomerPhoneNumber(customer.getCustomerPhoneNumber()) != null)
-            throw new InventoryAPIDuplicateEntryException("Duplicate phone number found",
-                "A customer already exist with the phone number: " + customer.getCustomerPhoneNumber(), null);
-
-        if (customerRepository.findDistinctByCustomerEmail(customer.getCustomerEmail()) != null) throw new
-                InventoryAPIDuplicateEntryException("Duplicate Email found",
-                "A customer already exist with the email: " + customer.getCustomerEmail(), null);
-
         customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
         return customerRepository.save(customer);
@@ -81,9 +73,6 @@ public class GenericServiceImpl implements GenericService {
 
         if (null == supplier) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find supplier entity to save", null);
-
-        if (supplierRepository.findBySupplierPhoneNumber(supplier.getSupplierPhoneNumber()) != null) throw new
-                InventoryAPIDuplicateEntryException("Duplicate entry", "Supplier with same phone number exists", null);
 
         supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
@@ -253,17 +242,5 @@ public class GenericServiceImpl implements GenericService {
                     "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
-    }
-
-    @Override
-    public List<Supplier> fetchSuppliersByCreator(String createdBy) {
-
-        return supplierRepository.findAllByCreatedBy(createdBy);
-    }
-
-    @Override
-    public List<StockCategory> fetchAllStockCategoryByCreator(String createdBy) {
-
-        return stockCategoryRepository.findAllByCreatedBy(createdBy);
     }
 }

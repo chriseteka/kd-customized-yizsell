@@ -29,7 +29,7 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 
     List<Invoice> fetchAllInvoiceByPaymentMode(int paymentModeValue);
 
-    List<Invoice> getInvoicesBySeller(Long sellerId);
+    List<Invoice> fetchAllInvoicesBySeller(Long sellerId);
 
     List<Invoice> fetchInvoicesByCustomer(Long customerId);
 }

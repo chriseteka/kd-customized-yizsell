@@ -67,8 +67,7 @@ public class ShopServicesImpl implements ShopServices {
                                 ("shop is not yours", "This shop was not created by you", null);
 
                     return shop;
-                })
-                .orElse(null);
+                }).orElse(null);
     }
 
     @Override

@@ -32,8 +32,4 @@ public interface GenericService {
     List<Shop> shopByAuthUserId();
 
     List<Seller> sellersByAuthUserId();
-
-    List<Supplier> fetchSuppliersByCreator(String createdBy);
-
-    List<StockCategory> fetchAllStockCategoryByCreator(String createdBy);
 }

@@ -81,7 +81,8 @@ public class MailServicesImpl implements MailServices {
         } catch (IOException ex) {
 
             ex.printStackTrace();
-            throw new InventoryAPIOperationException(String.valueOf(response.getStatusCode()), response.getBody(), null);
+            throw new InventoryAPIOperationException("Network error",
+                    "Network error, please check your internet connection", null);
         }
 
         return response;

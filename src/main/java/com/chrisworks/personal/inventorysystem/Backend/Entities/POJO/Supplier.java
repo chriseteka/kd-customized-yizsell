@@ -44,7 +44,7 @@ public class Supplier {
     private String supplierFullName;
 
     @Size(min = 5, max = 15, message = "Invalid Phone Number Entered")
-    @Column(name = "supplierPhoneNumber", nullable = false, unique = true)
+    @Column(name = "supplierPhoneNumber", nullable = false)
     private String supplierPhoneNumber;
 
     @Email(message = "Invalid Email Address Entered")

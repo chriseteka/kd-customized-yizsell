@@ -1,6 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.IncomeServices;
@@ -9,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping("/income")
@@ -25,6 +29,18 @@ public class IncomeController {
 
     @PostMapping(path = "/create", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createIncome(@RequestBody @Valid Income income){
+
+        if (!income.getIncomeTypeVal().matches("\\d+"))
+            throw new InventoryAPIDataValidationException("Income Type value error",
+                    "Income Type value must be any of these: 100, 200, 300", null);
+
+        income.setIncomeTypeValue(Integer.parseInt(income.getIncomeTypeVal()));
+
+        IntStream incomeValueStream = Arrays.stream(INCOME_TYPE.values()).mapToInt(INCOME_TYPE::getIncome_type_value);
+
+        if (incomeValueStream.noneMatch(value -> value == income.getIncomeTypeValue())) throw new
+                InventoryAPIDataValidationException("Income Type value error",
+                "Income Type value must be any of these: 100, 200, 300", null);
 
         Income incomeCreated = incomeServices.createEntity(income);
 

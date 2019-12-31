@@ -143,17 +143,17 @@ public class SellerServicesImpl implements SellerServices {
     }
 
     @Override
-    public List<Seller> deleteSellerList(List<Seller> sellerList) {
+    public List<Seller> deleteSellerList(List<Long> sellerIds) {
 
         List<Seller> deletedSellers = new ArrayList<>();
 
-        sellerList.forEach(seller -> deletedSellers.add(deleteSeller(seller.getSellerId())));
+        sellerIds.forEach(sellerId -> deletedSellers.add(deleteSeller(sellerId)));
 
         return deletedSellers;
     }
 
     @Override
-    public List<Seller> fetchShopSellersByShop(Shop shop) {
+    public List<Seller> fetchShopSellersByLoggedInUser() {
 
         return genericService.shopByAuthUserId()
                 .stream()
@@ -163,7 +163,7 @@ public class SellerServicesImpl implements SellerServices {
     }
 
     @Override
-    public List<Seller> fetchWarehouseAttendantsByWarehouse(Warehouse warehouse) {
+    public List<Seller> fetchWarehouseAttendantsByLoggedInUser() {
 
         return genericService.warehouseByAuthUserId()
                 .stream()

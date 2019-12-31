@@ -1,7 +1,8 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCategory;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
+
+import java.util.List;
 
 /**
  * @author Chris_Eteka
@@ -10,5 +11,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
  */
 public interface StockCategoryServices extends CRUDServices<StockCategory> {
 
-    StockCategory findByStockCategoryName(String stockCategoryName);
+    StockCategory fetchStockCategoryByName(String stockCategoryName);
+
+    List<StockCategory> fetchAllStockCategoryByCreatedBy(String createdBy);
 }

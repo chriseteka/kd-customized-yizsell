@@ -103,4 +103,10 @@ public class CustomerController {
 
         return ResponseEntity.ok(customerService.deleteCustomerById(customerId));
     }
+
+    @GetMapping(path = "/debt")
+    public ResponseEntity<?> fetchCustomerDebt(@RequestParam Long customerId){
+
+        return ResponseEntity.ok(customerService.fetchCustomerDebt(customerId));
+    }
 }
