@@ -13,6 +13,8 @@ public interface AuthenticationService extends UserDetailsService {
 
     void createVerificationToken(BusinessOwner user, String token);
 
+    Boolean resendVerificationToken(Long businessOwnerId);
+
     VerificationToken getVerificationToken(String token);
 
     BusinessOwner updateVerifiedBusinessOwner(BusinessOwner businessOwner);
@@ -20,6 +22,8 @@ public interface AuthenticationService extends UserDetailsService {
     BusinessOwner validateAndVerifyBusinessOwnerEmail(String token);
 
     Boolean createPasswordResetToken(String email);
+
+    Boolean resendPasswordResetToken(Long businessOwnerId);
 
     BusinessOwner getPasswordResetToken(String resetToken);
 

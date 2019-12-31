@@ -13,22 +13,16 @@ import java.util.List;
  */
 public interface WarehouseStockServices {
 
-    //Create and then add stock to warehouse using the warehouse id passed
     WarehouseStocks createStockInWarehouse(Long warehouseId, WarehouseStocks stock);
 
-    //Fetch all stock using authenticated user's details
     List<WarehouseStocks> allStockByWarehouseId(Long warehouseId);
 
-    //Fetch all stock that will soon finish
     List<WarehouseStocks> allSoonToFinishStock(Long warehouseId, int limit);
 
-    //Fetch all stock that will soon expire
     List<WarehouseStocks> allSoonToExpireStock(Long warehouseId, Date expiryDateInterval);
 
-    //Fetch all approved stock for seller to sell
     List<WarehouseStocks> allApprovedStock(Long warehouseId);
 
-    //Fetch all unapproved stock
     List<WarehouseStocks> allUnApprovedStock(Long warehouseId);
 
     List<WarehouseStocks> allUnApprovedStockByCreator(String createdBy);

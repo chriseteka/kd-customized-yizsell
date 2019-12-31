@@ -8,5 +8,5 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
 
     VerificationToken findByToken(String token);
 
-    VerificationToken findByBusinessOwner(BusinessOwner businessOwner);
+    VerificationToken findDistinctByBusinessOwner(BusinessOwner businessOwner);
 }
