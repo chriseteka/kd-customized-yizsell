@@ -73,7 +73,8 @@ public class WaybilledStocks {
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "waybillStockSupplier", joinColumns = @JoinColumn(name = "waybillstockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    @JoinTable(name = "waybillStockSupplier", joinColumns = @JoinColumn(name = "waybillstockId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier stockSupplier;
 
 

@@ -8,7 +8,9 @@ public enum ACCOUNT_TYPE {
 
     WAREHOUSE_ATTENDANT(200),
 
-    SHOP_SELLER(300);
+    SHOP_SELLER(300),
+
+    STAFF(400);
 
     private int account_type_value;
 

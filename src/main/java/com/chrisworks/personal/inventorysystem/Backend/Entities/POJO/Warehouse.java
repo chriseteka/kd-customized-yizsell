@@ -50,7 +50,8 @@ public class Warehouse {
     private String createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    @JoinTable(name = "businessOwnerWarehouses", joinColumns = @JoinColumn(name = "warehouseId"),
+            inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
     @JsonIgnore
     private BusinessOwner businessOwner;
 }

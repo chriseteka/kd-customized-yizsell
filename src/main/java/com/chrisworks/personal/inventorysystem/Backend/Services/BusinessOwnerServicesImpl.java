@@ -163,6 +163,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
                 seller.setUpdateDate(new Date());
                 seller.setShop(shop);
+                seller.setAccountTypeValue(ACCOUNT_TYPE.SHOP_SELLER.getAccount_type_value());
                 seller.setAccountType(ACCOUNT_TYPE.SHOP_SELLER);
                 return sellerRepository.save(seller);
 
@@ -195,6 +196,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
                 seller.setUpdateDate(new Date());
                 seller.setWarehouse(warehouse);
+                seller.setAccountTypeValue(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT.getAccount_type_value());
                 seller.setAccountType(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT);
                 return sellerRepository.save(seller);
 

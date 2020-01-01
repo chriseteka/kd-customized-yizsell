@@ -74,7 +74,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new UsernameNotFoundException("Email not found, ensure you have provided a valid email address");
             else {
 
-                //Collect the seller object
                 return seller;
             }
         }

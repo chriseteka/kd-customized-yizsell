@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Utility;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -45,5 +46,11 @@ public class Utility {
     public static Boolean isDateEqual(Date date1, Date date2){
 
         return fmt.format(date1).equals(fmt.format(date2));
+    }
+
+    public static long getDateDifferenceInDays(Date date1, Date date2) {
+
+        long diff = date2.getTime() - date1.getTime();
+        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
     }
 }

@@ -45,7 +45,8 @@ public class WarehouseStocks {
     private Date updateDate = new Date();
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stockStockCategory", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
+    @JoinTable(name = "warehouseStockStockCategory", joinColumns = @JoinColumn(name = "warehouseStockId"),
+            inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
     private StockCategory stockCategory;
 
     @Size(min = 3, message = "stock name must contain at least three characters")
@@ -103,12 +104,14 @@ public class WarehouseStocks {
 
     @JsonIgnore
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    @JoinTable(name = "warehouseStockSupplier", joinColumns = @JoinColumn(name = "warehouseStockId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Set<Supplier> stockPurchasedFrom = new HashSet<>();
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "restockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    @JoinTable(name = "warehouseRestockSupplier", joinColumns = @JoinColumn(name = "warehouseStockId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;
 
     @Column(name = "expiryDate")
@@ -123,6 +126,7 @@ public class WarehouseStocks {
 
     @JsonIgnore
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
+    @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseStockId"),
+            inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
 }

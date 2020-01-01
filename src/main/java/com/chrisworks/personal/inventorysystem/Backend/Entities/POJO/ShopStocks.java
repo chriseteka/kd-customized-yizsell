@@ -45,7 +45,8 @@ public class ShopStocks {
     private Date updateDate = new Date();
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stockStockCategory", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
+    @JoinTable(name = "shopStockStockCategory", joinColumns = @JoinColumn(name = "shopStockId"),
+            inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
     private StockCategory stockCategory;
 
     @Size(min = 3, message = "stock name must contain at least three characters")
@@ -103,12 +104,14 @@ public class ShopStocks {
 
     @JsonIgnore
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    @JoinTable(name = "shopStockSupplier", joinColumns = @JoinColumn(name = "shopStockId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Set<Supplier> stockPurchasedFrom = new HashSet<>();
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "restockSupplier", joinColumns = @JoinColumn(name = "stockId"), inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    @JoinTable(name = "shopRestockSupplier", joinColumns = @JoinColumn(name = "shopStockId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;
 
     @Column(name = "expiryDate")
@@ -120,6 +123,7 @@ public class ShopStocks {
 
     @JsonIgnore
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "stocksInShops", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "stockId"))
+    @JoinTable(name = "stocksInShops", joinColumns = @JoinColumn(name = "shopStockId"),
+            inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 }

@@ -49,11 +49,8 @@ public class Shop {
     private String createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "businessOwnerShops", joinColumns = @JoinColumn(name = "businessOwnerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "businessOwnerShops", joinColumns = @JoinColumn(name = "shopId"),
+            inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
     @JsonIgnore
     private BusinessOwner businessOwner;
-
-//    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-//    @JoinTable(name = "shopsInWarehouse", joinColumns = @JoinColumn(name = "shopId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
-//    private Warehouse warehouse;
 }

@@ -61,7 +61,8 @@ public class Income {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "incomeId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "shopIncome", joinColumns = @JoinColumn(name = "incomeId"),
+            inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
     @Basic

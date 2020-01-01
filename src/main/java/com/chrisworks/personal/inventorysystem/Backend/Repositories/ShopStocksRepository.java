@@ -18,4 +18,6 @@ public interface ShopStocksRepository extends JpaRepository<ShopStocks, Long> {
     List<ShopStocks> findAllByShop(Shop shop);
 
     List<ShopStocks> findAllByCreatedByAndApprovedIsFalse(String createdBy);
+
+    ShopStocks findDistinctByStockBarCodeId(String stockBarcodeId);
 }

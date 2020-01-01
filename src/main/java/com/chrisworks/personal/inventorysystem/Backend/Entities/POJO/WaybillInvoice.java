@@ -79,21 +79,25 @@ public class WaybillInvoice {
 
     //Shop Seller requesting goods from a warehouse, we can get the shop this request was made from.
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "waybillFrom", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+    @JoinTable(name = "waybillFrom", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
+            inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller sellerRequesting;
 
     //Warehouse Attendant issuing the waybill to the requested shop, we can get the warehouse this stock was taken from.
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "waybillIssuer", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "sellerId"))
+    @JoinTable(name = "waybillIssuer", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
+            inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller sellerIssuing;
 
     @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "waybillStockInWaybillInvoice", joinColumns = @JoinColumn(name = "waybillInvoiceId", nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "waybillStockId"))
+    @JoinTable(name = "waybillStockInWaybillInvoice", joinColumns = @JoinColumn(name = "waybillInvoiceId",
+            nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "waybillStockId"))
     private Set<WaybilledStocks> waybilledStocks = new HashSet<>();
 
     @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "fromShop", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "fromShop", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
+            inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
     @JsonIgnore

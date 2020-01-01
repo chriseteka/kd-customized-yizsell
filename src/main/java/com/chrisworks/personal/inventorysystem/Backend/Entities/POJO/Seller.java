@@ -75,12 +75,14 @@ public class Seller implements UserDetails {
 
     //Seller can be assigned to a shop
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "shopId"))
+    @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"),
+            inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
     //Seller can be assigned to a warehouse but not both
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(name = "sellersInWarehouse", joinColumns = @JoinColumn(name = "sellerId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
+    @JoinTable(name = "sellersInWarehouse", joinColumns = @JoinColumn(name = "sellerId"),
+            inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
 
     @Column(name = "isActive")
@@ -91,7 +93,7 @@ public class Seller implements UserDetails {
 
     @Basic
     @JsonIgnore
-    @Column(name = "accountType", updatable = false)
+    @Column(name = "accountType")
     private int accountTypeValue;
 
     //Seller can be a WAREHOUSE_ATTENDANT or a SHOP_SELLER
@@ -114,7 +116,7 @@ public class Seller implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(ACCOUNT_TYPE.SHOP_SELLER::toString);
+        return Collections.singleton(ACCOUNT_TYPE.STAFF::toString);
     }
 
     @Override

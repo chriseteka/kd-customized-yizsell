@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
@@ -10,12 +11,14 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getDateDifferenceInDays;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -83,6 +86,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                     InventoryAPIOperationException
                                     ("Not your Shop", "Shop does not belong to your creator", null);
 
+                            System.out.println(shop.getBusinessOwner().getHasWarehouse());
                             if (shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
                                     ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
                                             " first request a waybill from any of the business owner warehouses", null);
@@ -146,8 +150,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         return this.allStockByShopId(shopId)
                 .stream()
-                .filter(shopStocks -> expiryDateInterval.getTime()
-                        - shopStocks.getExpiryDate().getTime() <= 60)
+                .filter(shopStocks -> shopStocks.getExpiryDate() != null)
+                .filter(shopStocks -> getDateDifferenceInDays(expiryDateInterval, shopStocks.getExpiryDate()) <= 60)
                 .collect(Collectors.toList());
     }
 
@@ -323,6 +327,18 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
         if (null == stockSupplier) stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
+
+        if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
+
+            ShopStocks stockByBarcode = shopStocksRepository
+                    .findDistinctByStockBarCodeId(stockToAdd.getStockBarCodeId());
+            if (stockByBarcode != null
+                    && !stockByBarcode.getStockName().equalsIgnoreCase(stockToAdd.getStockName())){
+
+                throw new InventoryAPIDuplicateEntryException("Barcode already exist",
+                        "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
+            }
+        }
 
         ShopStocks existingStock = shopStocksRepository
                 .findDistinctByStockNameAndShop(stockToAdd.getStockName(), shop);

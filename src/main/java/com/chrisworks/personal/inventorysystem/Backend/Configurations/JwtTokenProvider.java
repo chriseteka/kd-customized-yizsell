@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Configurations;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import io.jsonwebtoken.*;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +51,9 @@ public class JwtTokenProvider {
     }
 
     public String generateSellerToken(Seller userDetails) {
+
+        if (userDetails.getAccountType() == null) throw new InventoryAPIOperationException("Seller cannot login",
+                "Seller may have not been assigned a warehouse or shop, hence cannot login", null);
 
         String userId = Long.toString(userDetails.getSellerId());
 

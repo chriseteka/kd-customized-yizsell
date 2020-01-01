@@ -6,6 +6,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCategory;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
@@ -17,6 +18,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getDateDifferenceInDays;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
 /**
@@ -140,8 +143,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
         return this.allStockByWarehouseId(warehouseId)
                 .stream()
-                .filter(warehouseStocks -> expiryDateInterval.getTime()
-                        - warehouseStocks.getExpiryDate().getTime() <= 60)
+                .filter(warehouseStocks -> warehouseStocks.getExpiryDate() != null)
+                .filter(warehouseStocks -> getDateDifferenceInDays(expiryDateInterval, warehouseStocks.getExpiryDate()) <= 60)
                 .collect(Collectors.toList());
     }
 
@@ -193,7 +196,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
                     return warehouseStockRepository.save(stockFound);
-                }).orElse(null);
+                }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Stock not found",
+                        "Stock with id: " + stockId + " was not found", null));
     }
 
     @Override
@@ -330,7 +334,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
     public WarehouseStocks changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice) {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Not allowed", "Operation not allowed", null);
+            throw new InventoryAPIOperationException("Not allowed",
+                    "Operation not allowed, this action can only be performed by a warehouse attendant", null);
 
         if (null == warehouseId || warehouseId < 0 || !warehouseId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("warehouse id error", "warehouse id is empty or not a valid number", null);
@@ -343,8 +348,13 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
         Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
 
+        Warehouse warehouse = seller.getWarehouse();
+
+        if (null == warehouse) throw new InventoryAPIOperationException("Seller has not warehouse",
+                "Seller performing this operation may have not been assigned to a warehouse", null);
+
         WarehouseStocks stockRetrieved = warehouseStockRepository
-                .findDistinctByStockNameAndWarehouse(stockName, seller.getWarehouse());
+                .findDistinctByStockNameAndWarehouse(stockName, warehouse);
 
         if(stockRetrieved == null) throw new InventoryAPIResourceNotFoundException("Not found",
                 "Stock with name: " + stockName + " was not found in your warehouse", null);
@@ -369,6 +379,18 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 .findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
 
         if (null == stockSupplier) stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
+
+        if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
+
+            WarehouseStocks stockByBarcode = warehouseStockRepository
+                    .findDistinctByStockBarCodeId(stockToAdd.getStockBarCodeId());
+            if (stockByBarcode != null
+                && !stockByBarcode.getStockName().equalsIgnoreCase(stockToAdd.getStockName())){
+
+                throw new InventoryAPIDuplicateEntryException("Barcode already exist",
+                        "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
+            }
+        }
 
         WarehouseStocks existingStock = warehouseStockRepository
                 .findDistinctByStockNameAndWarehouse(stockToAdd.getStockName(), warehouse);

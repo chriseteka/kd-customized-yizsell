@@ -84,6 +84,7 @@ public class ShopServicesImpl implements ShopServices {
                         ("shop is not yours", "This shop was not created by you", null);
 
             shop.setUpdateDate(new Date());
+            shop.setShopName(shopUpdates.getShopName());
             shop.setShopAddress(shopUpdates.getShopAddress());
             return shopRepository.save(shop);
         }).orElse(null);

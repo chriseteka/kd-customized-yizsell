@@ -48,6 +48,7 @@ public class WarehouseServicesImpl implements WarehouseServices {
                     InventoryAPIOperationException("Not your warehouse", "Warehouse not created by you", null);
 
             warehouse.setUpdateDate(new Date());
+            warehouse.setWarehouseName(warehouseUpdates.getWarehouseName());
             warehouse.setWarehouseAddress(warehouseUpdates.getWarehouseAddress());
             return warehouseRepository.save(warehouse);
         }).orElse(null);
@@ -105,6 +106,9 @@ public class WarehouseServicesImpl implements WarehouseServices {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user is not allowed to perform this operation", null);
+
+        if (!AuthenticatedUserDetails.getHasWarehouse()) throw new InventoryAPIOperationException("Operation not allowed",
+                "Logged in user has no right to create warehouse as this is not included in his plan", null);
 
         if (null == businessOwnerId || businessOwnerId < 0 || !businessOwnerId.toString().matches("\\d+")) throw new
                 InventoryAPIOperationException("business owner id error", "business owner id is empty or not a valid number", null);

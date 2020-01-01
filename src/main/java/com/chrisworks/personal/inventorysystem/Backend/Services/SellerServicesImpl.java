@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -191,12 +192,12 @@ public class SellerServicesImpl implements SellerServices {
                 throw new InventoryAPIOperationException("Not your seller", "Seller with id: " + sellerId +
                         " was not created by you", null);
 
-            seller.setSellerAddress(sellerUpdates.getSellerAddress() != null ?
-                    sellerUpdates.getSellerAddress() : seller.getSellerAddress());
-            seller.setSellerFullName(sellerUpdates.getSellerFullName() != null ?
-                    sellerUpdates.getSellerFullName() : seller.getSellerFullName());
-            seller.setSellerPhoneNumber(sellerUpdates.getSellerPhoneNumber() != null ?
-                    sellerUpdates.getSellerPhoneNumber() : seller.getSellerPhoneNumber());
+            seller.setUpdateDate(new Date());
+            seller.setSellerPassword(passwordEncoder.encode(sellerUpdates.getSellerPassword()));
+            seller.setSellerEmail(sellerUpdates.getSellerEmail());
+            seller.setSellerAddress(sellerUpdates.getSellerAddress());
+            seller.setSellerFullName(sellerUpdates.getSellerFullName());
+            seller.setSellerPhoneNumber(sellerUpdates.getSellerPhoneNumber());
 
             return sellerRepository.save(seller);
         }).orElse(null);

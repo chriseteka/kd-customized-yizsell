@@ -18,4 +18,6 @@ public interface WarehouseStockRepository extends JpaRepository<WarehouseStocks,
     List<WarehouseStocks> findAllByWarehouse(Warehouse warehouse);
 
     List<WarehouseStocks> findAllByCreatedByAndApprovedIsFalse(String createdBy);
+
+    WarehouseStocks findDistinctByStockBarCodeId(String stockBarCodeId);
 }
