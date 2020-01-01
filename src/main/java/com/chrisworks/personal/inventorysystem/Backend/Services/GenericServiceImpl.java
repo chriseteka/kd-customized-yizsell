@@ -146,7 +146,8 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
                 ("Seller not retrieved", "Seller with name: " + sellerName + " was not found.", null);
 
-        if(!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+        if(AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER) &&
+                !sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
             throw new InventoryAPIOperationException("Not allowed",
                     "You cannot view details of a seller not created by you", null);
 

@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
+
 /**
  * @author Chris_Eteka
  * @since 12/26/2019
@@ -82,31 +84,33 @@ public class WaybillServicesImpl implements WaybillServices {
                     AtomicReference<Set<WaybilledStocks>> waybilledStocks = new AtomicReference<>(Collections.emptySet());
                     AtomicReference<BigDecimal> waybillInvoiceAmount = new AtomicReference<>(BigDecimal.ZERO);
 
-                    stocks.forEach(order ->
-                            waybilledStocks.set(
-                                    warehouseStocks
-                                    .stream()
-                                    .map(stockFound -> {
-                                        if (stockFound.getStockName().equalsIgnoreCase(order.getStockName())
-                                                && stockFound.getPossibleQuantityRemaining() <= order.getQuantity()) {
+                    waybilledStocks.set(
+                        stocks.stream().map(order -> {
+                            WarehouseStocks stockFound = warehouseStocks.stream()
+                                    .filter(stock -> stock.getStockName().equalsIgnoreCase(order.getStockName()))
+                                    .collect(toSingleton());
 
-                                            stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
-                                                    - order.getQuantity());
-                                            warehouseStockRepository.save(stockFound);
-                                            waybillInvoiceAmount.set(waybillInvoiceAmount.get()
-                                                    .add((BigDecimal.valueOf(order.getQuantity())
-                                                            .multiply(stockFound.getPricePerStockPurchased()))));
-                                            return new WaybilledStocks(order.getStockName(),
-                                                    stockFound.getStockCategory().getCategoryName(), order.getQuantity(),
-                                                    stockFound.getSellingPricePerStock(), stockFound.getPricePerStockPurchased(),
-                                                    stockFound.getExpiryDate(), stockFound.getStockBarCodeId(),
-                                                    stockFound.getLastRestockPurchasedFrom());
-                                        }
-                                        else throw new InventoryAPIResourceNotFoundException("Could not find stock",
-                                                order.getStockName() + " in your list of orders was not found in the specified" +
-                                                        " warehouse or the quantity remaining is below your demands", null);
-                                    }).collect(Collectors.toSet())
-                            )
+                            if (null == stockFound) throw new InventoryAPIResourceNotFoundException("Could not find stock",
+                                    order.getStockName() + " in your list of orders was not found in the specified warehouse", null);
+
+                            if (stockFound.getPossibleQuantityRemaining() >= order.getQuantity()){
+
+                                stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
+                                        - order.getQuantity());
+                                warehouseStockRepository.save(stockFound);
+                                waybillInvoiceAmount.set(waybillInvoiceAmount.get()
+                                        .add((BigDecimal.valueOf(order.getQuantity())
+                                                .multiply(stockFound.getPricePerStockPurchased()))));
+                                return new WaybilledStocks(order.getStockName(),
+                                        stockFound.getStockCategory().getCategoryName(), order.getQuantity(),
+                                        stockFound.getSellingPricePerStock(), stockFound.getPricePerStockPurchased(),
+                                        stockFound.getExpiryDate(), stockFound.getStockBarCodeId(),
+                                        stockFound.getLastRestockPurchasedFrom());
+                            }
+                            else  throw new InventoryAPIResourceNotFoundException("Limited stock in warehouse",
+                                    order.getStockName() + " in your list of orders was found, but the number ordered is" +
+                                            " above the number available in the warehouse.", null);
+                        }).collect(Collectors.toSet())
                     );
 
                     if (waybilledStocks.get().isEmpty()) throw new InventoryAPIResourceNotFoundException
