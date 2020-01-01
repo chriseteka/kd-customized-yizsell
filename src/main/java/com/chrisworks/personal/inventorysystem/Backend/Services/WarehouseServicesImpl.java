@@ -118,6 +118,8 @@ public class WarehouseServicesImpl implements WarehouseServices {
 
         return businessOwnerRepository.findById(businessOwnerId)
                 .map(businessOwner -> {
+
+                    warehouse.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
                     warehouse.setBusinessOwner(businessOwner);
                     return warehouseRepository.save(warehouse);
                 }).orElse(null);

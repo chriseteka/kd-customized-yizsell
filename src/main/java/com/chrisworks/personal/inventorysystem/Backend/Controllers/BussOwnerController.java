@@ -41,7 +41,7 @@ public class BussOwnerController {
         return new ResponseEntity<>(businessOwnerAccount, HttpStatus.CREATED);
     }
 
-    @PostMapping(path = "/updateAccount/id", consumes = "application/json", produces = "application/json")
+    @PutMapping(path = "/updateAccount/id", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> updateProfile(@RequestBody @Valid BusinessOwner businessOwner,
                                            @RequestParam Long businessOwnerId){
 
@@ -84,7 +84,7 @@ public class BussOwnerController {
         }
     }
 
-    @PostMapping(path = "/updateSeller", consumes = "application/json", produces = "application/json")
+    @PutMapping(path = "/updateSeller", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> updateSeller(@RequestParam Long sellerId, @RequestBody @Valid Seller sellerUpdates){
 
         Seller sellerFound = genericService.sellersByAuthUserId()
