@@ -110,7 +110,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     String recipientAddress = businessOwner.getBusinessOwnerEmail();
                     String subject = "Registration Confirmation";
                     String message = "Confirm your registration by copying the following token and pasting where required: ";
-                    String body = message + verificationToken;
+                    String body = message + verificationToken.getToken();
 
                     EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
 
@@ -200,7 +200,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     String recipientAddress = businessOwner.getBusinessOwnerEmail();
                     String subject = "Password Reset Notification";
                     String message = "Reset your password by copying the following token and pasting where required: ";
-                    String body = message + resetToken;
+                    String body = message + resetToken.getToken();
 
                     EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
 
@@ -228,15 +228,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public BusinessOwner resetBusinessOwnerPassword(String resetToken, String newPassword) {
 
-        BusinessOwner businessOwnerByEmail =
-                passwordResetRepository.findDistinctByToken(resetToken).getBusinessOwner();
+        PasswordResetToken token = passwordResetRepository.findDistinctByToken(resetToken);
 
-        if (null == businessOwnerByEmail) throw new InventoryAPIResourceNotFoundException
+        if (null == token) throw new InventoryAPIResourceNotFoundException("Password reset token not found",
+                "Could not find password reset token with token id: " + resetToken, null);
+
+        BusinessOwner businessOwner = token.getBusinessOwner();
+
+        if (null == businessOwner) throw new InventoryAPIResourceNotFoundException
                 ("Business Owner not found", "Business Owner not found", null);
 
-        businessOwnerByEmail.setUpdateDate(new Date());
-        businessOwnerByEmail.setBusinessOwnerPassword(passwordEncoder.encode(newPassword));
+        businessOwner.setUpdateDate(new Date());
+        businessOwner.setBusinessOwnerPassword(passwordEncoder.encode(newPassword));
 
-        return businessOwnerRepository.save(businessOwnerByEmail);
+        return businessOwnerRepository.save(businessOwner);
     }
 }

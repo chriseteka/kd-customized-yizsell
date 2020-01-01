@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.stream.Collector;
@@ -37,5 +38,12 @@ public class Utility {
         calendar.add(Calendar.DATE, noOfDaysFromToday);
 
         return calendar.getTime();
+    }
+
+    static SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
+
+    public static Boolean isDateEqual(Date date1, Date date2){
+
+        return fmt.format(date1).equals(fmt.format(date2));
     }
 }

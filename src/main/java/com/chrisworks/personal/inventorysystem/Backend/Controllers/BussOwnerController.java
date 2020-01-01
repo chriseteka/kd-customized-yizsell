@@ -120,7 +120,7 @@ public class BussOwnerController {
         Seller seller = businessOwnerServices.unAssignSellerFromShop(sellerId, shopId);
 
         if (null == seller) throw new InventoryAPIOperationException("Seller not assigned to shop",
-                "Seller could not be assigned to a shop successfully, try again", null);
+                "Seller could not be unassigned from a shop successfully, try again", null);
 
         return ResponseEntity.ok(seller);
     }
@@ -131,7 +131,7 @@ public class BussOwnerController {
         Seller seller = businessOwnerServices.assignSellerToWarehouse(sellerId, warehouseId);
 
         if (null == seller) throw new InventoryAPIOperationException("Seller not assigned to shop",
-                "Seller could not be assigned to a shop successfully, try again", null);
+                "Seller could not be assigned to a warehouse successfully, try again", null);
 
         return ResponseEntity.ok(seller);
     }
@@ -142,7 +142,7 @@ public class BussOwnerController {
         Seller seller = businessOwnerServices.unAssignSellerFromWarehouse(sellerId, warehouseId);
 
         if (null == seller) throw new InventoryAPIOperationException("Seller not assigned to shop",
-                "Seller could not be assigned to a shop successfully, try again", null);
+                "Seller could not be unassigned from a warehouse successfully, try again", null);
 
         return ResponseEntity.ok(seller);
     }

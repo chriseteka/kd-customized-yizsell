@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
@@ -54,12 +55,10 @@ public class ExpenseServicesImpl implements ExpenseServices {
                 throw new InventoryAPIOperationException("Operation not allowed",
                         "You cannot update an expense not created by you", null);
 
-            expense.setExpenseAmount(expenseUpdates.getExpenseAmount() != null ?
-                    expenseUpdates.getExpenseAmount() : expense.getExpenseAmount());
-            expense.setExpenseType(expenseUpdates.getExpenseType() != null ?
-                    expenseUpdates.getExpenseType() : expense.getExpenseType());
-            expense.setExpenseDescription(expenseUpdates.getExpenseDescription() != null ?
-                    expenseUpdates.getExpenseDescription() : expense.getExpenseDescription());
+            expense.setUpdateDate(new Date());
+            expense.setExpenseAmount(expenseUpdates.getExpenseAmount());
+            expense.setExpenseDescription(expenseUpdates.getExpenseDescription());
+            expense.setExpenseTypeVal(expenseUpdates.getExpenseTypeVal());
 
             return expenseRepository.save(expense);
         }).orElse(null);
@@ -178,7 +177,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
 
         return getEntityList()
                 .stream()
-                .filter(expense -> expense.getCreatedDate().compareTo(createdOn) == 0)
+                .filter(expense -> isDateEqual(expense.getCreatedDate(), createdOn))
                 .collect(Collectors.toList());
     }
 

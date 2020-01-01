@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
@@ -55,12 +56,9 @@ public class IncomeServicesImpl implements IncomeServices {
                         "You cannot update an income not created by you", null);
 
             incomeFound.setUpdateDate(new Date());
-            incomeFound.setIncomeAmount(income.getIncomeAmount() != null ? income.getIncomeAmount()
-                    : incomeFound.getIncomeAmount());
-            incomeFound.setIncomeReference(income.getIncomeReference() != null ? income.getIncomeReference()
-                    : incomeFound.getIncomeReference());
-            incomeFound.setIncomeType(income.getIncomeType() != null ? income.getIncomeType()
-                    : incomeFound.getIncomeType());
+            incomeFound.setIncomeAmount(income.getIncomeAmount());
+            incomeFound.setIncomeReference(income.getIncomeReference());
+            incomeFound.setIncomeTypeVal(income.getIncomeTypeVal());
 
             return incomeRepository.save(incomeFound);
         }).orElse(null);
@@ -178,7 +176,7 @@ public class IncomeServicesImpl implements IncomeServices {
 
         return getEntityList()
                 .stream()
-                .filter(income -> income.getCreatedDate().compareTo(createdOn) == 0)
+                .filter(income -> isDateEqual(income.getCreatedDate(), createdOn))
                 .collect(Collectors.toList());
     }
 

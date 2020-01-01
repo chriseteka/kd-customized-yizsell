@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
 /**
@@ -235,7 +236,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
         return getEntityList()
                 .stream()
-                .filter(invoice -> invoice.getCreatedDate().compareTo(createdOn) == 0)
+                .filter(invoice -> isDateEqual(invoice.getCreatedDate(), createdOn))
                 .collect(Collectors.toList());
     }
 
