@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface StockCategoryRepository extends JpaRepository<StockCategory, Long> {
 
-    StockCategory findDistinctFirstByCategoryName(String stockCategoryName);
+    List<StockCategory> findAllByCategoryName(String stockCategoryName);
 
     List<StockCategory> findAllByCreatedBy(String createdBy);
 }

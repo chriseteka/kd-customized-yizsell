@@ -12,8 +12,6 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseStockRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.StockCategoryRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.SupplierRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,20 +47,13 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
     private final GenericService genericService;
 
-    private final StockCategoryRepository stockCategoryRepository;
-
-    private final SupplierRepository supplierRepository;
-
     @Autowired
     public WarehouseStockServicesImpl(SellerRepository sellerRepository, WarehouseRepository warehouseRepository,
-                                      WarehouseStockRepository warehouseStockRepository, GenericService genericService,
-                                      StockCategoryRepository stockCategoryRepository, SupplierRepository supplierRepository) {
+                                      WarehouseStockRepository warehouseStockRepository, GenericService genericService) {
         this.sellerRepository = sellerRepository;
         this.warehouseRepository = warehouseRepository;
         this.warehouseStockRepository = warehouseStockRepository;
         this.genericService = genericService;
-        this.stockCategoryRepository = stockCategoryRepository;
-        this.supplierRepository = supplierRepository;
     }
 
     @Transactional
@@ -254,14 +245,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 throw new InventoryAPIOperationException("Not your warehouse", "You cannot add stock to" +
                         " this warehouse because it was not created by you", null);
 
-            Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
-
-            stockSupplier = supplierRepository.findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
-
-            if (null == stockSupplier) stockSupplier = genericService
-                    .addSupplier(newStock.getLastRestockPurchasedFrom());
-
-            Supplier finalStockSupplier = stockSupplier;
+            Supplier finalStockSupplier = genericService.addSupplier(newStock.getLastRestockPurchasedFrom());
 
             Optional<WarehouseStocks> optionalStock = warehouseStockRepository.findById(stockId);
 
@@ -367,18 +351,9 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         if (null == stockToAdd) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find stock entity to save", null);
 
-        Supplier stockSupplier = stockToAdd.getLastRestockPurchasedFrom();
+        Supplier stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
 
-        StockCategory stockCategory = stockToAdd.getStockCategory();
-
-        stockCategory = stockCategoryRepository.findDistinctFirstByCategoryName(stockCategory.getCategoryName());
-
-        if (null == stockCategory) stockCategory = genericService.addStockCategory(stockToAdd.getStockCategory());
-
-        stockSupplier = supplierRepository
-                .findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
-
-        if (null == stockSupplier) stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
+        StockCategory stockCategory = genericService.addStockCategory(stockToAdd.getStockCategory());
 
         if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
 

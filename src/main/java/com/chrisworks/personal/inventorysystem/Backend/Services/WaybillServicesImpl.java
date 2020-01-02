@@ -30,8 +30,6 @@ public class WaybillServicesImpl implements WaybillServices {
 
     private final WaybillInvoiceRepository waybillInvoiceRepository;
 
-    private final StockCategoryRepository stockCategoryRepository;
-
     private final WarehouseRepository warehouseRepository;
 
     private final WarehouseStockRepository warehouseStockRepository;
@@ -42,19 +40,22 @@ public class WaybillServicesImpl implements WaybillServices {
 
     private final ShopRepository shopRepository;
 
+    private final GenericService genericService;
+
     @Autowired
     public WaybillServicesImpl(SellerRepository sellerRepository, WaybillInvoiceRepository waybillInvoiceRepository,
-                               StockCategoryRepository stockCategoryRepository, WarehouseRepository warehouseRepository,
+                               WarehouseRepository warehouseRepository,
                                WarehouseStockRepository warehouseStockRepository, ShopStockServices shopStockServices,
-                               ExpenseRepository expenseRepository, ShopRepository shopRepository) {
+                               ExpenseRepository expenseRepository, ShopRepository shopRepository,
+                               GenericService genericService) {
         this.sellerRepository = sellerRepository;
         this.waybillInvoiceRepository = waybillInvoiceRepository;
-        this.stockCategoryRepository = stockCategoryRepository;
         this.warehouseRepository = warehouseRepository;
         this.warehouseStockRepository = warehouseStockRepository;
         this.shopStockServices = shopStockServices;
         this.expenseRepository = expenseRepository;
         this.shopRepository = shopRepository;
+        this.genericService = genericService;
     }
 
     @Transactional
@@ -235,8 +236,8 @@ public class WaybillServicesImpl implements WaybillServices {
                             .multiply(waybilledStocks.getSellingPricePerStock()));
                     shopStock.setStockPurchasedTotalPrice(BigDecimal.valueOf(waybilledStocks.getQuantityWaybilled())
                             .multiply(waybilledStocks.getPurchasePricePerStock()));
-                    shopStock.setStockCategory(stockCategoryRepository
-                            .findDistinctFirstByCategoryName(waybilledStocks.getStockCategory()));
+                    shopStock.setStockCategory(genericService
+                            .getAuthUserStockCategoryByCategoryName(waybilledStocks.getStockCategory()));
 
                     ShopStocks stockAddedToShop = shopStockServices.addStockToShop(shopStock, seller.getShop());
 

@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
-    Customer findDistinctByCustomerPhoneNumber(String phoneNumber);
+    List<Customer> findAllByCustomerPhoneNumber(String phoneNumber);
 
     Customer findDistinctByCustomerEmail(String customerEmail);
 

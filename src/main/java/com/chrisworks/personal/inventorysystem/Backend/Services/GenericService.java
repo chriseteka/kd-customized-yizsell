@@ -32,4 +32,10 @@ public interface GenericService {
     List<Shop> shopByAuthUserId();
 
     List<Seller> sellersByAuthUserId();
+
+    Customer getAuthUserCustomerByPhoneNumber(String customerPhoneNumber);
+
+    Supplier getAuthUserSupplierByPhoneNumber(String supplierPhoneNumber);
+
+    StockCategory getAuthUserStockCategoryByCategoryName(String categoryName);
 }

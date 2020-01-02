@@ -38,13 +38,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final GenericService genericService;
 
-    private final StockCategoryRepository stockCategoryRepository;
-
-    private final SupplierRepository supplierRepository;
-
     private final InvoiceRepository invoiceRepository;
-
-    private final CustomerRepository customerRepository;
 
     private final StockSoldRepository stockSoldRepository;
 
@@ -52,18 +46,14 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
-                                 ShopRepository shopRepository, StockCategoryRepository stockCategoryRepository,
-                                 GenericService genericService, SupplierRepository supplierRepository,
-                                 InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
-                                 StockSoldRepository stockSoldRepository, ReturnedStockRepository returnedStockRepository) {
+                                 ShopRepository shopRepository, GenericService genericService,
+                                 InvoiceRepository invoiceRepository, StockSoldRepository stockSoldRepository,
+                                 ReturnedStockRepository returnedStockRepository) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
         this.genericService = genericService;
-        this.stockCategoryRepository = stockCategoryRepository;
-        this.supplierRepository = supplierRepository;
         this.invoiceRepository = invoiceRepository;
-        this.customerRepository = customerRepository;
         this.stockSoldRepository = stockSoldRepository;
         this.returnedStockRepository = returnedStockRepository;
     }
@@ -86,7 +76,6 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                     InventoryAPIOperationException
                                     ("Not your Shop", "Shop does not belong to your creator", null);
 
-                            System.out.println(shop.getBusinessOwner().getHasWarehouse());
                             if (shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
                                     ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
                                             " first request a waybill from any of the business owner warehouses", null);
@@ -267,14 +256,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 throw new InventoryAPIOperationException("Not your shop", "You cannot add stock to" +
                         " this shop because it was not created by you", null);
 
-            Supplier stockSupplier = newStock.getLastRestockPurchasedFrom();
-
-            stockSupplier = supplierRepository.findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
-
-            if (null == stockSupplier) stockSupplier = genericService
-                    .addSupplier(newStock.getLastRestockPurchasedFrom());
-
-            Supplier finalStockSupplier = stockSupplier;
+            Supplier finalStockSupplier = genericService.addSupplier(newStock.getLastRestockPurchasedFrom());
 
             Optional<ShopStocks> optionalShopStock = shopStocksRepository.findById(stockId);
 
@@ -315,18 +297,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (null == stockToAdd) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find stock entity to save", null);
 
-        Supplier stockSupplier = stockToAdd.getLastRestockPurchasedFrom();
+        Supplier stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
 
-        StockCategory stockCategory = stockToAdd.getStockCategory();
-
-        stockCategory = stockCategoryRepository.findDistinctFirstByCategoryName(stockCategory.getCategoryName());
-
-        if (null == stockCategory) stockCategory = genericService.addStockCategory(stockToAdd.getStockCategory());
-
-        stockSupplier = supplierRepository
-                .findBySupplierPhoneNumber(stockSupplier.getSupplierPhoneNumber());
-
-        if (null == stockSupplier) stockSupplier = genericService.addSupplier(stockToAdd.getLastRestockPurchasedFrom());
+        StockCategory stockCategory = genericService.addStockCategory(stockToAdd.getStockCategory());
 
         if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
 
@@ -479,9 +452,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         AtomicReference<ShopStocks> atomicStock = new AtomicReference<>();
         Set<StockSold> stockSoldSet = new HashSet<>();
 
-        customer.set(customerRepository
-                .findDistinctByCustomerPhoneNumber(invoice.getCustomerId().getCustomerPhoneNumber()));
-        if (null == customer.get()) customer.set(genericService.addCustomer(invoice.getCustomerId()));
+        customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
                 .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));

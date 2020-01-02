@@ -2,7 +2,6 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
-import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
@@ -14,11 +13,14 @@ import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.stream.Collectors;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
- * @since 11/27/2019
  * @email chriseteka@gmail.com
+ * @since 11/27/2019
  */
 @Service
 public class GenericServiceImpl implements GenericService {
@@ -45,8 +47,7 @@ public class GenericServiceImpl implements GenericService {
             (SupplierRepository supplierRepository, CustomerRepository customerRepository,
              ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
              SellerRepository sellerRepository, WarehouseRepository warehouseRepository,
-             StockCategoryRepository stockCategoryRepository, ShopRepository shopRepository)
-    {
+             StockCategoryRepository stockCategoryRepository, ShopRepository shopRepository) {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.expenseRepository = expenseRepository;
@@ -63,9 +64,66 @@ public class GenericServiceImpl implements GenericService {
         if (null == customer) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find customer entity to save", null);
 
-        customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        List<Customer> customerFoundList = customerRepository
+                .findAllByCustomerPhoneNumber(customer.getCustomerPhoneNumber());
 
-        return customerRepository.save(customer);
+        if (null == customerFoundList || customerFoundList.isEmpty()) {
+
+            customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            return customerRepository.save(customer);
+        } else {
+
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                List<String> sellerNames = this.sellersByAuthUserId()
+                        .stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+
+                boolean match = customerFoundList
+                        .stream()
+                        .map(Customer::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return customerRepository.save(customer);
+                } else return customerFoundList
+                        .stream()
+                        .filter(customerFound -> customerFound.getCustomerPhoneNumber()
+                                .equalsIgnoreCase(customer.getCustomerPhoneNumber())
+                                && sellerNames.contains(customerFound.getCreatedBy()))
+                        .collect(toSingleton());
+            } else {
+
+                Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+                List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+                List<String> sellerNames = sellerList
+                        .stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(seller.getCreatedBy());
+
+                boolean match = customerFoundList
+                        .stream()
+                        .map(Customer::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    customer.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return customerRepository.save(customer);
+                } else return customerFoundList
+                        .stream()
+                        .filter(customerFound -> customerFound.getCustomerPhoneNumber()
+                                .equalsIgnoreCase(customer.getCustomerPhoneNumber())
+                                && sellerNames.contains(customerFound.getCreatedBy()))
+                        .collect(toSingleton());
+            }
+        }
     }
 
     @Override
@@ -74,9 +132,63 @@ public class GenericServiceImpl implements GenericService {
         if (null == supplier) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find supplier entity to save", null);
 
-        supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        List<Supplier> supplierListFound = supplierRepository.findAllBySupplierPhoneNumber(supplier.getSupplierPhoneNumber());
 
-        return supplierRepository.save(supplier);
+        if (null == supplierListFound || supplierListFound.isEmpty()) {
+
+            supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            return supplierRepository.save(supplier);
+        } else {
+
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                List<String> sellerNames = this.sellersByAuthUserId()
+                        .stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+
+                boolean match = supplierListFound.stream()
+                        .map(Supplier::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return supplierRepository.save(supplier);
+                } else return supplierListFound
+                        .stream()
+                        .filter(supplierFound -> supplierFound.getSupplierPhoneNumber()
+                                .equalsIgnoreCase(supplier.getSupplierPhoneNumber())
+                                && sellerNames.contains(supplierFound.getCreatedBy()))
+                        .collect(toSingleton());
+            } else {
+
+                Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+                List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+                List<String> sellerNames = sellerList.stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(seller.getCreatedBy());
+
+                boolean match = supplierListFound
+                        .stream()
+                        .map(Supplier::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    supplier.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return supplierRepository.save(supplier);
+                } else return supplierListFound
+                        .stream()
+                        .filter(supplierFound -> supplierFound.getSupplierPhoneNumber()
+                                .equalsIgnoreCase(supplier.getSupplierPhoneNumber())
+                                && sellerNames.contains(supplierFound.getCreatedBy()))
+                        .collect(toSingleton());
+            }
+        }
     }
 
     @Override
@@ -85,8 +197,63 @@ public class GenericServiceImpl implements GenericService {
         if (null == stockCategory) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find stockCategory entity to save", null);
 
-        stockCategory.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        return stockCategoryRepository.save(stockCategory);
+        List<StockCategory> categoryListFound = stockCategoryRepository
+                .findAllByCreatedBy(stockCategory.getCategoryName());
+
+        if (null == categoryListFound || categoryListFound.isEmpty()) {
+
+            stockCategory.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            return stockCategoryRepository.save(stockCategory);
+        } else {
+
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                List<String> sellerNames = this.sellersByAuthUserId()
+                        .stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+
+                boolean match = categoryListFound.stream()
+                        .map(StockCategory::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    stockCategory.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return stockCategoryRepository.save(stockCategory);
+                } else return categoryListFound
+                        .stream()
+                        .filter(category -> category.getCategoryName()
+                                .equalsIgnoreCase(stockCategory.getCategoryName())
+                                && sellerNames.contains(category.getCreatedBy()))
+                        .collect(toSingleton());
+            } else {
+
+                Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+                List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+                List<String> sellerNames = sellerList.stream()
+                        .map(Seller::getSellerEmail)
+                        .collect(Collectors.toList());
+                sellerNames.add(seller.getCreatedBy());
+
+                boolean match = categoryListFound.stream()
+                        .map(StockCategory::getCreatedBy)
+                        .anyMatch(sellerNames::contains);
+
+                if (!match) {
+
+                    stockCategory.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    return stockCategoryRepository.save(stockCategory);
+                } else return categoryListFound
+                        .stream()
+                        .filter(category -> category.getCategoryName()
+                                .equalsIgnoreCase(stockCategory.getCategoryName())
+                                && sellerNames.contains(category.getCreatedBy()))
+                        .collect(toSingleton());
+            }
+        }
     }
 
     @Override
@@ -146,7 +313,7 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException
                 ("Seller not retrieved", "Seller with name: " + sellerName + " was not found.", null);
 
-        if(AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER) &&
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER) &&
                 !sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
             throw new InventoryAPIOperationException("Not allowed",
                     "You cannot view details of a seller not created by you", null);
@@ -174,7 +341,7 @@ public class GenericServiceImpl implements GenericService {
         if (null == sellerFound) throw new InventoryAPIResourceNotFoundException("Warehouse attendant not retrieved",
                 "Warehouse attendant with name: " + warehouseAttendantName + " was not found.", null);
 
-        if(!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+        if (!sellerFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
             throw new InventoryAPIOperationException("Not allowed",
                     "You cannot view details of a warehouse attendant not created by you", null);
 
@@ -202,7 +369,7 @@ public class GenericServiceImpl implements GenericService {
 
         if (authUserType.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             return warehouseRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        if (authUserType.equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)){
+        if (authUserType.equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)) {
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
             return new ArrayList<>(Collections.singleton(sellerFound.getWarehouse()));
@@ -225,7 +392,7 @@ public class GenericServiceImpl implements GenericService {
 
         if (authUserType.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             return shopRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        if (authUserType.equals(ACCOUNT_TYPE.SHOP_SELLER)){
+        if (authUserType.equals(ACCOUNT_TYPE.SHOP_SELLER)) {
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
             return new ArrayList<>(Collections.singleton(sellerFound.getShop()));
@@ -243,5 +410,110 @@ public class GenericServiceImpl implements GenericService {
                     "Logged in user is not allowed to perform this operation", null);
 
         return sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+    }
+
+    @Override
+    public Customer getAuthUserCustomerByPhoneNumber(String customerPhoneNumber) {
+
+        List<Customer> customerFoundList = customerRepository
+                .findAllByCustomerPhoneNumber(customerPhoneNumber);
+
+        if (null == customerFoundList || customerFoundList.isEmpty()) throw new InventoryAPIResourceNotFoundException
+                ("Customer not found", "Customer with phone number: " + customerPhoneNumber + " was not found", null);
+
+        List<String> sellerNames;
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            sellerNames = this.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+        }
+        else {
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            sellerNames = sellerList
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(seller.getCreatedBy());
+        }
+        return customerFoundList
+                .stream()
+                .filter(customerFound -> customerFound.getCustomerPhoneNumber().equalsIgnoreCase(customerPhoneNumber)
+                        && sellerNames.contains(customerFound.getCreatedBy()))
+                .collect(toSingleton());
+    }
+
+    @Override
+    public Supplier getAuthUserSupplierByPhoneNumber(String supplierPhoneNumber) {
+
+        List<Supplier> supplierFoundList = supplierRepository
+                .findAllBySupplierPhoneNumber(supplierPhoneNumber);
+
+        if (null == supplierFoundList || supplierFoundList.isEmpty()) throw new InventoryAPIResourceNotFoundException
+                ("Supplier not found", "Supplier with phone number: " + supplierPhoneNumber + " was not found", null);
+
+        List<String> sellerNames;
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            sellerNames = this.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+        }
+        else {
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            sellerNames = sellerList
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(seller.getCreatedBy());
+        }
+        return supplierFoundList
+                .stream()
+                .filter(supplierFound -> supplierFound.getSupplierPhoneNumber().equalsIgnoreCase(supplierPhoneNumber)
+                        && sellerNames.contains(supplierFound.getCreatedBy()))
+                .collect(toSingleton());
+    }
+
+    @Override
+    public StockCategory getAuthUserStockCategoryByCategoryName(String categoryName) {
+
+        List<StockCategory> categoryFoundList = stockCategoryRepository
+                .findAllByCategoryName(categoryName);
+
+        if (null == categoryFoundList || categoryFoundList.isEmpty()) throw new InventoryAPIResourceNotFoundException
+                ("Stock category not found", "Stock category with category name: " + categoryName + " was not found", null);
+
+        List<String> sellerNames;
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            sellerNames = this.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+        }
+        else {
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            sellerNames = sellerList
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(seller.getCreatedBy());
+        }
+        return categoryFoundList
+                .stream()
+                .filter(categoryFound -> categoryFound.getCategoryName().equalsIgnoreCase(categoryName)
+                        && sellerNames.contains(categoryFound.getCreatedBy()))
+                .collect(toSingleton());
     }
 }
