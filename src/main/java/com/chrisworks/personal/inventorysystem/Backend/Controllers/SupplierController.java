@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -62,9 +65,18 @@ public class SupplierController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllSupplierInABusiness(){
+    public ResponseEntity<?> fetchAllSupplierInABusiness(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(supplierServices.getEntityList());
+        if (page == 0 || size == 0) return ResponseEntity.ok(supplierServices.getEntityList());
+
+        List<Supplier> supplierList = supplierServices.getEntityList()
+                .stream()
+                .sorted(Comparator.comparing(Supplier::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(supplierList);
     }
 
     @DeleteMapping(path = "/byId")

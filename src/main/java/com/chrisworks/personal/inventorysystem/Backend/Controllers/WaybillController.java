@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -92,15 +94,35 @@ public class WaybillController {
     }
 
     @GetMapping(path = "/byShop")
-    public ResponseEntity<?> findByWaybillInvoiceInShop(@RequestParam Long shopId){
+    public ResponseEntity<?> findByWaybillInvoiceInShop(@RequestParam Long shopId, @RequestParam int page,
+                                                        @RequestParam int size){
 
-        return ResponseEntity.ok(waybillServices.findAllInShop(shopId));
+        if (page == 0 && size == 0) return ResponseEntity.ok(waybillServices.findAllInShop(shopId));
+
+        List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInShop(shopId)
+                .stream()
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(waybillInvoiceList);
     }
 
     @GetMapping(path = "/byWarehouse")
-    public ResponseEntity<?> findByWaybillInvoiceInWarehouse(@RequestParam Long warehouseId){
+    public ResponseEntity<?> findByWaybillInvoiceInWarehouse(@RequestParam Long warehouseId, @RequestParam int page,
+                                                             @RequestParam int size){
 
-        return ResponseEntity.ok(waybillServices.findAllInWarehouse(warehouseId));
+        if (page == 0 || size == 0) return ResponseEntity.ok(waybillServices.findAllInWarehouse(warehouseId));
+
+        List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInWarehouse(warehouseId)
+                .stream()
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(waybillInvoiceList);
     }
 
     @GetMapping(path = "/byCreator")

@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RestController
@@ -74,9 +77,18 @@ public class IncomeController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> getAllIncomes(){
+    public ResponseEntity<?> getAllIncomes(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(incomeServices.getEntityList());
+        if (page == 0 || size == 0) return ResponseEntity.ok(incomeServices.getEntityList());
+
+        List<Income> incomeList = incomeServices.getEntityList()
+                .stream()
+                .sorted(Comparator.comparing(Income::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(incomeList);
     }
 
     @DeleteMapping(path = "/byId")

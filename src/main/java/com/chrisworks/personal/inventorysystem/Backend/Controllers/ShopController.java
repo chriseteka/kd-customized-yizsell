@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -67,9 +70,18 @@ public class ShopController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllShops(){
+    public ResponseEntity<?> fetchAllShops(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(shopServices.fetchAllShops());
+        if (page == 0 || size == 0) return ResponseEntity.ok(shopServices.fetchAllShops());
+
+        List<Shop> shopList = shopServices.fetchAllShops()
+                .stream()
+                .sorted(Comparator.comparing(Shop::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(shopList);
     }
 
     @GetMapping(path = "/bySeller")

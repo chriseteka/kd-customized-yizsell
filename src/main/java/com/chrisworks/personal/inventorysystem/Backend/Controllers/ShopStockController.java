@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
@@ -44,9 +46,19 @@ public class ShopStockController {
     }
 
     @GetMapping(path = "/all/byShop")
-    public ResponseEntity<?> fetchAllByShopId(@RequestParam Long shopId){
+    public ResponseEntity<?> fetchAllByShopId(@RequestParam Long shopId, @RequestParam int page,
+                                              @RequestParam int size){
 
-        return ResponseEntity.ok(shopStockServices.allStockByShopId(shopId));
+        if (page == 0 || size == 0) return ResponseEntity.ok(shopStockServices.allStockByShopId(shopId));
+
+        List<ShopStocks> shopStocksList = shopStockServices.allStockByShopId(shopId)
+                .stream()
+                .sorted(Comparator.comparing(ShopStocks::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(shopStocksList);
     }
 
     @GetMapping(path = "/all/soonToFinish/byShop")

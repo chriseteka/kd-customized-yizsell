@@ -62,7 +62,7 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "businessOwnerPhoneNumber", nullable = false)
     private String businessOwnerPhoneNumber;
 
-    @Size(min = 4, message = "Business Owner Full Name must be at least four characters")
+    @Size(min = 4, message = "Password must contain at least four characters")
     @Column(name = "businessOwnerPassword", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String businessOwnerPassword;

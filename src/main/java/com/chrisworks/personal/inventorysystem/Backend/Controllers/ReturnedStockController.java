@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -71,9 +74,18 @@ public class ReturnedStockController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllReturnedStocks(){
+    public ResponseEntity<?> fetchAllReturnedStocks(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(returnedStockServices.fetchAllReturnedStocks());
+        if (page == 0 || size == 0) return ResponseEntity.ok(returnedStockServices.fetchAllReturnedStocks());
+
+        List<ReturnedStock> returnedStockList = returnedStockServices.fetchAllReturnedStocks()
+                .stream()
+                .sorted(Comparator.comparing(ReturnedStock::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(returnedStockList);
     }
 
     @GetMapping(path = "/all/unApproved/byCreator")

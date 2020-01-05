@@ -4,12 +4,20 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CustomerService;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.PDFMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.GeneratePDFReport.generatePDFReport;
 
 @RestController
 @RequestMapping("/customer")
@@ -52,9 +60,18 @@ public class CustomerController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllCustomers(){
+    public ResponseEntity<?> fetchAllCustomers(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(customerService.fetchAllCustomers());
+        if (page == 0 || size == 0) return ResponseEntity.ok(customerService.fetchAllCustomers());
+
+        List<Customer> customerList = customerService.fetchAllCustomers()
+                .stream()
+                .sorted(Comparator.comparing(Customer::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(customerList);
     }
 
     @GetMapping(path = "/withDebt")
@@ -108,5 +125,15 @@ public class CustomerController {
     public ResponseEntity<?> fetchCustomerDebt(@RequestParam Long customerId){
 
         return ResponseEntity.ok(customerService.fetchCustomerDebt(customerId));
+    }
+
+    @GetMapping(path = "/print")
+    public ResponseEntity<?> printTrial(@RequestBody PDFMap pdfMap){
+
+        ByteArrayResource resource = new ByteArrayResource(generatePDFReport(pdfMap));
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(resource);
     }
 }

@@ -41,9 +41,9 @@ public class Utility {
         return calendar.getTime();
     }
 
-    static SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
-
     public static Boolean isDateEqual(Date date1, Date date2){
+
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
 
         return fmt.format(date1).equals(fmt.format(date2));
     }

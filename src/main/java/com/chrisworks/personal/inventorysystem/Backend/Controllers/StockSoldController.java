@@ -1,11 +1,15 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockSold;
 import com.chrisworks.personal.inventorysystem.Backend.Services.StockSoldServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -25,9 +29,18 @@ public class StockSoldController {
     }
 
     @GetMapping
-    public ResponseEntity<?> fetchAllStockSoldByAuthUser(){
+    public ResponseEntity<?> fetchAllStockSoldByAuthUser(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(stockSoldServices.fetchAllStockSoldByAuthenticatedUser());
+        if (page == 0 || size == 0) return ResponseEntity.ok(stockSoldServices.fetchAllStockSoldByAuthenticatedUser());
+
+        List<StockSold> stockSoldList = stockSoldServices.fetchAllStockSoldByAuthenticatedUser()
+                .stream()
+                .sorted(Comparator.comparing(StockSold::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(stockSoldList);
     }
 
     @GetMapping(path = "/byInvoiceId")

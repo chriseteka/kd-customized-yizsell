@@ -17,10 +17,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
 @Component
 public class JwtTokenProvider {
 
-    private Date now = new Date(System.currentTimeMillis());
-
-    private Date expiryDate = new Date(now.getTime() + TOKEN_EXPIRATION_TIME);
-
     //Generate token for business owner login
     public String generateBusinessOwnerToken(BusinessOwner userDetails){
 
@@ -41,6 +37,11 @@ public class JwtTokenProvider {
     }
 
     private String jwtToken(String userId, Map<String, Object> claims) {
+
+        Date now = new Date(System.currentTimeMillis());
+
+        Date expiryDate = new Date(now.getTime() + TOKEN_EXPIRATION_TIME);
+
         return Jwts.builder()
                 .setSubject(userId)
                 .setClaims(claims)

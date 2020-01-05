@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -98,20 +100,47 @@ public class SellerController {
     }
 
     @GetMapping(path = "/all/shopSellers")
-    public ResponseEntity<?> fetchAllShopSellers() {
+    public ResponseEntity<?> fetchAllShopSellers(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(sellerServices.fetchShopSellersByLoggedInUser());
+        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchShopSellersByLoggedInUser());
+
+        List<Seller> sellerList = sellerServices.fetchShopSellersByLoggedInUser()
+                .stream()
+                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(sellerList);
     }
 
     @GetMapping(path = "/all/warehouseAttendants")
-    public ResponseEntity<?> fetchAllWarehouseAttendants() {
+    public ResponseEntity<?> fetchAllWarehouseAttendants(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(sellerServices.fetchWarehouseAttendantsByLoggedInUser());
+        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchWarehouseAttendantsByLoggedInUser());
+
+        List<Seller> sellerList = sellerServices.fetchWarehouseAttendantsByLoggedInUser()
+                .stream()
+                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(sellerList);
     }
 
     @GetMapping(path = "/all/sellers")
-    public ResponseEntity<?> fetchAllSellers() {
+    public ResponseEntity<?> fetchAllSellers(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(sellerServices.fetchSellers());
+        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchSellers());
+
+        List<Seller> sellerList = sellerServices.fetchSellers()
+                .stream()
+                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(sellerList);
     }
 }

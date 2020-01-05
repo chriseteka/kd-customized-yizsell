@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -62,9 +65,18 @@ public class StockCategoryController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllStockCategoryInABusiness(){
+    public ResponseEntity<?> fetchAllStockCategoryInABusiness(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(stockCategoryServices.getEntityList());
+        if (page == 0 || size == 0) return ResponseEntity.ok(stockCategoryServices.getEntityList());
+
+        List<StockCategory> stockCategoryList = stockCategoryServices.getEntityList()
+                .stream()
+                .sorted(Comparator.comparing(StockCategory::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(stockCategoryList);
     }
 
     @DeleteMapping(path = "/byId")

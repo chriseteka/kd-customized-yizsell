@@ -9,7 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/invoice")
@@ -35,9 +38,18 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> getAllInvoices(){
+    public ResponseEntity<?> getAllInvoices(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(invoiceServices.getEntityList());
+        if (page == 0 || size == 0) return ResponseEntity.ok(invoiceServices.getEntityList());
+
+        List<Invoice> invoiceList = invoiceServices.getEntityList()
+                .stream()
+                .sorted(Comparator.comparing(Invoice::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(invoiceList);
     }
 
     @DeleteMapping(path = "/byId")

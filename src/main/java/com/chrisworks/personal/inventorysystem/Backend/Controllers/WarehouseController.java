@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -65,9 +68,18 @@ public class WarehouseController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> fetchAllWarehouses(){
+    public ResponseEntity<?> fetchAllWarehouses(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(warehouseServices.fetchAllWarehouse());
+        if (page == 0 || size == 0) return ResponseEntity.ok(warehouseServices.fetchAllWarehouse());
+
+        List<Warehouse> warehouseList = warehouseServices.fetchAllWarehouse()
+                .stream()
+                .sorted(Comparator.comparing(Warehouse::getCreatedDate).reversed())
+                .skip((size * (page - 1)))
+                .limit(size)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(warehouseList);
     }
 
     @GetMapping(path = "/byWarehouseAttendant")
