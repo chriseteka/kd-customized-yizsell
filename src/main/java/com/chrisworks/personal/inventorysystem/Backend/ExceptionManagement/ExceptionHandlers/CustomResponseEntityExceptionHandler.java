@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Exce
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionResponse.ErrorDetailsObject;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.ExceptionResponse.ExceptionResponse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -149,14 +150,15 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     }
 
     //DB error, remove this before prod
-//    @ExceptionHandler(DataIntegrityViolationException.class)
-//    public ResponseEntity<?> SQLDataViolationExceptionHandler(DataIntegrityViolationException ex, WebRequest request) {
-//
-//        ExceptionResponse exceptionResponse = new
-//                ExceptionResponse(new Date(), HttpStatus.CONFLICT.value(), "DB VIOLATION ERROR: " + ex.getMessage(), request.getDescription(false));
-//
-//        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
-//
-////        return exceptionInfoHandler.getErrorInfoResponseEntity(req, e, EXCEPTION_DUPLICATE_EMAIL, HttpStatus.CONFLICT);
-//    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> SQLDataViolationExceptionHandler(DataIntegrityViolationException ex, WebRequest request) {
+
+        ExceptionResponse exceptionResponse = new
+                ExceptionResponse(new Date(), HttpStatus.CONFLICT.value(),
+                "DB VIOLATION ERROR: You maybe trying to delete a data holding other data as children. \n\n" + ex.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
+
+    }
 }

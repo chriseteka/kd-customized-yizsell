@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
@@ -7,7 +9,10 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ShopStocks;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.ShopStockServices;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,9 +33,12 @@ public class ShopStockController {
 
     private final ShopStockServices shopStockServices;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Autowired
-    public ShopStockController(ShopStockServices shopStockServices) {
+    public ShopStockController(ShopStockServices shopStockServices, ApplicationEventPublisher eventPublisher) {
         this.shopStockServices = shopStockServices;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping(path = "/create", consumes = "application/json", produces = "application/json")
@@ -42,7 +50,37 @@ public class ShopStockController {
         if (null == newStockInShop) throw new InventoryAPIOperationException("Stock not created",
                 "Stock not created successfully in shop, review your inputs and try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A new stock with name: " + stock.getStockName() + " has been added to your shop.",
+                    APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+        }
+
         return ResponseEntity.ok(newStockInShop);
+    }
+
+    @PostMapping(path = "/create/list", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> createStockListInShop(@RequestParam Long shopId,
+                                                        @RequestBody @Valid List<ShopStocks> stockList){
+
+        if (stockList.isEmpty()) throw new InventoryAPIOperationException("Empty list of stocks",
+                "You are trying to save an empty list of stock, this is not allowed", null);
+
+        List<ShopStocks> newStockListInShop = shopStockServices.createStockListInShop(shopId, stockList);
+
+        if (null == newStockListInShop || newStockListInShop.isEmpty())
+            throw new InventoryAPIOperationException("Stock not created",
+                    "Stock not created successfully in shop, review your inputs and try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "New stock list with size: " + stockList.size() + " were uploaded to your shop.",
+                    APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+        }
+
+        return ResponseEntity.ok(newStockListInShop);
     }
 
     @GetMapping(path = "/all/byShop")
@@ -130,6 +168,14 @@ public class ShopStockController {
         if (null == reStockToShop) throw new InventoryAPIOperationException("Restock failed",
                 "Restock failed, review your inputs and try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "Restock just occurred on a stock with name: " + stock.getStockName() +
+                            " has been added to previously existing ones in your shop.",
+                    APPLICATION_EVENTS.RESTOCK_EVENT));
+        }
+
         return ResponseEntity.ok(reStockToShop);
     }
 
@@ -142,6 +188,14 @@ public class ShopStockController {
         if (shopStock == null)
             throw new InventoryAPIOperationException("Data not updated",
                         "Could not change selling price for stock with value: " + newSellingPrice.toString(), null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "Selling price of stock in your shop with name: " + shopStock.getStockName() +
+                            " has been changed to: " + newSellingPrice,
+                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+        }
 
         return ResponseEntity.ok(shopStock);
     }
@@ -157,6 +211,14 @@ public class ShopStockController {
         if (shopStock == null)
             throw new InventoryAPIOperationException("Data not updated",
                         "Could not change selling price for stock with value: " + newSellingPrice.toString(), null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "Selling price of stock in your shop with name: " + stockName +
+                            " has been changed to: " + newSellingPrice,
+                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+        }
 
         return ResponseEntity.ok(shopStock);
     }
@@ -187,6 +249,14 @@ public class ShopStockController {
             throw new InventoryAPIOperationException("Data not saved",
                     "Could not complete stock sale successfully, review your inputs and try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A sale has been made in your shop with invoice number: " + newInvoice.getInvoiceNumber()
+                    + ", invoice amounts to: " + newInvoice.getInvoiceTotalAmount() + ", amount paid: " + newInvoice.getAmountPaid(),
+                    APPLICATION_EVENTS.SALE_EVENT));
+        }
+
         return ResponseEntity.ok(newInvoice);
     }
 
@@ -205,6 +275,15 @@ public class ShopStockController {
         if (newReturnedStock == null)
             throw new InventoryAPIOperationException("Data not saved",
                     "Stock not returned successfully, review your inputs and try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A return has been made in your shop with invoice number: " + newReturnedStock.getInvoiceId()
+                    + ", name of stock returned: " + newReturnedStock.getStockName()
+                            + ", worth of the stock returned is: " + newReturnedStock.getStockReturnedCost(),
+                    APPLICATION_EVENTS.RETURN_SALE_EVENT));
+        }
 
         return ResponseEntity.ok(newReturnedStock);
     }

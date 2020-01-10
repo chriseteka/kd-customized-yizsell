@@ -18,6 +18,8 @@ public interface ShopStockServices {
 
     ShopStocks createStockInShop(Long shopId, ShopStocks stock);
 
+    List<ShopStocks> createStockListInShop(Long shopId, List<ShopStocks> stocksList);
+
     List<ShopStocks> allStockByShopId(Long shopId);
 
     List<ShopStocks> allSoonToFinishStock(Long shopId, int limit);

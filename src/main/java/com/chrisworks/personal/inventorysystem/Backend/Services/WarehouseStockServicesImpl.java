@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatDate;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getDateDifferenceInDays;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -89,6 +90,15 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             else throw new InventoryAPIOperationException
                     ("Operation not allowed", "User attempting this operation is not allowed to proceed", null);
         }).orElse(null);
+    }
+
+    @Override
+    public List<WarehouseStocks> createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList) {
+
+        return stocksList
+                .stream()
+                .map(stock -> createStockInWarehouse(warehouseId, stock))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -254,6 +264,11 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
             return optionalStock.map(stock -> {
 
+                if (stock.getExpiryDate() != null
+                        && !stock.getStockName().equalsIgnoreCase(newStock.getStockName()))
+                    throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
+                            " because incoming stock comes with an expiration date not matching existing stock", null);
+
                 Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
                 allSuppliers.add(finalStockSupplier);
                 stock.setUpdateDate(new Date());
@@ -366,6 +381,9 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
             }
         }
+
+        if (stockToAdd.getExpiryDate() != null)
+            stockToAdd.setStockName(stockToAdd.getStockName() + " Exp: " + formatDate(stockToAdd.getExpiryDate()));
 
         WarehouseStocks existingStock = warehouseStockRepository
                 .findDistinctByStockNameAndWarehouse(stockToAdd.getStockName(), warehouse);

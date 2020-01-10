@@ -1,6 +1,10 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -52,5 +56,18 @@ public class Utility {
 
         long diff = date2.getTime() - date1.getTime();
         return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+    }
+
+    public static String formatDate(Date date){
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd");
+
+        Instant instant = date.toInstant();
+
+        LocalDate localDate = instant
+                .atZone(ZoneId.of("Africa/Lagos"))
+                .toLocalDate();
+
+        return localDate.format(formatter);
     }
 }

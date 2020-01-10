@@ -1,12 +1,17 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.IncomeServices;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +30,12 @@ public class IncomeController {
 
     private final IncomeServices incomeServices;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Autowired
-    public IncomeController(IncomeServices incomeServices) {
+    public IncomeController(IncomeServices incomeServices, ApplicationEventPublisher eventPublisher) {
         this.incomeServices = incomeServices;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping(path = "/create", consumes = "application/json", produces = "application/json")
@@ -50,6 +58,14 @@ public class IncomeController {
         if (null == incomeCreated)throw new InventoryAPIOperationException("Income not saved",
                 "Income was not saved successfully, please try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A new income has been created, with amount: " + income.getIncomeAmount() +
+                            " review and approve this income as soon as possible.",
+                    APPLICATION_EVENTS.INCOME_CREATE_EVENT));
+        }
+
         return ResponseEntity.ok(incomeCreated);
     }
 
@@ -61,6 +77,14 @@ public class IncomeController {
 
         if (null == updatedIncome) throw new InventoryAPIOperationException("Income not updated",
                 "Income was not updated successfully, please try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "An income has been updated, with it current amount: " + income.getIncomeAmount() +
+                            " review and approve this income as soon as possible.",
+                    APPLICATION_EVENTS.INCOME_UPDATE_EVENT));
+        }
 
         return ResponseEntity.ok(updatedIncome);
     }

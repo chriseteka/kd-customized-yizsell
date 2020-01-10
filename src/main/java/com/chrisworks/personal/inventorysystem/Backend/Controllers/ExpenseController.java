@@ -1,12 +1,17 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.ExpenseServices;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +30,12 @@ public class ExpenseController {
 
     private final ExpenseServices expenseServices;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Autowired
-    public ExpenseController(ExpenseServices expenseServices) {
+    public ExpenseController(ExpenseServices expenseServices, ApplicationEventPublisher eventPublisher) {
         this.expenseServices = expenseServices;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping(path = "/create", consumes = "application/json", produces = "application/json")
@@ -49,6 +57,14 @@ public class ExpenseController {
         if (null == expenseCreated)throw new InventoryAPIOperationException("Expense not saved",
                 "Expense was not saved successfully, please try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A new expense has been created, with amount: " + expense.getExpenseAmount() +
+                    " review and approve this expense as soon as possible.",
+                    APPLICATION_EVENTS.EXPENSE_CREATE_EVENT));
+        }
+
         return ResponseEntity.ok(expenseCreated);
     }
 
@@ -60,6 +76,14 @@ public class ExpenseController {
 
         if (null == updatedExpense) throw new InventoryAPIOperationException("Expense not updated",
                 "Expense was not updated successfully, please try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "An expense has been updated, with it current amount: " + expense.getExpenseAmount() +
+                            " review and approve this expense as soon as possible.",
+                    APPLICATION_EVENTS.EXPENSE_UPDATE_EVENT));
+        }
 
         return ResponseEntity.ok(updatedExpense);
     }

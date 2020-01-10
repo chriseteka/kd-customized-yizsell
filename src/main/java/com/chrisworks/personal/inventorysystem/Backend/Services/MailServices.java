@@ -16,4 +16,6 @@ public interface MailServices {
     void sendAutomatedEmail(EmailObject emailObject);
 
     Response sendEmailToAnyUser(EmailObject emailObject);
+
+    Response sendHTMLEmail(EmailObject emailObject);
 }

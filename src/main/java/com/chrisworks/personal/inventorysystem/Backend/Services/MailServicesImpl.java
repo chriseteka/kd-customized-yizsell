@@ -87,4 +87,15 @@ public class MailServicesImpl implements MailServices {
         return response;
 
     }
+
+    @Override
+    public Response sendHTMLEmail(EmailObject emailObject) {
+
+        Response response = send(emailObject.getMessageSender(), emailObject.getMessageReceiver(),
+                emailObject.getMessageTitle(), new Content("text/html", emailObject.getMessageBody()),
+                Collections.emptyList());
+        System.out.println("Status Code: " + response.getStatusCode() + ", Body: " + response.getBody() + ", Headers: "
+                + response.getHeaders());
+        return response;
+    }
 }

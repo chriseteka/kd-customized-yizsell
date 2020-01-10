@@ -101,6 +101,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
     }
 
     @Override
+    public List<ShopStocks> createStockListInShop(Long shopId, List<ShopStocks> stocksList) {
+
+        return stocksList
+                .stream()
+                .map(stock -> createStockInShop(shopId, stock))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ShopStocks> allStockByShopId(Long shopId) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException
@@ -435,7 +444,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         Optional<Shop> optionalShop = shopRepository.findById(shopId);
 
         if (!optionalShop.isPresent()) throw new InventoryAPIOperationException("Shop not found",
-                "Cannot find shop where sales is to be made from, review your inputs and try agin", null);
+                "Cannot find shop where sales is to be made from, review your inputs and try again", null);
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
                 && !optionalShop.get().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
@@ -479,7 +488,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             stockSoldSet.add(stockSoldRepository.save(stockSold));
 
             stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
-            stockFound.setStockSoldTotalPrice(stockFound.getStockSoldTotalPrice().add(stockSold.getCostPricePerStock()
+            stockFound.setStockSoldTotalPrice(stockFound.getStockSoldTotalPrice().add(stockSold.getPricePerStockSold()
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
             stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
             stockFound.setStockRemainingTotalPrice(BigDecimal.valueOf(stockFound.getStockQuantityRemaining())

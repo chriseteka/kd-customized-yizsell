@@ -1,11 +1,16 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WaybillInvoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WaybillOrder;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.WaybillServices;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,9 +33,12 @@ public class WaybillController {
 
     private final WaybillServices waybillServices;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Autowired
-    public WaybillController(WaybillServices waybillServices) {
+    public WaybillController(WaybillServices waybillServices, ApplicationEventPublisher eventPublisher) {
         this.waybillServices = waybillServices;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping(path = "/request/fromWarehouse", consumes = "application/json", produces = "application/json")
@@ -41,6 +49,15 @@ public class WaybillController {
 
         if (null == waybillInvoice) throw new InventoryAPIOperationException("Waybill request failed",
                 "Ware bill request failed, review your inputs and try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A ware bill request has been placed from: " + waybillInvoice.getShop().getShopName()
+                    + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
+                    + " to warehouse: " + waybillInvoice.getWarehouse().getWarehouseName(),
+                    APPLICATION_EVENTS.WARE_BILL_REQUEST_EVENT));
+        }
 
         return ResponseEntity.ok(waybillInvoice);
     }
@@ -55,6 +72,16 @@ public class WaybillController {
         if (null == waybillInvoice) throw new InventoryAPIOperationException("Confirmation failed",
                 "Ware bill confirmation and shipment was not successful, review your inputs and try again", null);
 
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A ware bill request has been confirmed and shipped from warehouse: "
+                            + waybillInvoice.getWarehouse().getWarehouseName()
+                            + " by: " + waybillInvoice.getSellerIssuing().getSellerFullName()
+                            + " to shop: " + waybillInvoice.getShop().getShopName(),
+                    APPLICATION_EVENTS.WARE_BILL_ISSUED_AND_SHIPPED_EVENT));
+        }
+
         return ResponseEntity.ok(waybillInvoice);
     }
 
@@ -65,6 +92,16 @@ public class WaybillController {
 
         if (null == waybillInvoice) throw new InventoryAPIOperationException("Confirmation failed",
                 "Could not confirm shipments, review your inputs and try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A ware bill request has been received and recorded to shop: "
+                            + waybillInvoice.getShop().getShopName()
+                            + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
+                            + " at shop: " + waybillInvoice.getShop().getShopName(),
+                    APPLICATION_EVENTS.WARE_BILL_RECEIVED_EVENT));
+        }
 
         return ResponseEntity.ok(waybillInvoice);
     }

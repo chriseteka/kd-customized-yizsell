@@ -1,10 +1,15 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.InvoiceServices;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +26,12 @@ public class InvoiceController {
 
     private final InvoiceServices invoiceServices;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Autowired
-    public InvoiceController(InvoiceServices invoiceServices) {
+    public InvoiceController(InvoiceServices invoiceServices, ApplicationEventPublisher eventPublisher) {
         this.invoiceServices = invoiceServices;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping(path = "/byId")
@@ -71,6 +79,14 @@ public class InvoiceController {
 
         if (null == invoice) throw new InventoryAPIOperationException("Debt clearance error",
                 "Debt clearance was not successful, review your inputs and try again", null);
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    "A debt clearance has been recorded with invoice number: " + invoiceNumber +
+                            ", amount paid: " + amountPaid + ", please review this action as soon as possible.",
+                    APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
+        }
 
         return ResponseEntity.ok(invoice);
     }

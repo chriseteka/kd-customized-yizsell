@@ -15,6 +15,8 @@ public interface WarehouseStockServices {
 
     WarehouseStocks createStockInWarehouse(Long warehouseId, WarehouseStocks stock);
 
+    List<WarehouseStocks> createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList);
+
     List<WarehouseStocks> allStockByWarehouseId(Long warehouseId);
 
     List<WarehouseStocks> allSoonToFinishStock(Long warehouseId, int limit);
