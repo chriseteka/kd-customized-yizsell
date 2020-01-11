@@ -354,10 +354,6 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public List<Warehouse> warehouseByAuthUserId() {
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
-            throw new InventoryAPIOperationException("Operation not allowed",
-                    "Logged in user is not allowed to perform this operation", null);
-
         Long authUserId = AuthenticatedUserDetails.getUserId();
 
         ACCOUNT_TYPE authUserType = AuthenticatedUserDetails.getAccount_type();
@@ -373,6 +369,11 @@ public class GenericServiceImpl implements GenericService {
 
             Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
             return new ArrayList<>(Collections.singleton(sellerFound.getWarehouse()));
+        }
+        if (authUserType.equals(ACCOUNT_TYPE.SHOP_SELLER)) {
+
+            Seller sellerFound = sellerRepository.findDistinctBySellerFullNameOrSellerEmail(authUserMail, authUserMail);
+            return warehouseRepository.findAllByCreatedBy(sellerFound.getCreatedBy());
         }
 
         return null;
