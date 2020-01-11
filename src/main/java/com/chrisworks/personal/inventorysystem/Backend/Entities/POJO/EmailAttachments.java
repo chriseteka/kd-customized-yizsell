@@ -21,6 +21,4 @@ public class EmailAttachments {
     private String attachmentType;
 
     private String attachment;
-
-    private byte[] byteArray;
 }

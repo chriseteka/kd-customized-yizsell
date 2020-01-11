@@ -7,15 +7,20 @@ import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwne
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SummaryReportsRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Services.MailServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.GenerateReport;
-import com.sendgrid.Response;
+import com.sendgrid.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Objects;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatDate;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,8 +65,6 @@ public class DailyJobs {
         nextReportDate = today;
 
         String notice = "This is a record taken as of the date: " + formatDate(today);
-
-        System.out.println("STARTING DAILY JOB EXECUTION NOW *********************************************************");
         businessOwnerRepository.findAll()
                 .parallelStream()
                 .forEach(businessOwner -> {
@@ -70,14 +73,14 @@ public class DailyJobs {
                     EmailAttachments attachments = new EmailAttachments();
 
                     byte[] pdf = report.generate(businessOwner, lastReportDate, nextReportDate, notice);
-                    ByteArrayInputStream inputStream = new ByteArrayInputStream(pdf);
 
                     emailObject.setMessageSender(emailSender);
                     emailObject.setMessageTitle("Daily Reports");
                     emailObject.setMessageBody("Download the daily report found in this email.");
                     emailObject.setMessageReceiver(businessOwner.getBusinessOwnerEmail());
                     attachments.setFileName("Daily-Summary-for: " + today + ".pdf");
-                    attachments.setAttachment(new String(pdf, UTF_8));
+                    String s = Base64.getEncoder().encodeToString(pdf);
+                    attachments.setAttachment(s);
                     attachments.setAttachmentType("application/pdf");
                     emailObject.setAttachments(Collections.singletonList(attachments));
 
@@ -90,9 +93,5 @@ public class DailyJobs {
                     reportsRepository.save(summaryReports);
                 });
         lastReportDate = today;
-
-        System.out.println("LAST REPORT DATE: " + lastReportDate);
-        System.out.println("NEXT REPORT DATE: " + nextReportDate);
-        System.out.println("ENDING DAILY JOB EXECUTION NOW************************************************************");
     }
 }

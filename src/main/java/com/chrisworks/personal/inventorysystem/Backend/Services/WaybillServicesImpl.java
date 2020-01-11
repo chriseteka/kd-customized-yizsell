@@ -304,15 +304,18 @@ public class WaybillServicesImpl implements WaybillServices {
     @Override
     public List<WaybillInvoice> findAllInShop(Long shopId) {
 
-        if (AuthenticatedUserDetails.getAccount_type() == null ||
-                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Unknown/Unauthorised user",
-                    "Operation not allowed, logged in user is not allowed to perform this operation", null);
-
         return shopRepository.findById(shopId)
                 .map(shop -> {
 
-                    if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                    if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                            && !sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails
+                            .getUserFullName()).getCreatedBy().equalsIgnoreCase(shop.getCreatedBy()))
+                        throw new InventoryAPIOperationException
+                                ("Not your shop",
+                                        "Cannot retrieve waybill invoice in a shop that is not created by your creator", null);
+
+                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                            && !shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                         throw new InventoryAPIOperationException("Not your shop",
                                 "Cannot retrieve waybill invoice in a shop that is not created by you", null);
 
