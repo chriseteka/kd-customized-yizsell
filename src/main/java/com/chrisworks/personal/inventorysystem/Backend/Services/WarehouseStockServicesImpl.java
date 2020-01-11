@@ -107,14 +107,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException
                 ("Unknown user", "Could not identify the type of user trying to view all stock in warehouse", null);
 
-        if(AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) throw new
-                InventoryAPIOperationException("Operation not allowed", "You are not authorized to add stocks" +
-                " to a warehouse, contact the business owner or warehouse attendant", null);
-
         return warehouseRepository.findById(warehouseId)
                 .map(warehouse -> {
 
-                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)
+                    if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
                             && !sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails
                             .getUserFullName()).getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
                         throw new InventoryAPIOperationException

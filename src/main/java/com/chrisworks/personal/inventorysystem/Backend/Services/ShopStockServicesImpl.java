@@ -250,7 +250,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         return shopRepository.findById(shopId).map(shop -> {
 
-            if (shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
+            if (!shop.getBusinessOwner().getHasWarehouse())throw new InventoryAPIOperationException
                     ("Operation not allowed", "You cannot add stock directly to this shop, you must" +
                             " first request a waybill from any of the business owner warehouses", null);
 

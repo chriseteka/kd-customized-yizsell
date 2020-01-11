@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.ByteArrayInputStream;
+
 /**
  * @author Chris_Eteka
  * @since 12/29/2019
@@ -19,4 +21,6 @@ public class EmailAttachments {
     private String attachmentType;
 
     private String attachment;
+
+    private byte[] byteArray;
 }

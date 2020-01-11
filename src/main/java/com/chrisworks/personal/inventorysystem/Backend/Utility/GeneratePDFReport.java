@@ -26,7 +26,6 @@ public class GeneratePDFReport {
             PdfPTable table = new PdfPTable(pdfMap.getTableHead().size());
             table.setWidthPercentage(60);
             table.setSummary(pdfMap.getTitle());
-//            table.setWidths(new int[]{1, 3, 3});
 
             Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
 

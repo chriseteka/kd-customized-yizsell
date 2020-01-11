@@ -221,6 +221,9 @@ public class WaybillServicesImpl implements WaybillServices {
 
                     ShopStocks shopStock = new ShopStocks();
 
+                    shopStock.setApproved(true);
+                    shopStock.setApprovedDate(new Date());
+                    shopStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                     shopStock.setStockName(waybilledStocks.getStockName());
                     shopStock.setExpiryDate(waybilledStocks.getExpiryDate());
                     shopStock.setStockBarCodeId(waybilledStocks.getStockBarCodeId());

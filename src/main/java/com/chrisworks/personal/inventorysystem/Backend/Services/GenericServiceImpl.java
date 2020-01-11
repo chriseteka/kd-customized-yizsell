@@ -198,7 +198,7 @@ public class GenericServiceImpl implements GenericService {
                 ("could not find an entity to save", "Could not find stockCategory entity to save", null);
 
         List<StockCategory> categoryListFound = stockCategoryRepository
-                .findAllByCreatedBy(stockCategory.getCategoryName());
+                .findAllByCategoryName(stockCategory.getCategoryName());
 
         if (null == categoryListFound || categoryListFound.isEmpty()) {
 
