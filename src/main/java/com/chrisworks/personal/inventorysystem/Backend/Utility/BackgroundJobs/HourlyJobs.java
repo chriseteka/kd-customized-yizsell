@@ -1,18 +1,21 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility.BackgroundJobs;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EmailObject;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EventLog;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.EventLogRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SummaryReportsRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Services.MailServices;
 import com.sendgrid.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatDate;
 
 /**
  * @author Chris_Eteka
@@ -28,19 +31,52 @@ public class HourlyJobs {
 
     private final EventLogRepository logRepository;
 
+    private final SummaryReportsRepository reportsRepository;
+
     private final MailServices mailServices;
 
     @Value("${email.sender}") private String emailSender;
 
     public HourlyJobs(BusinessOwnerRepository businessOwnerRepository, EventLogRepository logRepository,
-                      MailServices mailServices) {
+                      MailServices mailServices, SummaryReportsRepository reportsRepository) {
         this.businessOwnerRepository = businessOwnerRepository;
         this.logRepository = logRepository;
         this.mailServices = mailServices;
+        this.reportsRepository = reportsRepository;
     }
 
     @Scheduled(initialDelay = JOB_FIXED_RATE_TIME, fixedRate = JOB_FIXED_RATE_TIME)
     private void AlertBusinessOwnersOfEventsInThePastHour(){
+
+        //Try to send any yet to be delivered summary report
+        List<SummaryReports> allYetToDeliverReports = reportsRepository.findAllByDeliveredIsFalse();
+
+        allYetToDeliverReports
+                .parallelStream()
+                .forEach(summaryReports -> {
+
+                    EmailObject emailObject = new EmailObject();
+                    EmailAttachments attachments = new EmailAttachments();
+
+                    byte[] pdf = summaryReports.getData();
+
+                    emailObject.setMessageSender(emailSender);
+                    emailObject.setMessageTitle("Daily Reports");
+                    emailObject.setMessageBody("Download the daily report found in this email.");
+                    emailObject.setMessageReceiver(summaryReports.getReportFor());
+                    attachments.setFileName("Daily-Summary-for: " + summaryReports.getCreatedDate() + ".pdf");
+                    String attachedFile = Base64.getEncoder().encodeToString(pdf);
+                    attachments.setAttachment(attachedFile);
+                    attachments.setAttachmentType("application/pdf");
+                    emailObject.setAttachments(Collections.singletonList(attachments));
+
+                    Response response = mailServices.sendEmailToAnyUser(emailObject);
+
+                    if (response.getStatusCode() == 202){
+                        summaryReports.setDelivered(true);
+                        reportsRepository.save(summaryReports);
+                    }
+                });
 
         List<EventLog> eventLogList = businessOwnerRepository.findAll()
                 .parallelStream()

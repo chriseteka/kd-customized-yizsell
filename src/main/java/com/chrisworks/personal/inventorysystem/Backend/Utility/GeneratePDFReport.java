@@ -24,8 +24,7 @@ public class GeneratePDFReport {
         try {
 
             PdfPTable table = new PdfPTable(pdfMap.getTableHead().size());
-            table.setWidthPercentage(60);
-            table.setSummary(pdfMap.getTitle());
+            table.setWidthPercentage(100);
 
             Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
 
@@ -49,13 +48,15 @@ public class GeneratePDFReport {
 
                     cell = new PdfPCell(new Phrase(String.valueOf(data.get(columnName))
                             .replace("\"", "")));
-                    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    cell.setVerticalAlignment(Element.ALIGN_LEFT);
+                    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
                     table.addCell(cell);
                 }
             }
 
             PdfWriter.getInstance(document, output);
+            document.addTitle(pdfMap.getTitle());
+            document.addAuthor("kris_3t3ka");
             document.open();
             document.add(table);
 

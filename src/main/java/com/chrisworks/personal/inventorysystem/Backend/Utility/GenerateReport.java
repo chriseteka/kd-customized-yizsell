@@ -7,10 +7,6 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -60,13 +56,9 @@ public class GenerateReport {
     @Autowired
     private IncomeRepository incomeRepository;
 
-    @Autowired
-    private EventLogRepository logRepository;
-
     public byte[] generate(BusinessOwner businessOwner, Date lastReportDate, Date nextReportDate, String notice){
 
         String businessOwnerMail = businessOwner.getBusinessOwnerEmail();
-        System.out.println("Business Owner Email: " + businessOwnerMail);
 
         List<Warehouse> businessOwnerWarehouses = new ArrayList<>(Collections.emptyList());
         List<Shop> businessOwnerShops = new ArrayList<>(Collections.emptyList());
@@ -218,7 +210,8 @@ public class GenerateReport {
         pdfMap.setTableData(
             Stream.of(
                 new ArrayList<>(Arrays
-                    .asList(new Tuple("Generated Report Title: ", summaryReport.getTitle()),
+                    .asList(new Tuple("Generated Report Date: ", new Date().toString()),
+                            new Tuple("Generated Report Title: ", summaryReport.getTitle()),
                             new Tuple("Business Name: ", summaryReport.getBusinessName()),
                             new Tuple("Number of Warehouses: ", String.valueOf(summaryReport.getTotalWarehouses())),
                             new Tuple("Number of Shops: ", String.valueOf(summaryReport.getTotalShops())),
@@ -245,19 +238,6 @@ public class GenerateReport {
         );
 
         return GeneratePDFReport.generatePDFReport(pdfMap);
-//        byte[] pdfReport = GeneratePDFReport.generatePDFReport(pdfMap);
-//
-//        OutputStream out = null;
-//        try {
-//            out = new FileOutputStream("out.pdf");
-//            out.write(pdfReport);
-//            out.close();
-//            String m = new String(out)
-//        }catch (IOException e){
-//            e.printStackTrace();
-//        }
-//
-//        return Objects.requireNonNull(out).toString().getBytes();
     }
 
 }
