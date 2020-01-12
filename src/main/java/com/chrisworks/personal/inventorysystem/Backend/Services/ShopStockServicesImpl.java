@@ -461,7 +461,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
         AtomicReference<ShopStocks> atomicStock = new AtomicReference<>();
         Set<StockSold> stockSoldSet = new HashSet<>();
 
-        customer.set(genericService.addCustomer(invoice.getCustomerId()));
+        if (invoice.getCustomerId() != null)
+            customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
                 .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));
@@ -507,7 +508,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         invoice.getStockSold().clear();
         invoice.setStockSold(stockSoldSet);
-        invoice.setCustomerId(customer.get());
+        if (invoice.getCustomerId() != null)
+            invoice.setCustomerId(customer.get());
         invoice.setCreatedBy(invoiceGeneratedBy);
 
         if (ACCOUNT_TYPE.SHOP_SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
