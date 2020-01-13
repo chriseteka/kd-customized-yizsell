@@ -31,3 +31,5 @@ build/
 .vscode/
 "sendgrid.env" 
 "sendgrid.env"  source ./sendgrid.env
+*.xlsx
+*.env
