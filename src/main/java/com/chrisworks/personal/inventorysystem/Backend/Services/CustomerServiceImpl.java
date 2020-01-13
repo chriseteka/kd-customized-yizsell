@@ -225,10 +225,10 @@ public class CustomerServiceImpl implements CustomerService {
             customer.setCustomerFullName(customerUpdates.getCustomerFullName() != null ?
                     customerUpdates.getCustomerFullName() : customer.getCustomerFullName());
 
-            customer.setCustomerFullName(customerUpdates.getCustomerEmail() != null ?
+            customer.setCustomerEmail(customerUpdates.getCustomerEmail() != null ?
                     customerUpdates.getCustomerEmail() : customer.getCustomerEmail());
 
-            customer.setCustomerFullName(customerUpdates.getCustomerPhoneNumber() != null ?
+            customer.setCustomerPhoneNumber(customerUpdates.getCustomerPhoneNumber() != null ?
                     customerUpdates.getCustomerPhoneNumber() : customer.getCustomerPhoneNumber());
 
             return customerRepository.save(customer);
