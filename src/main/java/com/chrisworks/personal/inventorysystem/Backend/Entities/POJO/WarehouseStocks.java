@@ -30,7 +30,6 @@ import java.util.Set;
 public class WarehouseStocks {
 
     @Id
-//    @GeneratedValue(strategy = GenerationType.AUTO)
     @GeneratedValue(generator = "generator")
     @GenericGenerator(name = "generator", strategy = "increment")
     private Long warehouseStockId;

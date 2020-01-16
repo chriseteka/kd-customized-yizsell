@@ -24,6 +24,7 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", (Long.toString(userDetails.getBusinessOwnerId())));
+        claims.put("businessName", userDetails.getBusinessName());
         claims.put("fullName", userDetails.getBusinessOwnerFullName());
         claims.put("username", userDetails.getUsername());
         claims.put("isTrialAccount", userDetails.getIsTrialAccount());
@@ -60,6 +61,10 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", (Long.toString(userDetails.getSellerId())));
+        if (userDetails.getShop() != null)
+            claims.put("businessName", userDetails.getShop().getBusinessOwner().getBusinessName());
+        if (userDetails.getWarehouse() != null)
+            claims.put("businessName", userDetails.getWarehouse().getBusinessOwner().getBusinessName());
         claims.put("fullName", userDetails.getSellerFullName());
         claims.put("username", userDetails.getUsername());
         claims.put("isActive", userDetails.getIsActive());

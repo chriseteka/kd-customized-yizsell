@@ -68,14 +68,14 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)){
 
                 return sellerRepository.findById(AuthenticatedUserDetails.getUserId())
-                        .map(seller -> {
+                    .map(seller -> {
 
-                            if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy())) throw new
-                                    InventoryAPIOperationException
-                                    ("Not your warehouse", "Warehouse does not belong to your creator", null);
+                        if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy())) throw new
+                                InventoryAPIOperationException
+                                ("Not your warehouse", "Warehouse does not belong to your creator", null);
 
-                            return addStockToWarehouse(stock, warehouse);
-                        }).orElse(null);
+                        return addStockToWarehouse(stock, warehouse);
+                    }).orElse(null);
             }
             else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
                     && AuthenticatedUserDetails.getHasWarehouse()){
@@ -126,11 +126,6 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         ("Operation not allowed", "User attempting this operation is not allowed to proceed", null);
         }).orElseThrow(()-> new InventoryAPIOperationException("Warehouse not found",
                 "Warehouse with id: " + warehouseId + " was not found.", null));
-
-//        return stocksList
-//                .stream()
-//                .map(stock -> createStockInWarehouse(warehouseId, stock))
-//                .collect(Collectors.toList());
     }
 
     @Override

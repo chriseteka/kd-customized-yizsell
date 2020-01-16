@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
@@ -29,7 +30,8 @@ import java.util.Set;
 public class ShopStocks {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(generator = "shopStock")
+    @GenericGenerator(name = "shopStock", strategy = "increment")
     private Long shopStockId;
 
     @Temporal(TemporalType.DATE)
@@ -103,13 +105,13 @@ public class ShopStocks {
     private String approvedBy;
 
     @JsonIgnore
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = CascadeType.MERGE)
     @JoinTable(name = "shopStockSupplier", joinColumns = @JoinColumn(name = "shopStockId"),
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Set<Supplier> stockPurchasedFrom = new HashSet<>();
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(cascade = CascadeType.MERGE)
     @JoinTable(name = "shopRestockSupplier", joinColumns = @JoinColumn(name = "shopStockId"),
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;
@@ -122,7 +124,7 @@ public class ShopStocks {
     private String stockBarCodeId;
 
     @JsonIgnore
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinTable(name = "stocksInShops", joinColumns = @JoinColumn(name = "shopStockId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
