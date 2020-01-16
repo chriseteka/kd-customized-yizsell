@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
@@ -29,7 +30,9 @@ import java.util.Set;
 public class WarehouseStocks {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+//    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(generator = "generator")
+    @GenericGenerator(name = "generator", strategy = "increment")
     private Long warehouseStockId;
 
     @Temporal(TemporalType.DATE)
@@ -44,7 +47,7 @@ public class WarehouseStocks {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinTable(name = "warehouseStockStockCategory", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "stockCategoryId"))
     private StockCategory stockCategory;
@@ -103,13 +106,13 @@ public class WarehouseStocks {
     private String approvedBy;
 
     @JsonIgnore
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = CascadeType.MERGE)
     @JoinTable(name = "warehouseStockSupplier", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Set<Supplier> stockPurchasedFrom = new HashSet<>();
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinTable(name = "warehouseRestockSupplier", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier lastRestockPurchasedFrom;
@@ -125,7 +128,7 @@ public class WarehouseStocks {
     private int possibleQuantityRemaining;
 
     @JsonIgnore
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;

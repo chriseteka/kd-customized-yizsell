@@ -14,6 +14,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 /**
  * @author Chris_Eteka
  * @since 12/30/2019
@@ -72,16 +74,12 @@ public class ShopController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> fetchAllShops(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(shopServices.fetchAllShops());
-
         List<Shop> shopList = shopServices.fetchAllShops()
                 .stream()
                 .sorted(Comparator.comparing(Shop::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(shopList);
+        return ResponseEntity.ok(prepareResponse(shopList, page, size));
     }
 
     @GetMapping(path = "/bySeller")

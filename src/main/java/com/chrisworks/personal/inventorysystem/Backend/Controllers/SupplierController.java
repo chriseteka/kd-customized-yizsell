@@ -13,6 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 /**
  * @author Chris_Eteka
  * @since 12/31/2019
@@ -67,16 +69,12 @@ public class SupplierController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> fetchAllSupplierInABusiness(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(supplierServices.getEntityList());
-
         List<Supplier> supplierList = supplierServices.getEntityList()
                 .stream()
                 .sorted(Comparator.comparing(Supplier::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(supplierList);
+        return ResponseEntity.ok(prepareResponse(supplierList, page, size));
     }
 
     @DeleteMapping(path = "/byId")

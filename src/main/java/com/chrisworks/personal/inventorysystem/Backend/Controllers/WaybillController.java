@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 /**
  * @author Chris_Eteka
  * @since 12/31/2019
@@ -134,32 +136,24 @@ public class WaybillController {
     public ResponseEntity<?> findByWaybillInvoiceInShop(@RequestParam Long shopId, @RequestParam int page,
                                                         @RequestParam int size){
 
-        if (page == 0 && size == 0) return ResponseEntity.ok(waybillServices.findAllInShop(shopId));
-
         List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInShop(shopId)
                 .stream()
                 .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(waybillInvoiceList);
+        return ResponseEntity.ok(prepareResponse(waybillInvoiceList, page, size));
     }
 
     @GetMapping(path = "/byWarehouse")
     public ResponseEntity<?> findByWaybillInvoiceInWarehouse(@RequestParam Long warehouseId, @RequestParam int page,
                                                              @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(waybillServices.findAllInWarehouse(warehouseId));
-
         List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInWarehouse(warehouseId)
                 .stream()
                 .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(waybillInvoiceList);
+        return ResponseEntity.ok(prepareResponse(waybillInvoiceList, page, size));
     }
 
     @GetMapping(path = "/byCreator")

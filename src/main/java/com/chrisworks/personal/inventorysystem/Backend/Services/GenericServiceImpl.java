@@ -517,4 +517,64 @@ public class GenericServiceImpl implements GenericService {
                         && sellerNames.contains(categoryFound.getCreatedBy()))
                 .collect(toSingleton());
     }
+
+    @Override
+    public List<StockCategory> getAuthUserStockCategories() {
+
+        List<String> sellerNames;
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            sellerNames = this.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+        }
+        else {
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            sellerNames = sellerList
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(seller.getCreatedBy());
+        }
+
+        return sellerNames
+                .stream()
+                .map(stockCategoryRepository::findAllByCreatedBy)
+                .flatMap(List::parallelStream)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Supplier> getAuthUserSuppliers() {
+
+        List<String> sellerNames;
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+            sellerNames = this.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(AuthenticatedUserDetails.getUserFullName());
+        }
+        else {
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            List<Seller> sellerList = sellerRepository.findAllByCreatedBy(seller.getCreatedBy());
+
+            sellerNames = sellerList
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellerNames.add(seller.getCreatedBy());
+        }
+
+        return sellerNames
+                .stream()
+                .map(supplierRepository::findAllByCreatedBy)
+                .flatMap(List::parallelStream)
+                .collect(Collectors.toList());
+    }
 }

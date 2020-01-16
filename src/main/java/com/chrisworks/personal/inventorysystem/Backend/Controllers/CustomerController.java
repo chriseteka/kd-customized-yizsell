@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.GeneratePDFReport.generatePDFReport;
 
 @RestController
@@ -62,16 +63,12 @@ public class CustomerController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> fetchAllCustomers(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(customerService.fetchAllCustomers());
-
         List<Customer> customerList = customerService.fetchAllCustomers()
                 .stream()
                 .sorted(Comparator.comparing(Customer::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(customerList);
+        return ResponseEntity.ok(prepareResponse(customerList,page, size));
     }
 
     @GetMapping(path = "/withDebt")

@@ -9,9 +9,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCatego
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseStockRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,17 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Date;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatDate;
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getDateDifferenceInDays;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.*;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
 /**
@@ -48,13 +40,20 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
     private final GenericService genericService;
 
+    private final StockCategoryRepository stockCategoryRepository;
+
+    private final SupplierRepository supplierRepository;
+
     @Autowired
     public WarehouseStockServicesImpl(SellerRepository sellerRepository, WarehouseRepository warehouseRepository,
-                                      WarehouseStockRepository warehouseStockRepository, GenericService genericService) {
+                                      WarehouseStockRepository warehouseStockRepository, GenericService genericService,
+                                      StockCategoryRepository stockCategoryRepository, SupplierRepository supplierRepository) {
         this.sellerRepository = sellerRepository;
         this.warehouseRepository = warehouseRepository;
         this.warehouseStockRepository = warehouseStockRepository;
         this.genericService = genericService;
+        this.stockCategoryRepository = stockCategoryRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     @Transactional
@@ -89,16 +88,49 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             }
             else throw new InventoryAPIOperationException
                     ("Operation not allowed", "User attempting this operation is not allowed to proceed", null);
-        }).orElse(null);
+        }).orElseThrow(()-> new InventoryAPIOperationException("Warehouse not found",
+                "Warehouse with id: " + warehouseId + " was not found.", null));
     }
 
     @Override
+    @Transactional
     public List<WarehouseStocks> createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList) {
 
-        return stocksList
-                .stream()
-                .map(stock -> createStockInWarehouse(warehouseId, stock))
-                .collect(Collectors.toList());
+        if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException
+                ("Unknown user", "Could not identify the type of user trying to add stock to warehouse", null);
+
+        return warehouseRepository.findById(warehouseId).map(warehouse -> {
+
+            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)){
+
+                return sellerRepository.findById(AuthenticatedUserDetails.getUserId())
+                        .map(seller -> {
+
+                            if (!seller.getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy())) throw new
+                                    InventoryAPIOperationException
+                                    ("Not your warehouse", "Warehouse does not belong to your creator", null);
+
+                            return bulkUploadToWarehouseStock(stocksList, warehouse);
+                        }).orElse(null);
+            }
+            else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                    && AuthenticatedUserDetails.getHasWarehouse()){
+
+                if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
+                        InventoryAPIOperationException("Not your warehouse", "Warehouse you are about to add a stock" +
+                        " does not belong to you, cannot proceed with this operation", null);
+
+                return bulkUploadToWarehouseStock(stocksList, warehouse);
+            }
+            else throw new InventoryAPIOperationException
+                        ("Operation not allowed", "User attempting this operation is not allowed to proceed", null);
+        }).orElseThrow(()-> new InventoryAPIOperationException("Warehouse not found",
+                "Warehouse with id: " + warehouseId + " was not found.", null));
+
+//        return stocksList
+//                .stream()
+//                .map(stock -> createStockInWarehouse(warehouseId, stock))
+//                .collect(Collectors.toList());
     }
 
     @Override
@@ -434,5 +466,169 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         }
 
         return stock;
+    }
+
+    private List<WarehouseStocks> bulkUploadToWarehouseStock(List<WarehouseStocks> stocksList, Warehouse warehouse){
+
+        List<StockCategory> existingCategories;
+        List<Supplier> existingSuppliers;
+        String creator = AuthenticatedUserDetails.getUserFullName();
+
+        existingCategories = genericService.getAuthUserStockCategories();
+        existingSuppliers = genericService.getAuthUserSuppliers();
+
+        List<String> categoryNames = existingCategories
+                .stream()
+                .map(StockCategory::getCategoryName)
+                .collect(Collectors.toList());
+
+        List<String> suppliersNumbers = existingSuppliers
+                .stream()
+                .map(Supplier::getSupplierPhoneNumber)
+                .collect(Collectors.toList());
+
+        List<String> incomingStockCategoryNames = stocksList
+                .stream()
+                .map(WarehouseStocks::getStockCategory)
+                .map(StockCategory::getCategoryName)
+                .distinct()
+                .collect(Collectors.toList());
+
+        incomingStockCategoryNames
+                .forEach(categoryName -> {
+                    if (!categoryNames.contains(categoryName)){
+
+                        StockCategory temporaryCategory = new StockCategory();
+                        temporaryCategory.setCategoryName(categoryName);
+                        temporaryCategory.setCreatedBy(creator);
+                        existingCategories.add(stockCategoryRepository.save(temporaryCategory));
+                    }
+                });
+
+        Map<String, List<Supplier>> incomingSuppliers = stocksList
+                .stream()
+                .map(WarehouseStocks::getLastRestockPurchasedFrom)
+                .collect(Collectors.groupingBy(Supplier::getSupplierPhoneNumber, Collectors.toList()));
+
+        for (String key : incomingSuppliers.keySet()) {
+
+            Supplier supplier = incomingSuppliers.get(key).get(0);
+                if (!suppliersNumbers.contains(supplier.getSupplierPhoneNumber())) {
+
+                    supplier.setCreatedBy(creator);
+                    existingSuppliers.add(supplierRepository.save(supplier));
+                }
+        }
+
+        final List<StockCategory> registeredCategories = existingCategories;
+
+        final List<Supplier> registeredSuppliers = existingSuppliers;
+
+        List<WarehouseStocks> stockToSaveList = stocksList
+                .stream()
+                .map(stockToAdd -> {
+
+                    if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
+
+                        WarehouseStocks stockByBarcode = warehouseStockRepository
+                                .findDistinctByStockBarCodeId(stockToAdd.getStockBarCodeId());
+                        if (stockByBarcode != null
+                                && !stockByBarcode.getStockName().equalsIgnoreCase(stockToAdd.getStockName())) {
+
+                            throw new InventoryAPIDuplicateEntryException("Barcode already exist",
+                                    "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
+                        }
+                    }
+
+                    if (stockToAdd.getStockQuantityPurchased() <= 0) return null;
+
+                    if (stockToAdd.getExpiryDate() != null)
+                        stockToAdd.setStockName(stockToAdd.getStockName() + " Exp: " + formatDate(stockToAdd.getExpiryDate()));
+
+                    stockToAdd.setStockCategory(registeredCategories
+                            .stream()
+                            .filter(stockCategory -> stockCategory.getCategoryName()
+                                    .equalsIgnoreCase(stockToAdd.getStockCategory().getCategoryName()))
+                            .collect(toSingleton())
+                    );
+                    stockToAdd.setLastRestockPurchasedFrom(registeredSuppliers
+                            .stream()
+                            .filter(supplier -> supplier.getSupplierPhoneNumber()
+                                    .equalsIgnoreCase(stockToAdd.getLastRestockPurchasedFrom()
+                                            .getSupplierPhoneNumber()))
+                            .collect(toSingleton())
+                    );
+
+                    WarehouseStocks existingStock = warehouseStockRepository
+                            .findDistinctByStockNameAndWarehouse(stockToAdd.getStockName(), warehouse);
+
+                    if (existingStock != null) {
+
+                        Long stockId = existingStock.getWarehouseStockId();
+
+                        existingStock.setLastRestockPurchasedFrom(stockToAdd.getLastRestockPurchasedFrom());
+
+                        Optional<WarehouseStocks> optionalStock = warehouseStockRepository.findById(stockId);
+
+                        if (!optionalStock.isPresent()) throw new InventoryAPIOperationException
+                                ("could not find an entity", "Could not find stock with the id " + stockId, null);
+
+                        return optionalStock.map(stock -> {
+
+                            if (stock.getExpiryDate() != null
+                                    && !stock.getStockName().equalsIgnoreCase(existingStock.getStockName()))
+                                throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
+                                        " because incoming stock comes with an expiration date not matching existing stock", null);
+
+                            Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
+                            allSuppliers.add(existingStock.getLastRestockPurchasedFrom());
+                            stock.setUpdateDate(new Date());
+                            stock.setStockPurchasedFrom(allSuppliers);
+                            stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+                            stock.setLastRestockQuantity(existingStock.getStockQuantityPurchased());
+                            stock.setSellingPricePerStock(existingStock.getSellingPricePerStock());
+                            stock.setStockQuantityPurchased(existingStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
+                            stock.setStockQuantityRemaining(existingStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
+                            stock.setPossibleQuantityRemaining(existingStock.getStockQuantityPurchased() + stock.getPossibleQuantityRemaining());
+                            stock.setStockPurchasedTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockPurchasedTotalPrice()));
+                            stock.setStockRemainingTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockRemainingTotalPrice()));
+                            stock.setPricePerStockPurchased(existingStock.getStockPurchasedTotalPrice()
+                                    .divide(BigDecimal.valueOf(existingStock.getStockQuantityPurchased()), 2));
+
+                            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                                stock.setApproved(true);
+                                stock.setApprovedDate(new Date());
+                                stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                            }
+                            return stock;
+                        }).orElse(null);
+                    }
+
+                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+
+                        stockToAdd.setApproved(true);
+                        stockToAdd.setApprovedDate(new Date());
+                        stockToAdd.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                    }
+
+                    stockToAdd.setWarehouse(warehouse);
+                    stockToAdd.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
+                    stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                    stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+                    stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
+                    stockToAdd.setPossibleQuantityRemaining(stockToAdd.getStockQuantityRemaining());
+                    stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
+                    stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
+                            .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
+                    Set<Supplier> supplierSet = new HashSet<>();
+                    supplierSet.add(stockToAdd.getLastRestockPurchasedFrom());
+                    stockToAdd.setStockPurchasedFrom(supplierSet);
+
+                    return stockToAdd;
+                }).filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return warehouseStockRepository.saveAll(stockToSaveList);
     }
 }

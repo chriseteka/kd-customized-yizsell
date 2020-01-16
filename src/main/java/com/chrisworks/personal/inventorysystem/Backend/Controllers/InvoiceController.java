@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 @RestController
 @RequestMapping("/invoice")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -48,16 +50,12 @@ public class InvoiceController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> getAllInvoices(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(invoiceServices.getEntityList());
-
         List<Invoice> invoiceList = invoiceServices.getEntityList()
                 .stream()
                 .sorted(Comparator.comparing(Invoice::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(invoiceList);
+        return ResponseEntity.ok(prepareResponse(invoiceList, page, size));
     }
 
     @DeleteMapping(path = "/byId")

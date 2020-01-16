@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 
 /**
@@ -87,16 +88,13 @@ public class WarehouseStockController {
     public ResponseEntity<?> fetchAllByWarehouseId(@RequestParam Long warehouseId, @RequestParam int page,
                                                    @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(warehouseStockServices.allStockByWarehouseId(warehouseId));
-
-        List<WarehouseStocks> warehouseStocksList = warehouseStockServices.allStockByWarehouseId(warehouseId)
+        List<WarehouseStocks> warehouseStocksList = warehouseStockServices
+                .allStockByWarehouseId(warehouseId)
                 .stream()
                 .sorted(Comparator.comparing(WarehouseStocks::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(warehouseStocksList);
+        return ResponseEntity.ok(prepareResponse(warehouseStocksList, page, size));
     }
 
     @GetMapping(path = "/all/soonToFinish/byWarehouse")

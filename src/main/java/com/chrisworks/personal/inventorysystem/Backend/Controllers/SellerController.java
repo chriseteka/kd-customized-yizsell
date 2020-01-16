@@ -13,6 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 /**
  * @author Chris_Eteka
  * @since 11/27/2019
@@ -102,45 +104,33 @@ public class SellerController {
     @GetMapping(path = "/all/shopSellers")
     public ResponseEntity<?> fetchAllShopSellers(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchShopSellersByLoggedInUser());
-
         List<Seller> sellerList = sellerServices.fetchShopSellersByLoggedInUser()
                 .stream()
                 .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(sellerList);
+        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
     }
 
     @GetMapping(path = "/all/warehouseAttendants")
     public ResponseEntity<?> fetchAllWarehouseAttendants(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchWarehouseAttendantsByLoggedInUser());
-
         List<Seller> sellerList = sellerServices.fetchWarehouseAttendantsByLoggedInUser()
                 .stream()
                 .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(sellerList);
+        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
     }
 
     @GetMapping(path = "/all/sellers")
     public ResponseEntity<?> fetchAllSellers(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(sellerServices.fetchSellers());
-
         List<Seller> sellerList = sellerServices.fetchSellers()
                 .stream()
                 .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(sellerList);
+        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
     }
 }

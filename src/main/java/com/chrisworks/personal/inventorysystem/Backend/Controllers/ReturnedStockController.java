@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 /**
  * @author Chris_Eteka
  * @since 12/30/2019
@@ -76,16 +78,12 @@ public class ReturnedStockController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> fetchAllReturnedStocks(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(returnedStockServices.fetchAllReturnedStocks());
-
         List<ReturnedStock> returnedStockList = returnedStockServices.fetchAllReturnedStocks()
                 .stream()
                 .sorted(Comparator.comparing(ReturnedStock::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(returnedStockList);
+        return ResponseEntity.ok(prepareResponse(returnedStockList, page, size));
     }
 
     @GetMapping(path = "/all/unApproved/byCreator")

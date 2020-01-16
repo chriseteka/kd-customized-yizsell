@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+
 @RestController
 @RequestMapping("/expense")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -102,16 +104,12 @@ public class ExpenseController {
     @GetMapping(path = "/all")
     public ResponseEntity<?> getAllExpenses(@RequestParam int page, @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(expenseServices.getEntityList());
-
         List<Expense> expenseList = expenseServices.getEntityList()
                 .stream()
                 .sorted(Comparator.comparing(Expense::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(expenseList);
+        return ResponseEntity.ok(prepareResponse(expenseList, page, size));
     }
 
     @DeleteMapping(path = "/byId")

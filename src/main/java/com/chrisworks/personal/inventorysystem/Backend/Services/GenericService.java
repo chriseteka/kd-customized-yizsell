@@ -38,4 +38,8 @@ public interface GenericService {
     Supplier getAuthUserSupplierByPhoneNumber(String supplierPhoneNumber);
 
     StockCategory getAuthUserStockCategoryByCategoryName(String categoryName);
+
+    List<StockCategory> getAuthUserStockCategories();
+
+    List<Supplier> getAuthUserSuppliers();
 }

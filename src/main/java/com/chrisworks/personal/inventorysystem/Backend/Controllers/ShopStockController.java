@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 
 @RestController
@@ -87,16 +88,12 @@ public class ShopStockController {
     public ResponseEntity<?> fetchAllByShopId(@RequestParam Long shopId, @RequestParam int page,
                                               @RequestParam int size){
 
-        if (page == 0 || size == 0) return ResponseEntity.ok(shopStockServices.allStockByShopId(shopId));
-
         List<ShopStocks> shopStocksList = shopStockServices.allStockByShopId(shopId)
                 .stream()
                 .sorted(Comparator.comparing(ShopStocks::getCreatedDate).reversed())
-                .skip((size * (page - 1)))
-                .limit(size)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(shopStocksList);
+        return ResponseEntity.ok(prepareResponse(shopStocksList, page, size));
     }
 
     @GetMapping(path = "/all/soonToFinish/byShop")
