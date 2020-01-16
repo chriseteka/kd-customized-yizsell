@@ -142,8 +142,8 @@ public class WaybillServicesImpl implements WaybillServices {
 
         WaybillInvoice waybillInvoice = waybillInvoiceRepository.findDistinctByWaybillInvoiceNumber(waybillInvoiceNumber);
 
-        if (null == waybillInvoice) throw new InventoryAPIResourceNotFoundException
-                ("Waybill invoice not found", "waybill invoice with number: " + waybillInvoiceNumber + " was not found", null);
+        if (null == waybillInvoice) throw new InventoryAPIResourceNotFoundException("Waybill invoice not found",
+                "waybill invoice with number: " + waybillInvoiceNumber + " was not found", null);
 
         Set<WaybilledStocks> waybilledStocks = waybillInvoice.getWaybilledStocks();
 
@@ -206,8 +206,11 @@ public class WaybillServicesImpl implements WaybillServices {
 
         WaybillInvoice waybillInvoice = waybillInvoiceRepository.findDistinctByWaybillInvoiceNumber(waybillInvoiceNumber);
 
-        if (null == waybillInvoice) throw new InventoryAPIResourceNotFoundException
-                ("Waybill invoice not found", "waybill invoice with number: " + waybillInvoiceNumber + " was not found", null);
+        if (null == waybillInvoice) throw new InventoryAPIResourceNotFoundException("Waybill invoice not found",
+                "waybill invoice with number: " + waybillInvoiceNumber + " was not found", null);
+
+        if (!waybillInvoice.getIsWaybillShipped()) throw new InventoryAPIOperationException("Cannot confirm shipment",
+                "Cannot confirm shipment of a stock that has not been moved from the requested warehouse", null);
 
         //Add each stock to the shop of the seller that requested the waybill
         waybillInvoice.getWaybilledStocks()

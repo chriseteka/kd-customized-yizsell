@@ -187,9 +187,15 @@ public class WaybillController {
     }
 
     @GetMapping(path = "/all/pending")
-    public ResponseEntity<?> findAllWaybillInvoicePendingConfirmAndChip(){
+    public ResponseEntity<?> findAllWaybillInvoicePendingConfirmAndChip(@RequestParam int page,
+                                                                        @RequestParam int size){
 
-        return ResponseEntity.ok(waybillServices.findAllPendingRequests());
+        List<WaybillInvoice> allPendingRequests = waybillServices.findAllPendingRequests()
+                .stream()
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(prepareResponse(allPendingRequests, page, size));
     }
 
     @GetMapping(path = "/all/currentlyShipped")

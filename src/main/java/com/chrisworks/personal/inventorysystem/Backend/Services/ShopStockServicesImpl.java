@@ -47,12 +47,17 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final SupplierRepository supplierRepository;
 
+    private final LoyaltyRepository loyaltyRepository;
+
+    private final CustomerRepository customerRepository;
+
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
                                  ShopRepository shopRepository, GenericService genericService,
                                  InvoiceRepository invoiceRepository, StockSoldRepository stockSoldRepository,
                                  ReturnedStockRepository returnedStockRepository, SupplierRepository supplierRepository,
-                                 StockCategoryRepository stockCategoryRepository) {
+                                 StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
+                                 CustomerRepository customerRepository) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
@@ -62,6 +67,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.returnedStockRepository = returnedStockRepository;
         this.stockCategoryRepository = stockCategoryRepository;
         this.supplierRepository = supplierRepository;
+        this.loyaltyRepository = loyaltyRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Transactional
@@ -547,8 +554,28 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();
 
+        Customer cust = customer.get();
         invoice.getStockSold().clear();
         invoice.setStockSold(stockSoldSet);
+        if (cust != null && cust.getIsLoyal()){
+
+            Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);
+            if (null != loyaltyPlan){
+                if (cust.getNumberOfPurchasesAfterLastReward() < loyaltyPlan.getNumberOfDaysBeforeReward()
+                        || is(cust.getRecentPurchasesAmount()).lt(loyaltyPlan.getThreshold())) {
+
+                    cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(invoice.getAmountPaid()));
+                    cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() + 1);
+                    customer.set(customerRepository.save(cust));
+                }
+                else {
+
+                    cust.setNumberOfPurchasesAfterLastReward(0);
+                    cust.setRecentPurchasesAmount(BigDecimal.ZERO);
+                    customer.set(customerRepository.save(cust));
+                }
+            }
+        }
         if (invoice.getCustomerId() != null)
             invoice.setCustomerId(customer.get());
         invoice.setCreatedBy(invoiceGeneratedBy);

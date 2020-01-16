@@ -9,6 +9,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -50,6 +51,15 @@ public class Customer {
     @Email(message = "Invalid Email Address Entered")
     @Column(name = "customerEmail")
     private String customerEmail;
+
+    @Column(name = "isLoyal")
+    private Boolean isLoyal = false;
+
+    @Column(name = "purchasesAfterLastReward")
+    private int numberOfPurchasesAfterLastReward = 0;
+
+    @Column(name = "recentPurchasesAmount")
+    private BigDecimal recentPurchasesAmount = BigDecimal.ZERO;
 
     @Column(name = "createdBy")
     private String createdBy;
