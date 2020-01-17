@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
@@ -68,9 +69,9 @@ public class ShopStockController {
         if (stockList.isEmpty()) throw new InventoryAPIOperationException("Empty list of stocks",
                 "You are trying to save an empty list of stock, this is not allowed", null);
 
-        List<ShopStocks> newStockListInShop = shopStockServices.createStockListInShop(shopId, stockList);
+        BulkUploadResponseWrapper uploadResponse = shopStockServices.createStockListInShop(shopId, stockList);
 
-        if (null == newStockListInShop || newStockListInShop.isEmpty())
+        if (null == uploadResponse)
             throw new InventoryAPIOperationException("Stock not created",
                     "Stock not created successfully in shop, review your inputs and try again", null);
 
@@ -81,7 +82,7 @@ public class ShopStockController {
                     APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
         }
 
-        return ResponseEntity.ok(newStockListInShop);
+        return ResponseEntity.ok(uploadResponse);
     }
 
     @GetMapping(path = "/all/byShop")

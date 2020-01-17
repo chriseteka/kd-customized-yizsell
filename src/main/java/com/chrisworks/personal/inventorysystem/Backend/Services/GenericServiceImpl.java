@@ -9,10 +9,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
@@ -521,7 +518,7 @@ public class GenericServiceImpl implements GenericService {
     @Override
     public List<StockCategory> getAuthUserStockCategories() {
 
-        List<String> sellerNames;
+        List<String> sellerNames = new ArrayList<>(Collections.emptyList());
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             sellerNames = this.sellersByAuthUserId()
@@ -545,13 +542,14 @@ public class GenericServiceImpl implements GenericService {
                 .stream()
                 .map(stockCategoryRepository::findAllByCreatedBy)
                 .flatMap(List::parallelStream)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Supplier> getAuthUserSuppliers() {
 
-        List<String> sellerNames;
+        List<String> sellerNames = new ArrayList<>(Collections.emptyList());
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             sellerNames = this.sellersByAuthUserId()
@@ -575,6 +573,7 @@ public class GenericServiceImpl implements GenericService {
                 .stream()
                 .map(supplierRepository::findAllByCreatedBy)
                 .flatMap(List::parallelStream)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
@@ -18,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper.bulkUploadResponse;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.*;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -116,7 +118,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     @Override
     @Transactional
-    public List<ShopStocks> createStockListInShop(Long shopId, List<ShopStocks> stocksList) {
+    public BulkUploadResponseWrapper createStockListInShop(Long shopId, List<ShopStocks> stocksList) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException
                 ("Unknown user", "Could not identify the type of user trying to add stock to shop", null);
@@ -137,7 +139,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                         " first request a waybill from any of the business owner warehouses", null);
 
                         return bulkUploadToShopStock(stocksList, shop);
-                    }).orElse(null);
+                    }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Seller not found",
+                                "Could not determine the seller making this request", null));
             }
             else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
 
@@ -509,7 +512,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
         AtomicReference<ShopStocks> atomicStock = new AtomicReference<>();
         Set<StockSold> stockSoldSet = new HashSet<>();
 
-        if (invoice.getCustomerId() != null)
+        if (invoice.getCustomerId() != null
+                && invoice.getCustomerId().getCustomerPhoneNumber() != null
+                && invoice.getCustomerId().getCustomerFullName() != null)
             customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
@@ -576,7 +581,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 }
             }
         }
-        if (invoice.getCustomerId() != null)
+        if (invoice.getCustomerId() != null && invoice.getCustomerId().getCustomerPhoneNumber() != null)
             invoice.setCustomerId(customer.get());
         invoice.setCreatedBy(invoiceGeneratedBy);
 
@@ -635,7 +640,16 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
 
         returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        returnedStock.setCustomerId(invoiceRetrieved.getCustomerId());
+        Customer cust = invoiceRetrieved.getCustomerId();
+        if (cust != null && cust.getIsLoyal()){
+
+            if (is(cust.getRecentPurchasesAmount()).isPositive()){
+                cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount()
+                        .subtract(returnedStock.getStockReturnedCost()));
+                cust = customerRepository.save(cust);
+            }
+        }
+        returnedStock.setCustomerId(cust);
         returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                 .multiply(stockRecordFromShop.getSellingPricePerStock()));
 
@@ -739,8 +753,38 @@ public class ShopStockServicesImpl implements ShopStockServices {
         return stock;
     }
 
-    private List<ShopStocks> bulkUploadToShopStock(List<ShopStocks> stocksList, Shop shop){
+    private BulkUploadResponseWrapper bulkUploadToShopStock(List<ShopStocks> stocksList, Shop shop){
 
+        //Remove any duplicate before you persist the data (duplicates search by name)
+        List<ShopStocks> stockToAddList;
+        List<String> stockNames = stocksList
+                .stream()
+                .map(ShopStocks::getStockName)
+                .distinct()
+                .collect(Collectors.toList());
+
+        //Merge quantities for duplicate stock
+        stockToAddList = stockNames
+                .stream()
+                .map(name -> stocksList
+                        .stream()
+                        .filter(stock -> stock.getStockName().equalsIgnoreCase(name))
+                        .reduce(new ShopStocks(), (t1, t2) -> {
+
+                            if (t1.getStockName() == null) return t2;
+                            if ((t1.getExpiryDate() != null && t2.getExpiryDate() != null
+                                    && t1.getExpiryDate().equals(t2.getExpiryDate()))
+                                    || t1.getStockName().equalsIgnoreCase(t2.getStockName())) {
+
+
+                                t1.setStockQuantityPurchased(t1.getStockQuantityPurchased() + t2.getStockQuantityPurchased());
+                            }
+                            return t1;
+                        }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<ShopStocks> rejectedStockList = new ArrayList<>(Collections.emptyList());
         List<StockCategory> existingCategories;
         List<Supplier> existingSuppliers;
         String creator = AuthenticatedUserDetails.getUserFullName();
@@ -748,23 +792,26 @@ public class ShopStockServicesImpl implements ShopStockServices {
         existingCategories = genericService.getAuthUserStockCategories();
         existingSuppliers = genericService.getAuthUserSuppliers();
 
+        //Already existing stock category names
         List<String> categoryNames = existingCategories
                 .stream()
                 .map(StockCategory::getCategoryName)
                 .collect(Collectors.toList());
 
+        //Already existing suppliers phone numbers
         List<String> suppliersNumbers = existingSuppliers
                 .stream()
                 .map(Supplier::getSupplierPhoneNumber)
                 .collect(Collectors.toList());
 
-        List<String> incomingStockCategoryNames = stocksList
+        List<String> incomingStockCategoryNames = stockToAddList
                 .stream()
                 .map(ShopStocks::getStockCategory)
                 .map(StockCategory::getCategoryName)
                 .distinct()
                 .collect(Collectors.toList());
 
+        //Create a new stock category if stock category does not exist.
         incomingStockCategoryNames
                 .forEach(categoryName -> {
                     if (!categoryNames.contains(categoryName)){
@@ -776,11 +823,12 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     }
                 });
 
-        Map<String, List<Supplier>> incomingSuppliers = stocksList
+        Map<String, List<Supplier>> incomingSuppliers = stockToAddList
                 .stream()
                 .map(ShopStocks::getLastRestockPurchasedFrom)
                 .collect(Collectors.groupingBy(Supplier::getSupplierPhoneNumber, Collectors.toList()));
 
+        //Save a new supplier if incoming supplier does not exist.
         for (String key : incomingSuppliers.keySet()) {
 
             Supplier supplier = incomingSuppliers.get(key).get(0);
@@ -795,10 +843,11 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         final List<Supplier> registeredSuppliers = existingSuppliers;
 
-        List<ShopStocks> stockToSaveList = stocksList
+        List<ShopStocks> stockToSaveList = stockToAddList
                 .stream()
                 .map(stockToAdd -> {
 
+                    //If there is bar code, do this
                     if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
 
                         ShopStocks stockByBarcode = shopStocksRepository
@@ -811,8 +860,14 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         }
                     }
 
-                    if (stockToAdd.getStockQuantityPurchased() <= 0) return null;
+                    //If stock has quantity from zero and below
+                    if (stockToAdd.getStockQuantityPurchased() <= 0){
 
+                        rejectedStockList.add(stockToAdd);
+                        return null;
+                    }
+
+                    //If stock has expiry date, rename with inclusion of the date
                     if (stockToAdd.getExpiryDate() != null)
                         stockToAdd.setStockName(stockToAdd.getStockName() + " Exp: " + formatDate(stockToAdd.getExpiryDate()));
 
@@ -833,71 +888,67 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     ShopStocks existingStock = shopStocksRepository
                             .findDistinctByStockNameAndShop(stockToAdd.getStockName(), shop);
 
+                    //If stock already exist, increment its quantity, and make an update
                     if (existingStock != null) {
 
-                        Long stockId = existingStock.getShopStockId();
+                        if (existingStock.getExpiryDate() != null
+                                && !stockToAdd.getStockName().equalsIgnoreCase(existingStock.getStockName()))
+                            throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
+                                    " because incoming stock comes with an expiration date not matching existing stock", null);
 
                         existingStock.setLastRestockPurchasedFrom(stockToAdd.getLastRestockPurchasedFrom());
+                        Set<Supplier> allSuppliers = existingStock.getStockPurchasedFrom();
+                        allSuppliers.add(existingStock.getLastRestockPurchasedFrom());
+                        existingStock.setUpdateDate(new Date());
+                        existingStock.setStockPurchasedFrom(allSuppliers);
+                        existingStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+                        existingStock.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
+                        existingStock.setSellingPricePerStock(stockToAdd.getSellingPricePerStock());
+                        existingStock.setStockQuantityPurchased(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityPurchased());
+                        existingStock.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityRemaining());
+                        existingStock.setStockPurchasedTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockPurchasedTotalPrice()));
+                        existingStock.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockRemainingTotalPrice()));
+                        existingStock.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
+                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
-                        Optional<ShopStocks> optionalStock = shopStocksRepository.findById(stockId);
+                        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-                        if (!optionalStock.isPresent()) throw new InventoryAPIOperationException
-                                ("could not find an entity", "Could not find stock with the id " + stockId, null);
-
-                        return optionalStock.map(stock -> {
-
-                            if (stock.getExpiryDate() != null
-                                    && !stock.getStockName().equalsIgnoreCase(existingStock.getStockName()))
-                                throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
-                                        " because incoming stock comes with an expiration date not matching existing stock", null);
-
-                            Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
-                            allSuppliers.add(existingStock.getLastRestockPurchasedFrom());
-                            stock.setUpdateDate(new Date());
-                            stock.setStockPurchasedFrom(allSuppliers);
-                            stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
-                            stock.setLastRestockQuantity(existingStock.getStockQuantityPurchased());
-                            stock.setSellingPricePerStock(existingStock.getSellingPricePerStock());
-                            stock.setStockQuantityPurchased(existingStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
-                            stock.setStockQuantityRemaining(existingStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
-                            stock.setStockPurchasedTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockPurchasedTotalPrice()));
-                            stock.setStockRemainingTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockRemainingTotalPrice()));
-                            stock.setPricePerStockPurchased(existingStock.getStockPurchasedTotalPrice()
-                                    .divide(BigDecimal.valueOf(existingStock.getStockQuantityPurchased()), 2));
-
-                            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
-
-                                stock.setApproved(true);
-                                stock.setApprovedDate(new Date());
-                                stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-                            }
-                            return stock;
-                        }).orElse(null);
+                            existingStock.setApproved(true);
+                            existingStock.setApprovedDate(new Date());
+                            existingStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                        }
+                        return existingStock;
                     }
+                    else {
+                        //If stock is uploaded by business owner, approve it
+                        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
+                            stockToAdd.setApproved(true);
+                            stockToAdd.setApprovedDate(new Date());
+                            stockToAdd.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                        }
 
-                        stockToAdd.setApproved(true);
-                        stockToAdd.setApprovedDate(new Date());
-                        stockToAdd.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                        //Set other fields
+                        stockToAdd.setShop(shop);
+                        stockToAdd.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
+                        stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+                        stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+                        stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
+                        stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
+                        stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
+                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
+                        Set<Supplier> supplierSet = new HashSet<>();
+                        supplierSet.add(stockToAdd.getLastRestockPurchasedFrom());
+                        stockToAdd.setStockPurchasedFrom(supplierSet);
+
+                        return stockToAdd;
                     }
-
-                    stockToAdd.setShop(shop);
-                    stockToAdd.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
-                    stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-                    stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
-                    stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
-                    stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
-                    stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                            .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
-                    Set<Supplier> supplierSet = new HashSet<>();
-                    supplierSet.add(stockToAdd.getLastRestockPurchasedFrom());
-                    stockToAdd.setStockPurchasedFrom(supplierSet);
-
-                    return stockToAdd;
-                }).filter(Objects::nonNull)
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        return shopStocksRepository.saveAll(stockToSaveList);
+        List<ShopStocks> successfulUploads = shopStocksRepository.saveAll(stockToSaveList);
+
+        return bulkUploadResponse(successfulUploads, rejectedStockList);
     }
 }

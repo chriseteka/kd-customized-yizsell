@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WarehouseStocks;
 
 import java.math.BigDecimal;
@@ -15,7 +16,7 @@ public interface WarehouseStockServices {
 
     WarehouseStocks createStockInWarehouse(Long warehouseId, WarehouseStocks stock);
 
-    List<WarehouseStocks> createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList);
+    BulkUploadResponseWrapper createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList);
 
     List<WarehouseStocks> allStockByWarehouseId(Long warehouseId);
 

@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WarehouseStocks;
@@ -67,10 +68,10 @@ public class WarehouseStockController {
         if (stockList.isEmpty()) throw new InventoryAPIOperationException("Empty list of stocks",
                 "You are trying to save an empty list of stock, this is not allowed", null);
 
-        List<WarehouseStocks> newStockListInWarehouse = warehouseStockServices
+        BulkUploadResponseWrapper uploadResponse = warehouseStockServices
                 .createStockListInWarehouse(warehouseId, stockList);
 
-        if (null == newStockListInWarehouse || newStockListInWarehouse.isEmpty())
+        if (null == uploadResponse)
             throw new InventoryAPIOperationException("Stock not created",
                 "Stock not created successfully in warehouse, review your inputs and try again", null);
 
@@ -80,8 +81,7 @@ public class WarehouseStockController {
                     "New stock list with size: " + stockList.size() + " were uploaded to your warehouse.",
                     APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
         }
-
-        return ResponseEntity.ok(newStockListInWarehouse);
+        return ResponseEntity.ok(uploadResponse);
     }
 
     @GetMapping(path = "/all/byWarehouse")

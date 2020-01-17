@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WarehouseStocks;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
@@ -21,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper.bulkUploadResponse;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.*;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -75,7 +77,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                                 ("Not your warehouse", "Warehouse does not belong to your creator", null);
 
                         return addStockToWarehouse(stock, warehouse);
-                    }).orElse(null);
+                    }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Seller not found",
+                                "Could not determine the warehouse attendant making this request", null));
             }
             else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
                     && AuthenticatedUserDetails.getHasWarehouse()){
@@ -94,7 +97,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
     @Override
     @Transactional
-    public List<WarehouseStocks> createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList) {
+    public BulkUploadResponseWrapper createStockListInWarehouse(Long warehouseId, List<WarehouseStocks> stocksList) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException
                 ("Unknown user", "Could not identify the type of user trying to add stock to warehouse", null);
@@ -463,8 +466,38 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         return stock;
     }
 
-    private List<WarehouseStocks> bulkUploadToWarehouseStock(List<WarehouseStocks> stocksList, Warehouse warehouse){
+    private BulkUploadResponseWrapper bulkUploadToWarehouseStock(List<WarehouseStocks> stocksList, Warehouse warehouse){
 
+        //Remove any duplicate before you persist the data (duplicates search by name)
+        List<WarehouseStocks> stockToAddList;
+        List<String> stockNames = stocksList
+                .stream()
+                .map(WarehouseStocks::getStockName)
+                .distinct()
+                .collect(Collectors.toList());
+
+        //Merge quantities for duplicate stock
+        stockToAddList = stockNames
+                .stream()
+                .map(name -> stocksList
+                        .stream()
+                        .filter(stock -> stock.getStockName().equalsIgnoreCase(name))
+                        .reduce(new WarehouseStocks(), (t1, t2) -> {
+
+                            if (t1.getStockName() == null) return t2;
+                            if ((t1.getExpiryDate() != null && t2.getExpiryDate() != null
+                                    && t1.getExpiryDate().equals(t2.getExpiryDate()))
+                                    || t1.getStockName().equalsIgnoreCase(t2.getStockName())) {
+
+
+                                t1.setStockQuantityPurchased(t1.getStockQuantityPurchased() + t2.getStockQuantityPurchased());
+                            }
+                            return t1;
+                        }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<WarehouseStocks> rejectedStockList = new ArrayList<>(Collections.emptyList());
         List<StockCategory> existingCategories;
         List<Supplier> existingSuppliers;
         String creator = AuthenticatedUserDetails.getUserFullName();
@@ -472,39 +505,43 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         existingCategories = genericService.getAuthUserStockCategories();
         existingSuppliers = genericService.getAuthUserSuppliers();
 
+        //Already existing stock category names
         List<String> categoryNames = existingCategories
-                .stream()
-                .map(StockCategory::getCategoryName)
-                .collect(Collectors.toList());
+            .stream()
+            .map(StockCategory::getCategoryName)
+            .collect(Collectors.toList());
 
+        //Already existing suppliers phone numbers
         List<String> suppliersNumbers = existingSuppliers
-                .stream()
-                .map(Supplier::getSupplierPhoneNumber)
-                .collect(Collectors.toList());
+            .stream()
+            .map(Supplier::getSupplierPhoneNumber)
+            .collect(Collectors.toList());
 
-        List<String> incomingStockCategoryNames = stocksList
-                .stream()
-                .map(WarehouseStocks::getStockCategory)
-                .map(StockCategory::getCategoryName)
-                .distinct()
-                .collect(Collectors.toList());
+        List<String> incomingStockCategoryNames = stockToAddList
+            .stream()
+            .map(WarehouseStocks::getStockCategory)
+            .map(StockCategory::getCategoryName)
+            .distinct()
+            .collect(Collectors.toList());
 
+        //Create a new stock category if stock category does not exist.
         incomingStockCategoryNames
-                .forEach(categoryName -> {
-                    if (!categoryNames.contains(categoryName)){
+            .forEach(categoryName -> {
+                if (!categoryNames.contains(categoryName)){
 
-                        StockCategory temporaryCategory = new StockCategory();
-                        temporaryCategory.setCategoryName(categoryName);
-                        temporaryCategory.setCreatedBy(creator);
-                        existingCategories.add(stockCategoryRepository.save(temporaryCategory));
-                    }
-                });
+                    StockCategory temporaryCategory = new StockCategory();
+                    temporaryCategory.setCategoryName(categoryName);
+                    temporaryCategory.setCreatedBy(creator);
+                    existingCategories.add(stockCategoryRepository.save(temporaryCategory));
+                }
+            });
 
-        Map<String, List<Supplier>> incomingSuppliers = stocksList
-                .stream()
-                .map(WarehouseStocks::getLastRestockPurchasedFrom)
-                .collect(Collectors.groupingBy(Supplier::getSupplierPhoneNumber, Collectors.toList()));
+        Map<String, List<Supplier>> incomingSuppliers = stockToAddList
+            .stream()
+            .map(WarehouseStocks::getLastRestockPurchasedFrom)
+            .collect(Collectors.groupingBy(Supplier::getSupplierPhoneNumber, Collectors.toList()));
 
+        //Save a new supplier if incoming supplier does not exist.
         for (String key : incomingSuppliers.keySet()) {
 
             Supplier supplier = incomingSuppliers.get(key).get(0);
@@ -519,87 +556,85 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
         final List<Supplier> registeredSuppliers = existingSuppliers;
 
-        List<WarehouseStocks> stockToSaveList = stocksList
-                .stream()
-                .map(stockToAdd -> {
+        List<WarehouseStocks> stockToSaveList = stockToAddList
+            .stream()
+            .map(stockToAdd -> {
 
-                    if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
+                //If there is bar code, do this
+                if (!StringUtils.isEmpty(stockToAdd.getStockBarCodeId())) {
 
-                        WarehouseStocks stockByBarcode = warehouseStockRepository
-                                .findDistinctByStockBarCodeId(stockToAdd.getStockBarCodeId());
-                        if (stockByBarcode != null
-                                && !stockByBarcode.getStockName().equalsIgnoreCase(stockToAdd.getStockName())) {
+                    WarehouseStocks stockByBarcode = warehouseStockRepository
+                            .findDistinctByStockBarCodeId(stockToAdd.getStockBarCodeId());
+                    if (stockByBarcode != null
+                            && !stockByBarcode.getStockName().equalsIgnoreCase(stockToAdd.getStockName())) {
 
-                            throw new InventoryAPIDuplicateEntryException("Barcode already exist",
-                                    "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
-                        }
+                        throw new InventoryAPIDuplicateEntryException("Barcode already exist",
+                                "Another stock exist with the barcode id you passed for the new stock you are about to add", null);
                     }
+                }
 
-                    if (stockToAdd.getStockQuantityPurchased() <= 0) return null;
+                //If stock has quantity from zero and below
+                if (stockToAdd.getStockQuantityPurchased() <= 0){
 
-                    if (stockToAdd.getExpiryDate() != null)
-                        stockToAdd.setStockName(stockToAdd.getStockName() + " Exp: " + formatDate(stockToAdd.getExpiryDate()));
+                    rejectedStockList.add(stockToAdd);
+                    return null;
+                }
 
-                    stockToAdd.setStockCategory(registeredCategories
-                            .stream()
-                            .filter(stockCategory -> stockCategory.getCategoryName()
-                                    .equalsIgnoreCase(stockToAdd.getStockCategory().getCategoryName()))
-                            .collect(toSingleton())
-                    );
-                    stockToAdd.setLastRestockPurchasedFrom(registeredSuppliers
-                            .stream()
-                            .filter(supplier -> supplier.getSupplierPhoneNumber()
-                                    .equalsIgnoreCase(stockToAdd.getLastRestockPurchasedFrom()
-                                            .getSupplierPhoneNumber()))
-                            .collect(toSingleton())
-                    );
+                //If stock has expiry date, rename with inclusion of the date
+                if (stockToAdd.getExpiryDate() != null)
+                    stockToAdd.setStockName(stockToAdd.getStockName() + " Exp: " + formatDate(stockToAdd.getExpiryDate()));
 
-                    WarehouseStocks existingStock = warehouseStockRepository
-                            .findDistinctByStockNameAndWarehouse(stockToAdd.getStockName(), warehouse);
+                stockToAdd.setStockCategory(registeredCategories
+                        .stream()
+                        .filter(stockCategory -> stockCategory.getCategoryName()
+                                .equalsIgnoreCase(stockToAdd.getStockCategory().getCategoryName()))
+                        .collect(toSingleton())
+                );
+                stockToAdd.setLastRestockPurchasedFrom(registeredSuppliers
+                        .stream()
+                        .filter(supplier -> supplier.getSupplierPhoneNumber()
+                                .equalsIgnoreCase(stockToAdd.getLastRestockPurchasedFrom()
+                                        .getSupplierPhoneNumber()))
+                        .collect(toSingleton())
+                );
 
-                    if (existingStock != null) {
+                WarehouseStocks existingStock = warehouseStockRepository
+                        .findDistinctByStockNameAndWarehouse(stockToAdd.getStockName(), warehouse);
 
-                        Long stockId = existingStock.getWarehouseStockId();
+                //If stock already exist, increment its quantity, and make an update
+                if (existingStock != null) {
 
-                        existingStock.setLastRestockPurchasedFrom(stockToAdd.getLastRestockPurchasedFrom());
+                    if (existingStock.getExpiryDate() != null
+                            && !stockToAdd.getStockName().equalsIgnoreCase(existingStock.getStockName()))
+                        throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
+                                " because incoming stock comes with an expiration date not matching existing stock", null);
 
-                        Optional<WarehouseStocks> optionalStock = warehouseStockRepository.findById(stockId);
+                    existingStock.setLastRestockPurchasedFrom(stockToAdd.getLastRestockPurchasedFrom());
+                    Set<Supplier> allSuppliers = existingStock.getStockPurchasedFrom();
+                    allSuppliers.add(existingStock.getLastRestockPurchasedFrom());
+                    existingStock.setUpdateDate(new Date());
+                    existingStock.setStockPurchasedFrom(allSuppliers);
+                    existingStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+                    existingStock.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
+                    existingStock.setSellingPricePerStock(stockToAdd.getSellingPricePerStock());
+                    existingStock.setStockQuantityPurchased(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityPurchased());
+                    existingStock.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityRemaining());
+                    existingStock.setPossibleQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getPossibleQuantityRemaining());
+                    existingStock.setStockPurchasedTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockPurchasedTotalPrice()));
+                    existingStock.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockRemainingTotalPrice()));
+                    existingStock.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
+                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
-                        if (!optionalStock.isPresent()) throw new InventoryAPIOperationException
-                                ("could not find an entity", "Could not find stock with the id " + stockId, null);
+                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-                        return optionalStock.map(stock -> {
-
-                            if (stock.getExpiryDate() != null
-                                    && !stock.getStockName().equalsIgnoreCase(existingStock.getStockName()))
-                                throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
-                                        " because incoming stock comes with an expiration date not matching existing stock", null);
-
-                            Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
-                            allSuppliers.add(existingStock.getLastRestockPurchasedFrom());
-                            stock.setUpdateDate(new Date());
-                            stock.setStockPurchasedFrom(allSuppliers);
-                            stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
-                            stock.setLastRestockQuantity(existingStock.getStockQuantityPurchased());
-                            stock.setSellingPricePerStock(existingStock.getSellingPricePerStock());
-                            stock.setStockQuantityPurchased(existingStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
-                            stock.setStockQuantityRemaining(existingStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
-                            stock.setPossibleQuantityRemaining(existingStock.getStockQuantityPurchased() + stock.getPossibleQuantityRemaining());
-                            stock.setStockPurchasedTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockPurchasedTotalPrice()));
-                            stock.setStockRemainingTotalPrice(existingStock.getStockPurchasedTotalPrice().add(stock.getStockRemainingTotalPrice()));
-                            stock.setPricePerStockPurchased(existingStock.getStockPurchasedTotalPrice()
-                                    .divide(BigDecimal.valueOf(existingStock.getStockQuantityPurchased()), 2));
-
-                            if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
-
-                                stock.setApproved(true);
-                                stock.setApprovedDate(new Date());
-                                stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-                            }
-                            return stock;
-                        }).orElse(null);
+                        existingStock.setApproved(true);
+                        existingStock.setApprovedDate(new Date());
+                        existingStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                     }
-
+                    return existingStock;
+                }
+                else {
+                    //If stock is uploaded by business owner, approve it
                     if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
                         stockToAdd.setApproved(true);
@@ -607,6 +642,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         stockToAdd.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                     }
 
+                    //Set other fields
                     stockToAdd.setWarehouse(warehouse);
                     stockToAdd.setLastRestockQuantity(stockToAdd.getStockQuantityPurchased());
                     stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
@@ -621,9 +657,13 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     stockToAdd.setStockPurchasedFrom(supplierSet);
 
                     return stockToAdd;
-                }).filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
-        return warehouseStockRepository.saveAll(stockToSaveList);
+        List<WarehouseStocks> successfulUploads = warehouseStockRepository.saveAll(stockToSaveList);
+
+        return bulkUploadResponse(successfulUploads, rejectedStockList);
     }
 }

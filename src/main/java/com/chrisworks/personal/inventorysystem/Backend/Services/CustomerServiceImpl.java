@@ -93,7 +93,6 @@ public class CustomerServiceImpl implements CustomerService {
 
             customerSet.addAll(sellerList
                     .stream()
-                    .filter(s -> s.getShop() != null)
                     .map(Seller::getSellerEmail)
                     .map(customerRepository::findAllByCreatedBy)
                     .flatMap(List::parallelStream)

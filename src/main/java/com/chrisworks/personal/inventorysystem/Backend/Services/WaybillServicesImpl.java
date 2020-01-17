@@ -77,7 +77,7 @@ public class WaybillServicesImpl implements WaybillServices {
                         throw new InventoryAPIOperationException("Warehouse not yours",
                                 "You cannot request for stock in a warehouse not created by your owner", null);
 
-                    List<WarehouseStocks> warehouseStocks = warehouseStockRepository.findAll();
+                    List<WarehouseStocks> warehouseStocks = warehouseStockRepository.findAllByWarehouse(warehouse);
 
                     if (warehouseStocks.isEmpty()) throw new InventoryAPIResourceNotFoundException
                             ("Could not find stocks", "No stock was found in the specified warehouse", null);

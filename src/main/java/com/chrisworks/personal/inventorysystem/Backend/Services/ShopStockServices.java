@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
@@ -18,7 +19,7 @@ public interface ShopStockServices {
 
     ShopStocks createStockInShop(Long shopId, ShopStocks stock);
 
-    List<ShopStocks> createStockListInShop(Long shopId, List<ShopStocks> stocksList);
+    BulkUploadResponseWrapper createStockListInShop(Long shopId, List<ShopStocks> stocksList);
 
     List<ShopStocks> allStockByShopId(Long shopId);
 
