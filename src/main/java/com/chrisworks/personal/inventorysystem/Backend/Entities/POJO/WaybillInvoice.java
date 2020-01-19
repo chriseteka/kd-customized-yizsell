@@ -100,7 +100,7 @@ public class WaybillInvoice {
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
-    @JsonIgnore
+//    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "toWarehouse", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;

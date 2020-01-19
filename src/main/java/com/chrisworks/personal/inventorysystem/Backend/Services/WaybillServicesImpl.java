@@ -173,8 +173,10 @@ public class WaybillServicesImpl implements WaybillServices {
                         .multiply(BigDecimal.valueOf(stock.getQuantityWaybilled()))));
                 stockFound.setStockRemainingTotalPrice(BigDecimal.valueOf(stockFound.getStockQuantityRemaining())
                         .multiply(stockFound.getPricePerStockPurchased()));
-                stockFound.setProfit(stockFound.getProfit()
-                        .add(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice())));
+                stockFound.setProfit(stockFound.getProfit().add(
+                                (stockFound.getSellingPricePerStock().subtract(stockFound.getPricePerStockPurchased()))
+                                        .multiply(BigDecimal.valueOf(stock.getQuantityWaybilled()))
+                        ));
                 warehouseStockRepository.save(stockFound);
             });
 

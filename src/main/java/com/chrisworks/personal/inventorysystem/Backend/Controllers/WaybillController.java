@@ -67,9 +67,9 @@ public class WaybillController {
     @PutMapping(path = "/beginShipment")
     public ResponseEntity<?> confirmOrderAndBeginShipment(@RequestParam Long warehouseId,
                                                           @RequestParam String wareBillNumber,
-                                                          @RequestParam BigDecimal expense){
+                                                          @RequestParam Long expense){
 
-        WaybillInvoice waybillInvoice = waybillServices.confirmAndShipWaybill(warehouseId, wareBillNumber, expense);
+        WaybillInvoice waybillInvoice = waybillServices.confirmAndShipWaybill(warehouseId, wareBillNumber, BigDecimal.valueOf(expense));
 
         if (null == waybillInvoice) throw new InventoryAPIOperationException("Confirmation failed",
                 "Ware bill confirmation and shipment was not successful, review your inputs and try again", null);
