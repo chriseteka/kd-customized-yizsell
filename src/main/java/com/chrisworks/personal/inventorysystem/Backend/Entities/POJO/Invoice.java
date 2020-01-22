@@ -91,6 +91,14 @@ public class Invoice {
     @Transient
     private PAYMENT_MODE paymentMode;
 
+    @Transient
+    @JsonIgnore
+    private Boolean isLoyaltyDiscount = false;
+
+    @Transient
+    @JsonIgnore
+    private String reasonForDiscount = null;
+
     @PostLoad
     void fillTransient() {
         if (paymentModeValue > 0) {
