@@ -90,6 +90,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     public SendGrid getSendGrid(){
-        return new SendGrid("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");
+        return new SendGrid("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");
     }
 }
