@@ -6,10 +6,10 @@
         "script":"/usr/bin/java",
         "args":[
             "-jar",
-            "/usr/smart-sell/backend/target/inventory-system-backend-0.0.1-SNAPSHOT.jar"
+            "/usr/yiz-sell/backend/target/inventory-system-backend-0.0.1-SNAPSHOT.jar"
         ],
         "watch":[
-            "/usr/smart-sell/backend/target/inventory-system-backend-0.0.1-SNAPSHOT.jar"
+            "/usr/yiz-sell/backend/target/inventory-system-backend-0.0.1-SNAPSHOT.jar"
         ],
         "node_args":[],
         "log_date_format":"YYYY-MM-DD HH:mm Z",
