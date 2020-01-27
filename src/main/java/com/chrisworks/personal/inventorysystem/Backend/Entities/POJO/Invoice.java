@@ -49,9 +49,8 @@ public class Invoice {
     @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal invoiceTotalAmount;
 
-    @DecimalMin(value = "0.0", message = "Amount paid must be greater or equal to zero than zero")
     @Column(name = "amountPaid", nullable = false)
-    private BigDecimal amountPaid;
+    private BigDecimal amountPaid = BigDecimal.ZERO;
 
     @Column(name = "debt")
     private BigDecimal debt = BigDecimal.ZERO;
