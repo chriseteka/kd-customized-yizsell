@@ -53,13 +53,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final CustomerRepository customerRepository;
 
+    private final SalesDiscountServices salesDiscountServices;
+
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
                                  ShopRepository shopRepository, GenericService genericService,
                                  InvoiceRepository invoiceRepository, StockSoldRepository stockSoldRepository,
                                  ReturnedStockRepository returnedStockRepository, SupplierRepository supplierRepository,
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
-                                 CustomerRepository customerRepository) {
+                                 CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
@@ -71,6 +73,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.supplierRepository = supplierRepository;
         this.loyaltyRepository = loyaltyRepository;
         this.customerRepository = customerRepository;
+        this.salesDiscountServices = salesDiscountServices;
     }
 
     @Transactional
@@ -335,10 +338,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 stock.setSellingPricePerStock(newStock.getSellingPricePerStock());
                 stock.setStockQuantityPurchased(newStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
                 stock.setStockQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
+                newStock.setStockPurchasedTotalPrice(newStock.getPricePerStockPurchased()
+                        .multiply(BigDecimal.valueOf(newStock.getStockQuantityPurchased())));
                 stock.setStockPurchasedTotalPrice(newStock.getStockPurchasedTotalPrice().add(stock.getStockPurchasedTotalPrice()));
                 stock.setStockRemainingTotalPrice(newStock.getStockPurchasedTotalPrice().add(stock.getStockRemainingTotalPrice()));
-                stock.setPricePerStockPurchased(newStock.getStockPurchasedTotalPrice()
-                        .divide(BigDecimal.valueOf(newStock.getStockQuantityPurchased()), 2));
 
                 if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -401,9 +404,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
         stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
         stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
         stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
+        stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
-        stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
         return shopStocksRepository.save(stockToAdd);
     }
@@ -541,13 +544,20 @@ public class ShopStockServicesImpl implements ShopStockServices {
             stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
             stockSoldSet.add(stockSoldRepository.save(stockSold));
 
+            //Generate discount on this stock sold if it exists
+            salesDiscountServices.generateDiscountOnStockSold(stockSold, stockFound.getSellingPricePerStock(),
+                    invoice.getInvoiceNumber(), invoice.getCustomerId().getCustomerFullName());
+
             stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
             stockFound.setStockSoldTotalPrice(stockFound.getStockSoldTotalPrice().add(stockSold.getPricePerStockSold()
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))));
             stockFound.setStockQuantityRemaining(stockFound.getStockQuantityRemaining() - stockSold.getQuantitySold());
             stockFound.setStockRemainingTotalPrice(BigDecimal.valueOf(stockFound.getStockQuantityRemaining())
                     .multiply(stockFound.getPricePerStockPurchased()));
-            stockFound.setProfit(stockFound.getStockSoldTotalPrice().subtract(stockFound.getStockPurchasedTotalPrice()));
+            stockFound.setProfit(stockFound.getProfit().add(
+                    (stockFound.getSellingPricePerStock().subtract(stockFound.getPricePerStockPurchased()))
+                    .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))
+            ));
             shopStocksRepository.save(stockFound);
 
             if (atomicStock.get() == null) throw new InventoryAPIResourceNotFoundException
@@ -566,21 +576,35 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);
             if (null != loyaltyPlan){
-                if (cust.getNumberOfPurchasesAfterLastReward() < loyaltyPlan.getNumberOfDaysBeforeReward()
-                        || is(cust.getRecentPurchasesAmount()).lt(loyaltyPlan.getThreshold())) {
+                if (!invoice.getIsLoyaltyDiscount()) {
 
                     cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(invoice.getAmountPaid()));
                     cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() + 1);
                     customer.set(customerRepository.save(cust));
+
+                    //Generate discount on invoice if it exists
+                    salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
                 }
                 else {
 
                     cust.setNumberOfPurchasesAfterLastReward(0);
                     cust.setRecentPurchasesAmount(BigDecimal.ZERO);
                     customer.set(customerRepository.save(cust));
+
+                    //Generate discount on invoice if it exists
+                    salesDiscountServices.generateDiscountOnLoyalCustomers(customer.get(), invoice.getDiscount());
                 }
+            }else {
+
+                //Generate discount on invoice if it exists
+                salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
             }
+        }else {
+
+            //Generate discount on invoice if it exists
+            salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
         }
+
         if (invoice.getCustomerId() != null && invoice.getCustomerId().getCustomerPhoneNumber() != null)
             invoice.setCustomerId(customer.get());
         invoice.setCreatedBy(invoiceGeneratedBy);
@@ -660,7 +684,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 stockRecordFromShop.getStockQuantityRemaining());
         stockRecordFromShop.setProfit(stockRecordFromShop.getProfit()
                 .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                        .multiply(stockRecordFromShop.getSellingPricePerStock())));
+                        .multiply(stockRecordFromShop.getSellingPricePerStock()
+                                .subtract(stockRecordFromShop.getPricePerStockPurchased()))));
         stockRecordFromShop.setStockSoldTotalPrice(stockRecordFromShop.getStockSoldTotalPrice()
                 .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                         .multiply(stockAboutToBeReturned.getPricePerStockSold())));
@@ -906,10 +931,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         existingStock.setSellingPricePerStock(stockToAdd.getSellingPricePerStock());
                         existingStock.setStockQuantityPurchased(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityPurchased());
                         existingStock.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityRemaining());
+                        stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                                .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
                         existingStock.setStockPurchasedTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockPurchasedTotalPrice()));
                         existingStock.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockRemainingTotalPrice()));
-                        existingStock.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
                         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -934,6 +959,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         stockToAdd.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
                         stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
                         stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
+                        stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                                .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
                         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
                         stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
                                 .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));

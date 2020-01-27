@@ -40,15 +40,12 @@ public class Customer {
     @Column(name = "updateDate")
     private Date updateDate = new Date();
 
-    @Size(min = 3, message = "Customer name must have at least three characters")
     @Column(name = "customerFullName", nullable = false)
     private String customerFullName;
 
-    @Size(min = 5, max = 15, message = "Invalid Phone Number Entered")
     @Column(name = "customerPhoneNumber", nullable = false)
     private String customerPhoneNumber;
 
-    @Email(message = "Invalid Email Address Entered")
     @Column(name = "customerEmail")
     private String customerEmail;
 

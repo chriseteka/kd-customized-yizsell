@@ -306,10 +306,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 stock.setStockQuantityPurchased(newStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
                 stock.setStockQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
                 stock.setPossibleQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getPossibleQuantityRemaining());
-                stock.setStockPurchasedTotalPrice(newStock.getStockPurchasedTotalPrice().add(stock.getStockPurchasedTotalPrice()));
+                newStock.setStockPurchasedTotalPrice(newStock.getPricePerStockPurchased()
+                        .multiply(BigDecimal.valueOf(newStock.getStockQuantityPurchased())));
+                stock.setStockPurchasedTotalPrice((newStock.getStockPurchasedTotalPrice()).add(stock.getStockPurchasedTotalPrice()));
                 stock.setStockRemainingTotalPrice(newStock.getStockPurchasedTotalPrice().add(stock.getStockRemainingTotalPrice()));
-                stock.setPricePerStockPurchased(newStock.getStockPurchasedTotalPrice()
-                        .divide(BigDecimal.valueOf(newStock.getStockQuantityPurchased()), 2));
 
                 if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -440,9 +440,9 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
         stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
         stockToAdd.setPossibleQuantityRemaining(stockToAdd.getStockQuantityRemaining());
+        stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
-        stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
         return warehouseStockRepository.save(stockToAdd);
     }
@@ -620,10 +620,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     existingStock.setStockQuantityPurchased(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityPurchased());
                     existingStock.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getStockQuantityRemaining());
                     existingStock.setPossibleQuantityRemaining(stockToAdd.getStockQuantityPurchased() + existingStock.getPossibleQuantityRemaining());
+                    stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                            .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
                     existingStock.setStockPurchasedTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockPurchasedTotalPrice()));
                     existingStock.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice().add(existingStock.getStockRemainingTotalPrice()));
-                    existingStock.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
 
                     if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
@@ -649,9 +649,9 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     stockToAdd.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
                     stockToAdd.setStockQuantityRemaining(stockToAdd.getStockQuantityPurchased());
                     stockToAdd.setPossibleQuantityRemaining(stockToAdd.getStockQuantityRemaining());
+                    stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
+                            .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
                     stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
-                    stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                            .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
                     Set<Supplier> supplierSet = new HashSet<>();
                     supplierSet.add(stockToAdd.getLastRestockPurchasedFrom());
                     stockToAdd.setStockPurchasedFrom(supplierSet);

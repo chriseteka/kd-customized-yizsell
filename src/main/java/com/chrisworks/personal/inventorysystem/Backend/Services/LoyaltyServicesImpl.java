@@ -3,11 +3,13 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Loyalty;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.LoyaltyRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,10 +32,14 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
 
     private final LoyaltyRepository loyaltyRepository;
 
+    private final SellerRepository sellerRepository;
+
     @Autowired
-    public LoyaltyServicesImpl(CustomerRepository customerRepository, LoyaltyRepository loyaltyRepository) {
+    public LoyaltyServicesImpl(CustomerRepository customerRepository, LoyaltyRepository loyaltyRepository,
+                               SellerRepository sellerRepository) {
         this.customerRepository = customerRepository;
         this.loyaltyRepository = loyaltyRepository;
+        this.sellerRepository = sellerRepository;
     }
 
     @Override
@@ -157,9 +163,17 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
     @Override
     public List<Loyalty> getEntityList() {
 
-        preAuthorize();
+        if (AuthenticatedUserDetails.getAccount_type() == null) throw new InventoryAPIOperationException("Unknown user",
+                "Cannot determine the account type of the logged in user", null);
 
-        return loyaltyRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            return loyaltyRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        else {
+
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+
+            return loyaltyRepository.findAllByCreatedBy(seller.getCreatedBy());
+        }
     }
 
     @Override
