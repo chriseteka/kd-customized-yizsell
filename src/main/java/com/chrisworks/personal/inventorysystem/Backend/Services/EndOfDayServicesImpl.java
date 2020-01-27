@@ -59,7 +59,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
     }
 
     @Override
-    public void generateEndOfDayReport() {
+    public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport() {
 
         if (AuthenticatedUserDetails.getAccount_type() == null
                 || AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
@@ -72,7 +72,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         String loggedInUser = AuthenticatedUserDetails.getUserFullName();
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
-            computeEndOfDay(fromDate, toDate, Collections.singletonList(loggedInUser));
+            return computeEndOfDay(fromDate, toDate, Collections.singletonList(loggedInUser));
 
         else if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
 
@@ -84,25 +84,28 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
                 .collect(Collectors.toList());
             sellerEmails.add(loggedInUser);
 
-            computeEndOfDay(fromDate, toDate, sellerEmails);
+            return computeEndOfDay(fromDate, toDate, sellerEmails);
         }
+
+        else throw new InventoryAPIOperationException("Operation not allowed",
+                    "Cannot verify the user making this request", null);
 
     }
 
     @Override
-    public void generateEndOfDayReportFor(Date anyDate) {
+    public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportFor(Date anyDate) {
 
         if (anyDate == null) throw new InventoryAPIOperationException("Not allowed",
                 "Please pass in a valid date to compute end of day", null);
 
         fromDate = anyDate;
 
-        this.generateEndOfDayReport();
+        return this.generateEndOfDayReport();
 
     }
 
     @Override
-    public void generateEndOfDayReportBetween(Date from, Date to) {
+    public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportBetween(Date from, Date to) {
 
         if (from == null || to == null) throw new InventoryAPIOperationException("Not allowed",
                 "Please pass in a valid date to compute end of day, between given date intervals", null);
@@ -110,11 +113,11 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         fromDate = from;
         toDate = to;
 
-        this.generateEndOfDayReport();
+        return this.generateEndOfDayReport();
 
     }
 
-    private void computeEndOfDay(Date from, Date to, List<String> staff){
+    private EndOfDayServicesImpl.EndOfDayReport computeEndOfDay(Date from, Date to, List<String> staff){
 
         endOfDayInvoices.addAll(staff
             .stream()
@@ -313,6 +316,8 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         endOfDayReport.setAccountStatus(is(balanceAccount.getTotalCashAtHand()).eq(cashFlow.getTotalCashAtHand())
             ? ACCOUNT_STATUS.BALANCED
             : ACCOUNT_STATUS.NOT_BALANCED);
+
+        return endOfDayReport;
     }
 
     @Data

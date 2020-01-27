@@ -4,9 +4,9 @@ import java.util.Date;
 
 public interface EndOfDayServices {
 
-    void generateEndOfDayReport();
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport();
 
-    void generateEndOfDayReportFor(Date anyDate);
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportFor(Date anyDate);
 
-    void generateEndOfDayReportBetween(Date from, Date to);
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportBetween(Date from, Date to);
 }
