@@ -1,24 +1,21 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.SalesDiscount;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockSold;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SalesDiscountRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.OVER_SALE_DISCOUNT;
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.UNDER_SALE_DISCOUNT;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.*;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -72,12 +69,42 @@ public class SalesDiscountServiceImpl implements SalesDiscountServices {
         }
     }
 
+    //Modify to support other discount types added by a business owner.
     @Override
-    public void generateDiscountOnInvoice(String invoiceNumber, BigDecimal discount) {
+    public void generateDiscountOnInvoice(Invoice invoice) {
+
+        SalesDiscount salesDiscount = new SalesDiscount();
+
+        salesDiscount.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        salesDiscount.setDiscountAmount(invoice.getDiscount());
+        salesDiscount.setDiscountType(GENERAL_DISCOUNT);
+        salesDiscount.setInvoiceNumber(invoice.getInvoiceNumber());
+        salesDiscount.setDiscountIssuedTo(invoice.getCustomerId() != null
+            ? invoice.getCustomerId().getCustomerFullName() : "");
+        salesDiscount.setReasonForDiscount(invoice.getReasonForDiscount() != null
+            ? invoice.getReasonForDiscount() : "Discount issued on invoice sales");
+        salesDiscount.setDiscountPercentage(salesDiscount.getDiscountAmount()
+            .divide(invoice.getInvoiceTotalAmount(), 2).doubleValue() * 100);
+
+        salesDiscountRepository.save(salesDiscount);
     }
 
     @Override
-    public void generateDiscountOnLoyalCustomers(Customer customer, BigDecimal discount) {
+    public void generateDiscountOnLoyalCustomers(Customer customer, Invoice invoice) {
+
+        SalesDiscount salesDiscount = new SalesDiscount();
+
+        salesDiscount.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        salesDiscount.setDiscountAmount(invoice.getDiscount());
+        salesDiscount.setDiscountType(LOYALTY_DISCOUNT);
+        salesDiscount.setInvoiceNumber(invoice.getInvoiceNumber());
+        salesDiscount.setDiscountIssuedTo(StringUtils.isEmpty(customer.getCustomerPhoneNumber())
+            ? customer.getCustomerPhoneNumber() : customer.getCustomerFullName());
+        salesDiscount.setReasonForDiscount("Loyalty discount given  to a loyal customer");
+        salesDiscount.setDiscountPercentage(salesDiscount.getDiscountAmount()
+                .divide(invoice.getInvoiceTotalAmount(), 2).doubleValue() * 100);
+
+        salesDiscountRepository.save(salesDiscount);
     }
 
     @Override

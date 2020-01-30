@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.SalesDiscount;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockSold;
 
@@ -12,9 +13,9 @@ public interface SalesDiscountServices {
 
     void generateDiscountOnStockSold(StockSold stockSold, BigDecimal basePrice, String invoiceNumber, String customer);
 
-    void generateDiscountOnInvoice(String invoiceNumber, BigDecimal discount);
+    void generateDiscountOnInvoice(Invoice invoice);
 
-    void generateDiscountOnLoyalCustomers(Customer customer, BigDecimal discount);
+    void generateDiscountOnLoyalCustomers(Customer customer, Invoice invoice);
 
     List<SalesDiscount> fetchAllSalesDiscount();
 

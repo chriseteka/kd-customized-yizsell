@@ -523,7 +523,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
                 .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));
         if (is(totalToAmountPaidDiff).isPositive()) invoice.setDebt(totalToAmountPaidDiff.abs());
-
+        else invoice.setBalance(totalToAmountPaidDiff.abs());
 
         invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
         invoice.getStockSold().forEach(stockSold -> {
@@ -581,9 +581,6 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(invoice.getAmountPaid()));
                     cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() + 1);
                     customer.set(customerRepository.save(cust));
-
-                    //Generate discount on invoice if it exists
-                    salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
                 }
                 else {
 
@@ -592,21 +589,17 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     customer.set(customerRepository.save(cust));
 
                     //Generate discount on invoice if it exists
-                    salesDiscountServices.generateDiscountOnLoyalCustomers(customer.get(), invoice.getDiscount());
+                    salesDiscountServices.generateDiscountOnLoyalCustomers(customer.get(), invoice);
                 }
-            }else {
-
-                //Generate discount on invoice if it exists
-                salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
             }
-        }else {
-
-            //Generate discount on invoice if it exists
-            salesDiscountServices.generateDiscountOnInvoice(invoice.getInvoiceNumber(), invoice.getDiscount());
         }
 
         if (invoice.getCustomerId() != null && invoice.getCustomerId().getCustomerPhoneNumber() != null)
             invoice.setCustomerId(customer.get());
+
+        //Generate discount on invoice if it exists
+        if (is(invoice.getDiscount()).isPositive() && !invoice.getIsLoyaltyDiscount())
+            salesDiscountServices.generateDiscountOnInvoice(invoice);
         invoice.setCreatedBy(invoiceGeneratedBy);
 
         if (ACCOUNT_TYPE.SHOP_SELLER.equals(AuthenticatedUserDetails.getAccount_type()))

@@ -1,7 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -26,16 +25,6 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
     private Date fromDate = null;
 
     private Date toDate = null;
-
-    private List<Invoice> endOfDayInvoices = new ArrayList<>(Collections.emptyList());
-
-    private List<Income> endOfDayIncome = new ArrayList<>(Collections.emptyList());
-
-    private List<Expense> endOfDayExpenses = new ArrayList<>(Collections.emptyList());
-
-    private List<SalesDiscount> endOfDayDiscounts = new ArrayList<>(Collections.emptyList());
-
-    private List<StockSalesEndOfDay> endOfDayStockSales = new ArrayList<>(Collections.emptyList());
 
     private final InvoiceRepository invoiceRepository;
 
@@ -119,6 +108,16 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
     private EndOfDayServicesImpl.EndOfDayReport computeEndOfDay(Date from, Date to, List<String> staff){
 
+        //CLEAR ALL LISTS BEFORE COMPUTATION STARTS
+        List<Invoice> endOfDayInvoices = new ArrayList<>(Collections.emptyList());
+
+        List<Income> endOfDayIncome = new ArrayList<>(Collections.emptyList());
+
+        List<Expense> endOfDayExpenses = new ArrayList<>(Collections.emptyList());
+
+        List<SalesDiscount> endOfDayDiscounts = new ArrayList<>(Collections.emptyList());
+
+        //Fetch All Needed Data from the database (invoices, income, expenses, discount).
         endOfDayInvoices.addAll(staff
             .stream()
             .map(invoiceRepository::findAllByCreatedBy)
@@ -144,11 +143,247 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
             .collect(Collectors.toList())
         );
 
+        //Sort invoices, income, expenses and discount by the date passed, default date is today.
         List<Invoice> sortedInvoiceList = endOfDayInvoices
                 .stream()
                 .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
                         && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
                 .collect(Collectors.toList());
+
+        List<Income> sortedIncomeList = endOfDayIncome
+                .stream()
+                .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
+                        && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
+                .collect(Collectors.toList());
+
+        List<Expense> sortedExpenseList = endOfDayExpenses
+                .stream()
+                .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
+                        && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
+                .collect(Collectors.toList());
+
+        List<SalesDiscount> sortedDiscountList = endOfDayDiscounts
+                .stream()
+                .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
+                        && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
+                .collect(Collectors.toList());
+
+        //Compute the end of day report for stock sold.
+        List<StockSalesEndOfDay> uniqueStockSoldReport = computeEndOfDayInvoices(sortedInvoiceList);
+
+        //Compute the end of day for expenses incurred
+        List<ExpenseBreakDown> expenseBreakDownList = computeEndOfDayExpenses(sortedExpenseList);
+
+        //Compute the end of day for income made
+        List<IncomeBreakDown> incomeBreakDownList = computeEndOfDayIncome(sortedIncomeList);
+
+        //Compute the end of day for discounts given
+        List<DiscountBreakDown> discountBreakDownList = computeEndOfDayDiscounts(sortedDiscountList);
+
+        CashFlowEndOfDay cashFlow = new CashFlowEndOfDay();
+
+        cashFlow.setIncomeBreakDownList(incomeBreakDownList);
+
+        cashFlow.setExpenseBreakDownList(expenseBreakDownList);
+
+        cashFlow.setTotalChangesGiven(sortedInvoiceList
+            .stream()
+            .map(Invoice::getBalance)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        cashFlow.setTotalIncome(sortedIncomeList
+            .stream()
+            .map(Income::getIncomeAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        cashFlow.setTotalExpenses(sortedExpenseList
+            .stream()
+            .map(Expense::getExpenseAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        cashFlow.setTotalCashAtHand(cashFlow.getTotalIncome()
+                .subtract(cashFlow.getTotalExpenses()
+                    .add(cashFlow.getTotalChangesGiven())));
+
+        BalanceAccount balanceAccount = new BalanceAccount();
+
+        balanceAccount.setStockSoldTotalWorth(uniqueStockSoldReport
+            .stream()
+            .map(StockSalesEndOfDay::getWorthOfStockSold)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        //Add any other type of income that is not of stock_sale.
+        balanceAccount.setOtherIncome(sortedIncomeList
+            .stream()
+            .filter(income -> !income.getIncomeType().equals(INCOME_TYPE.STOCK_SALE))
+            .map(Income::getIncomeAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+        );
+
+        balanceAccount.setDiscountBreakDownList(discountBreakDownList);
+
+        BigDecimal negativeDiscount = sortedDiscountList
+            .stream()
+            .filter(salesDiscount -> !salesDiscount.getDiscountType().equalsIgnoreCase("OVER SALE DISCOUNT"))
+            .map(SalesDiscount::getDiscountAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal positiveDiscount = sortedDiscountList
+            .stream()
+            .filter(salesDiscount -> salesDiscount.getDiscountType().equalsIgnoreCase("OVER SALE DISCOUNT"))
+            .map(SalesDiscount::getDiscountAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        //Discount might be error pruned
+        balanceAccount.setTotalDiscountGiven(positiveDiscount.subtract(negativeDiscount).abs());
+
+        balanceAccount.setTotalDebtsIncurred(sortedInvoiceList
+            .stream()
+            .map(Invoice::getDebt)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        BigDecimal debits = cashFlow.getTotalExpenses()
+            .add(balanceAccount.getTotalDiscountGiven())
+            .add(balanceAccount.getTotalDebtsIncurred());
+
+        balanceAccount.setTotalCashAtHand(balanceAccount.getStockSoldTotalWorth()
+            .add(balanceAccount.otherIncome)
+            .subtract(debits));
+
+        EndOfDayReport endOfDayReport = new EndOfDayReport();
+
+        endOfDayReport.setStockReportList(uniqueStockSoldReport);
+        endOfDayReport.setCashFlow(cashFlow);
+        endOfDayReport.setBalanceAccount(balanceAccount);
+        endOfDayReport.setAccountStatus(is(balanceAccount.getTotalCashAtHand()).eq(cashFlow.getTotalCashAtHand())
+            ? ACCOUNT_STATUS.BALANCED
+            : ACCOUNT_STATUS.NOT_BALANCED);
+
+        fromDate = null;
+        toDate = null;
+
+        return endOfDayReport;
+    }
+
+    private List<DiscountBreakDown> computeEndOfDayDiscounts(List<SalesDiscount> sortedDiscountList) {
+
+        //Sort all expense by their types and sum them
+        List<DiscountBreakDown> discountBreakDownList = new ArrayList<>(Collections.emptyList());
+        discountBreakDownList.addAll(sortedDiscountList
+            .stream()
+            .map(discount -> {
+
+                DiscountBreakDown discountBreakDown = new DiscountBreakDown();
+                discountBreakDown.setDiscountType(discount.getDiscountType());
+                discountBreakDown.setTotalAmount(discount.getDiscountAmount());
+
+                return discountBreakDown;
+            })
+            .collect(Collectors.toList())
+        );
+
+        List<String> discountTypes = discountBreakDownList
+                .stream()
+                .map(DiscountBreakDown::getDiscountType)
+                .distinct()
+                .collect(Collectors.toList());
+
+        return discountTypes
+            .stream()
+            .map(discount_type -> discountBreakDownList
+                .stream()
+                .filter(discount -> discount.getDiscountType().equalsIgnoreCase(discount_type))
+                .reduce(new DiscountBreakDown(), (t1, t2) -> {
+
+                    if (t1.getDiscountType() == null) return t2;
+                    if ((t1.getDiscountType().equalsIgnoreCase(t2.getDiscountType())))
+                        t1.setTotalAmount(t1.getTotalAmount().add(t2.getTotalAmount()));
+                    return t1;
+                }))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    private List<IncomeBreakDown> computeEndOfDayIncome(List<Income> sortedIncomeList) {
+
+        //Sort all expense by their types and sum them
+        List<IncomeBreakDown> incomeBreakDownList = new ArrayList<>(Collections.emptyList());
+        incomeBreakDownList.addAll(sortedIncomeList
+            .stream()
+            .map(income -> {
+
+                IncomeBreakDown incomeBreakDown = new IncomeBreakDown();
+                incomeBreakDown.setIncomeType(income.getIncomeType().toString());
+                incomeBreakDown.setTotalAmount(income.getIncomeAmount());
+
+                return incomeBreakDown;
+            })
+            .collect(Collectors.toList())
+        );
+
+        List<String> incomeTypes = incomeBreakDownList
+                .stream()
+                .map(IncomeBreakDown::getIncomeType)
+                .distinct()
+                .collect(Collectors.toList());
+
+        return incomeTypes
+            .stream()
+            .map(income_type -> incomeBreakDownList
+                .stream()
+                .filter(income -> income.getIncomeType().equalsIgnoreCase(income_type))
+                .reduce(new IncomeBreakDown(), (t1, t2) -> {
+
+                    if (t1.getIncomeType() == null) return t2;
+                    if ((t1.getIncomeType().equalsIgnoreCase(t2.getIncomeType())))
+                        t1.setTotalAmount(t1.getTotalAmount().add(t2.getTotalAmount()));
+                    return t1;
+                }))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    private List<ExpenseBreakDown> computeEndOfDayExpenses(List<Expense> sortedExpenseList) {
+
+        //Sort all expense by their types and sum them
+        List<ExpenseBreakDown> expenseBreakdown = new ArrayList<>(Collections.emptyList());
+            expenseBreakdown.addAll(sortedExpenseList
+                .stream()
+                .map(expense -> {
+
+                    ExpenseBreakDown expenseBreakDown = new ExpenseBreakDown();
+                    expenseBreakDown.setExpenseType(expense.getExpenseType().toString());
+                    expenseBreakDown.setTotalAmount(expense.getExpenseAmount());
+
+                    return expenseBreakDown;
+                })
+                .collect(Collectors.toList())
+            );
+
+        List<String> expenseTypes = expenseBreakdown
+            .stream()
+            .map(ExpenseBreakDown::getExpenseType)
+            .distinct()
+            .collect(Collectors.toList());
+
+        return expenseTypes
+            .stream()
+            .map(expense_type -> expenseBreakdown
+                .stream()
+                .filter(expense -> expense.getExpenseType().equalsIgnoreCase(expense_type))
+                .reduce(new ExpenseBreakDown(), (t1, t2) -> {
+
+                    if (t1.getExpenseType() == null) return t2;
+                    if ((t1.getExpenseType().equalsIgnoreCase(t2.getExpenseType())))
+                        t1.setTotalAmount(t1.getTotalAmount().add(t2.getTotalAmount()));
+                    return t1;
+                }))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    private List<StockSalesEndOfDay> computeEndOfDayInvoices(List<Invoice> sortedInvoiceList) {
+
+        List<StockSalesEndOfDay> endOfDayStockSales = new ArrayList<>(Collections.emptyList());
 
         endOfDayStockSales.addAll(sortedInvoiceList
             .stream()
@@ -173,7 +408,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
             .distinct()
             .collect(Collectors.toList());
 
-        List<StockSalesEndOfDay> uniqueStockSoldReport = stockNames
+        return stockNames
             .stream()
             .map(name -> endOfDayStockSales
                 .stream()
@@ -192,132 +427,6 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
                 }))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-
-        CashFlowEndOfDay cashFlow = new CashFlowEndOfDay();
-
-        List<Income> sortedIncomeList = endOfDayIncome
-            .stream()
-            .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
-                    && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
-            .collect(Collectors.toList());
-
-        List<Expense> sortedExpenseList = endOfDayExpenses
-                .stream()
-                .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
-                        && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
-                .collect(Collectors.toList());
-        List<SalesDiscount> sortedDiscountList = endOfDayDiscounts
-                .stream()
-                .filter(object -> getDateDifferenceInDays(from, object.getCreatedDate()) >= 0
-                        && getDateDifferenceInDays(to, object.getCreatedDate()) <= 0)
-                .collect(Collectors.toList());
-
-        //Sort all income by their types and sum them
-        for (INCOME_TYPE income_type : INCOME_TYPE.values()){
-
-            IncomeBreakDown incomeBreakDown = new IncomeBreakDown(income_type.toString(), BigDecimal.ZERO);
-            cashFlow.getIncomeBreakDownList().addAll(sortedIncomeList
-                .stream()
-                .map(income -> {
-                    if (income.getIncomeType().equals(income_type))
-                        incomeBreakDown.setTotalAmount(incomeBreakDown.getTotalAmount()
-                            .add(income.getIncomeAmount()));
-                    return incomeBreakDown;
-                })
-                .collect(Collectors.toList()));
-        }
-
-        //Sort all expense by their types and sum them
-        for (EXPENSE_TYPE expense_type : EXPENSE_TYPE.values()){
-
-            ExpenseBreakDown expenseBreakDown = new ExpenseBreakDown(expense_type.toString(), BigDecimal.ZERO);
-            cashFlow.expenseBreakDownList.addAll(sortedExpenseList
-                .stream()
-                .map(expense -> {
-                    if (expense.getExpenseType().equals(expense_type))
-                        expenseBreakDown.setTotalAmount(expenseBreakDown.getTotalAmount()
-                            .add(expense.getExpenseAmount()));
-                    return expenseBreakDown;
-                })
-                .collect(Collectors.toList()));
-        }
-
-        cashFlow.setTotalIncome(sortedIncomeList
-            .stream()
-            .map(Income::getIncomeAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-        cashFlow.setTotalExpenses(sortedExpenseList
-            .stream()
-            .map(Expense::getExpenseAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-        cashFlow.setTotalCashAtHand(cashFlow.getTotalIncome().subtract(cashFlow.getTotalExpenses()));
-
-        BalanceAccount balanceAccount = new BalanceAccount();
-
-        balanceAccount.setStockSoldTotalWorth(uniqueStockSoldReport
-            .stream()
-            .map(StockSalesEndOfDay::getWorthOfStockSold)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-        //Add any other type of income that is not of stock_sale.
-        balanceAccount.setOtherIncome(sortedIncomeList
-            .stream()
-            .filter(income -> !income.getIncomeType().equals(INCOME_TYPE.STOCK_SALE))
-            .map(Income::getIncomeAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
-        );
-
-        List<String> DISCOUNT_TYPES = sortedDiscountList
-            .stream()
-            .map(SalesDiscount::getDiscountType)
-            .collect(Collectors.toList());
-
-        //Sort all discount by their types and sort them.
-        for (String discountType : DISCOUNT_TYPES){
-
-            DiscountBreakDown discountBreakDown = new DiscountBreakDown(discountType, BigDecimal.ZERO);
-            balanceAccount.getDiscountBreakDownList().addAll(sortedDiscountList
-                .stream()
-                .map(salesDiscount -> {
-                    if (salesDiscount.getDiscountType().equalsIgnoreCase(discountType))
-                        discountBreakDown.setTotalAmount(discountBreakDown.getTotalAmount()
-                            .add(salesDiscount.getDiscountAmount()));
-                    return discountBreakDown;
-                })
-                .collect(Collectors.toList()));
-        }
-
-        //Discount might be error pruned
-        balanceAccount.setTotalDiscountGiven(sortedDiscountList
-            .stream()
-            .map(SalesDiscount::getDiscountAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-        balanceAccount.setTotalDebtsIncurred(sortedInvoiceList
-            .stream()
-            .map(Invoice::getDebt)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-        BigDecimal debits = cashFlow.getTotalExpenses()
-            .add(balanceAccount.getTotalDiscountGiven())
-            .add(balanceAccount.getTotalDebtsIncurred());
-
-        balanceAccount.setTotalCashAtHand(balanceAccount.getStockSoldTotalWorth()
-            .add(balanceAccount.otherIncome)
-            .subtract(debits));
-
-        EndOfDayReport endOfDayReport = new EndOfDayReport();
-
-        endOfDayReport.setStockReportList(uniqueStockSoldReport);
-        endOfDayReport.setCashFlow(cashFlow);
-        endOfDayReport.setBalanceAccount(balanceAccount);
-        endOfDayReport.setAccountStatus(is(balanceAccount.getTotalCashAtHand()).eq(cashFlow.getTotalCashAtHand())
-            ? ACCOUNT_STATUS.BALANCED
-            : ACCOUNT_STATUS.NOT_BALANCED);
-
-        return endOfDayReport;
     }
 
     @Data
@@ -328,6 +437,8 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         String stockSoldName;
 
         int stockSoldTotalQuantity;
+
+        int totalQuantityRemaining;
 
         BigDecimal worthOfStockSold;
     }
@@ -372,6 +483,8 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         BigDecimal totalIncome = BigDecimal.ZERO;
 
         BigDecimal totalExpenses = BigDecimal.ZERO;
+
+        BigDecimal totalChangesGiven = BigDecimal.ZERO;
 
         BigDecimal totalCashAtHand = BigDecimal.ZERO;
     }

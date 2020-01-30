@@ -49,11 +49,14 @@ public class Invoice {
     @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal invoiceTotalAmount;
 
-    @Column(name = "amountPaid", nullable = false)
+    @Column(name = "amountPaid")
     private BigDecimal amountPaid = BigDecimal.ZERO;
 
     @Column(name = "debt")
     private BigDecimal debt = BigDecimal.ZERO;
+
+    @Column(name = "balance")
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
