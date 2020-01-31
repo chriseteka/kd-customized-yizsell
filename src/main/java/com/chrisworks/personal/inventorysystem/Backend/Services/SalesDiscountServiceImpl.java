@@ -82,6 +82,7 @@ public class SalesDiscountServiceImpl implements SalesDiscountServices {
         salesDiscount.setDiscountIssuedTo(invoice.getCustomerId() != null
             ? invoice.getCustomerId().getCustomerFullName() : "");
         salesDiscount.setReasonForDiscount(invoice.getReasonForDiscount() != null
+            && !StringUtils.isEmpty(invoice.getReasonForDiscount())
             ? invoice.getReasonForDiscount() : "Discount issued on invoice sales");
         salesDiscount.setDiscountPercentage(salesDiscount.getDiscountAmount()
             .divide(invoice.getInvoiceTotalAmount(), 2).doubleValue() * 100);
@@ -100,7 +101,10 @@ public class SalesDiscountServiceImpl implements SalesDiscountServices {
         salesDiscount.setInvoiceNumber(invoice.getInvoiceNumber());
         salesDiscount.setDiscountIssuedTo(StringUtils.isEmpty(customer.getCustomerPhoneNumber())
             ? customer.getCustomerPhoneNumber() : customer.getCustomerFullName());
-        salesDiscount.setReasonForDiscount("Loyalty discount given  to a loyal customer");
+        salesDiscount.setReasonForDiscount(invoice.getReasonForDiscount() == null
+                || StringUtils.isEmpty(invoice.getReasonForDiscount())
+                ? "Loyalty discount given  to a loyal customer"
+                : invoice.getReasonForDiscount());
         salesDiscount.setDiscountPercentage(salesDiscount.getDiscountAmount()
                 .divide(invoice.getInvoiceTotalAmount(), 2).doubleValue() * 100);
 
