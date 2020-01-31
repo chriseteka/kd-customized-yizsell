@@ -94,11 +94,11 @@ public class Invoice {
     private PAYMENT_MODE paymentMode;
 
     @Transient
-    @JsonIgnore
-    private Boolean isLoyaltyDiscount = false;
+//    @JsonIgnore
+    private BigDecimal loyaltyDiscount = BigDecimal.ZERO;
 
     @Transient
-    @JsonIgnore
+//    @JsonIgnore
     private String reasonForDiscount = null;
 
     @PostLoad

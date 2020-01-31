@@ -95,7 +95,7 @@ public class SalesDiscountServiceImpl implements SalesDiscountServices {
         SalesDiscount salesDiscount = new SalesDiscount();
 
         salesDiscount.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        salesDiscount.setDiscountAmount(invoice.getDiscount());
+        salesDiscount.setDiscountAmount(invoice.getLoyaltyDiscount());
         salesDiscount.setDiscountType(LOYALTY_DISCOUNT);
         salesDiscount.setInvoiceNumber(invoice.getInvoiceNumber());
         salesDiscount.setDiscountIssuedTo(StringUtils.isEmpty(customer.getCustomerPhoneNumber())

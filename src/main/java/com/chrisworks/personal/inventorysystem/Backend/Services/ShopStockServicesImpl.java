@@ -521,7 +521,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
             customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
         BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
-                .subtract(invoice.getAmountPaid().add(invoice.getDiscount()));
+                .subtract(invoice.getAmountPaid()
+                        .add(invoice.getDiscount())
+                        .add(invoice.getLoyaltyDiscount()));
         if (is(totalToAmountPaidDiff).isPositive()) invoice.setDebt(totalToAmountPaidDiff.abs());
         else invoice.setBalance(totalToAmountPaidDiff.abs());
 
@@ -576,7 +578,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);
             if (null != loyaltyPlan){
-                if (!invoice.getIsLoyaltyDiscount()) {
+                if (is(invoice.getLoyaltyDiscount()).lte(0.0)) {
 
                     cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(invoice.getAmountPaid()));
                     cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() + 1);
@@ -598,7 +600,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             invoice.setCustomerId(customer.get());
 
         //Generate discount on invoice if it exists
-        if (is(invoice.getDiscount()).isPositive() && !invoice.getIsLoyaltyDiscount())
+        if (is(invoice.getDiscount()).isPositive())
             salesDiscountServices.generateDiscountOnInvoice(invoice);
         invoice.setCreatedBy(invoiceGeneratedBy);
 
