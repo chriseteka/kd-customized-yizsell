@@ -44,11 +44,11 @@ public class LoyaltyController {
         return ResponseEntity.ok(loyaltyServices.updateEntity(loyaltyId, loyalty));
     }
 
-    @PutMapping(path = "/add/customer", consumes = "application/json", produces = "application/json")
+    @PutMapping(path = "/add/customer", produces = "application/json")
     public ResponseEntity<?> addCustomerToPlan(@RequestParam Long customerId,
                                                @RequestParam Long loyaltyId){
 
-        return ResponseEntity.ok(loyaltyServices.addCustomerToLoyaltyPlan(customerId, loyaltyId));
+        return ResponseEntity.ok(loyaltyServices.addCustomerToLoyaltyPlan(loyaltyId, customerId));
     }
 
     @GetMapping(path = "/byId", produces = "application/json")
