@@ -51,6 +51,13 @@ public class LoyaltyController {
         return ResponseEntity.ok(loyaltyServices.addCustomerToLoyaltyPlan(loyaltyId, customerId));
     }
 
+    @PutMapping(path = "/remove/customer", produces = "application/json")
+    public ResponseEntity<?> removeCustomerFromPlan(@RequestParam Long customerId,
+                                               @RequestParam Long loyaltyId){
+
+        return ResponseEntity.ok(loyaltyServices.removeCustomerFromPlan(loyaltyId, customerId));
+    }
+
     @GetMapping(path = "/byId", produces = "application/json")
     public  ResponseEntity<?> fetchLoyaltyById(@RequestParam Long loyaltyId){
 

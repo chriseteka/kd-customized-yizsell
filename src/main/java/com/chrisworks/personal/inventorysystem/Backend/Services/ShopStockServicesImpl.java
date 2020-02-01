@@ -463,7 +463,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
                 if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
                         InventoryAPIOperationException("Operation not allowed",
-                        "You cannot change sellig price of a stock in a shop not created by you", null);
+                        "You cannot change selling price of a stock in a shop not created by you", null);
 
                 ShopStocks stockRetrieved = shopStocksRepository.findDistinctByStockNameAndShop(stockName, shop);
 
@@ -566,8 +566,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
         });
 
-        String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
-        genericService.addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
+        if (is(invoice.getAmountPaid()).isPositive()) {
+            String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
+            genericService.addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
+        }
 
         String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();
 

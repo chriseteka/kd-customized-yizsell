@@ -49,6 +49,7 @@ public class Invoice {
     @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal invoiceTotalAmount;
 
+    @DecimalMin(value = "0")
     @Column(name = "amountPaid")
     private BigDecimal amountPaid = BigDecimal.ZERO;
 
@@ -58,6 +59,7 @@ public class Invoice {
     @Column(name = "balance")
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @DecimalMin(value = "0")
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
 
@@ -94,11 +96,10 @@ public class Invoice {
     private PAYMENT_MODE paymentMode;
 
     @Transient
-//    @JsonIgnore
+    @DecimalMin(value = "0")
     private BigDecimal loyaltyDiscount = BigDecimal.ZERO;
 
     @Transient
-//    @JsonIgnore
     private String reasonForDiscount = null;
 
     @PostLoad

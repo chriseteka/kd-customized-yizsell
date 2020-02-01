@@ -61,8 +61,8 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
                         .stream()
                         .anyMatch(c -> c.getCustomerPhoneNumber().equalsIgnoreCase(customer.getCustomerPhoneNumber()));
 
-                if (match) throw new InventoryAPIOperationException("Customer has bee subscribed",
-                        "Customer with id: " + customerId + " may have been subscribed to a loyalty plan, " +
+                if (match) throw new InventoryAPIOperationException("Customer has been subscribed",
+                        "Customer with id: " + customerId + " have already been subscribed to this or another loyalty plan, " +
                                 "remove this customer from their pre-existing plan, and try again.", null);
 
                 customer.setIsLoyal(true);
@@ -86,7 +86,7 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
             Loyalty loyalty = loyaltyRepository.findDistinctByCustomers(customer);
 
             if (loyalty == null) throw new InventoryAPIOperationException("Customer has no loyalty",
-                    "Customer may have not been subscribed to any loyalty plan", null);
+                    "Customer may have not been subscribed to this or any loyalty plan", null);
 
             return loyalty;
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Customer not found",

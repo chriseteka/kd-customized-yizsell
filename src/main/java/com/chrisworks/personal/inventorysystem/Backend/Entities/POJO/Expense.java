@@ -39,7 +39,7 @@ public class Expense {
     @Column(name = "updatedDate")
     private Date updateDate = new Date();
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Expense must be greater than zero")
+    @DecimalMin(value = "0.0", message = "Expense must be greater than or equal to zero")
     @Column(name = "expenseAmount", nullable = false)
     private BigDecimal expenseAmount;
 
