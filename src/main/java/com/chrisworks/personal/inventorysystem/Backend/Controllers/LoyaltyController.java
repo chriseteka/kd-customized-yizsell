@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Loyalty;
 import com.chrisworks.personal.inventorysystem.Backend.Services.LoyaltyServices;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +80,14 @@ public class LoyaltyController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(loyaltyList, page, size));
+    }
+
+    @GetMapping(path = "/customers", produces = "application/json")
+    public  ResponseEntity<?> fetchAllLoyalCustomers(@RequestParam int page, @RequestParam int size){
+
+        List<Customer> loyalCustomerList = loyaltyServices.fetchAuthenticatedUserLoyalCustomers();
+
+        return ResponseEntity.ok(prepareResponse(loyalCustomerList, page, size));
     }
 
     @DeleteMapping(path = "/delete/byId", produces = "application/json")

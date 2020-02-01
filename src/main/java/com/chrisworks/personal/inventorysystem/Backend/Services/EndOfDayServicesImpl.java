@@ -36,29 +36,35 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
     private final SellerRepository sellerRepository;
 
+    private final WarehouseStockRepository warehouseStockRepository;
+
     @Autowired
     public EndOfDayServicesImpl(InvoiceRepository invoiceRepository, IncomeRepository incomeRepository,
                                 ExpenseRepository expenseRepository, SalesDiscountRepository discountRepository,
-                                SellerRepository sellerRepository) {
+                                SellerRepository sellerRepository, WarehouseStockRepository warehouseStockRepository) {
         this.invoiceRepository = invoiceRepository;
         this.incomeRepository = incomeRepository;
         this.expenseRepository = expenseRepository;
         this.discountRepository = discountRepository;
         this.sellerRepository = sellerRepository;
+        this.warehouseStockRepository = warehouseStockRepository;
     }
 
     @Override
     public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport() {
 
-        if (AuthenticatedUserDetails.getAccount_type() == null
-                || AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+        if (AuthenticatedUserDetails.getAccount_type() == null)
             throw new InventoryAPIOperationException("Not allowed",
-                    "Logged in user is not allowed to perform this operation", null);
+                    "Logged in user is unknown and hence not allowed to perform this operation", null);
 
         if (fromDate == null) fromDate = new Date();
         if (toDate == null) toDate = fromDate;
 
         String loggedInUser = AuthenticatedUserDetails.getUserFullName();
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            return null;
+//            return computeWarehouseAttendantEndOfDay(fromDate, toDate, Collections.singletonList(loggedInUser));
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
             return computeEndOfDay(fromDate, toDate, Collections.singletonList(loggedInUser));
@@ -264,6 +270,15 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         return endOfDayReport;
     }
 
+    private WarehouseAttendantEndOfDay computeWarehouseAttendantEndOfDay(Date from, Date to, List<String> staff){
+
+        List<NewStockAddedToWarehouse> newStockList = new ArrayList<>(Collections.emptyList());
+
+        List<WaybillEndOfDay> waybillEndOfDayList = new ArrayList<>(Collections.emptyList());
+
+        return null;
+    }
+
     private List<DiscountBreakDown> computeEndOfDayDiscounts(List<SalesDiscount> sortedDiscountList) {
 
         //Sort all expense by their types and sum them
@@ -443,6 +458,32 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         BigDecimal worthOfStockSold;
     }
 
+    @Data
+    class NewStockAddedToWarehouse{
+
+        String stockCategory;
+
+        String stockName;
+
+        int quantity;
+    }
+
+    @Data
+    class WaybillEndOfDay{
+
+        String stockCategory;
+
+        String stockName;
+
+        int quantityWaybilled;
+
+        BigDecimal waybillActualCost;
+
+        BigDecimal waybillSellingWorth;
+
+        int numberOfWaybillInvoices;
+    }
+
     @NoArgsConstructor
     @AllArgsConstructor
     @Data
@@ -515,6 +556,8 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
     @Data
     class EndOfDayReport{
 
+        WarehouseAttendantEndOfDay warehouseAttendantEndOfDay;
+
         List<StockSalesEndOfDay> stockReportList;
 
         CashFlowEndOfDay cashFlow;
@@ -522,5 +565,15 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         BalanceAccount balanceAccount;
 
         ACCOUNT_STATUS accountStatus;
+    }
+
+    @Data
+    class WarehouseAttendantEndOfDay{
+
+        String warehouseName;
+
+        List<NewStockAddedToWarehouse> newStockAddedToWarehouseList;
+
+        List<WaybillEndOfDay> waybillEndOfDayList;
     }
 }

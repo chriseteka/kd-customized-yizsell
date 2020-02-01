@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -60,4 +61,12 @@ public class Customer {
 
     @Column(name = "createdBy")
     private String createdBy;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "purchaseTimesBeforeNextReward")
+    private int numberOfPurchaseTimesBeforeReward = 0;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "threshold")
+    private BigDecimal threshold = BigDecimal.ZERO;
 }

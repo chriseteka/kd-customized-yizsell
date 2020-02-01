@@ -15,8 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
@@ -66,6 +68,8 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
                                 "remove this customer from their pre-existing plan, and try again.", null);
 
                 customer.setIsLoyal(true);
+                customer.setThreshold(loyalty.getThreshold());
+                customer.setNumberOfPurchaseTimesBeforeReward(loyalty.getNumberOfDaysBeforeReward());
                 customerSet.add(customerRepository.save(customer));
                 loyalty.setCustomers(customerSet);
 
@@ -116,6 +120,21 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
 
         loyaltyPlan.setCustomers(customerSet);
         return loyaltyRepository.save(loyaltyPlan);
+    }
+
+    @Override
+    public List<Customer> fetchAuthenticatedUserLoyalCustomers() {
+
+        preAuthorize();
+
+        List<Loyalty> authUserLoyalties = loyaltyRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        return authUserLoyalties
+                .stream()
+                .sorted(Comparator.comparing(Loyalty::getCreatedDate).reversed())
+                .map(Loyalty::getCustomers)
+                .flatMap(Set::parallelStream)
+                .collect(Collectors.toList());
     }
 
     @Override
