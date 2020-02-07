@@ -13,7 +13,7 @@ public enum PAYMENT_MODE {
 
     TRANSFER(200),
 
-    BANK_DEPOSIT(300);
+    POS(300);
 
     private int payment_mode_value;
 

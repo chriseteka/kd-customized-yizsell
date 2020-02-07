@@ -1,12 +1,14 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EOD_TYPE;
+
 import java.util.Date;
 
 public interface EndOfDayServices {
 
-    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport();
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport(EOD_TYPE eod_type);
 
-    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportFor(Date anyDate);
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportFor(EOD_TYPE eod_type, Date anyDate);
 
-    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportBetween(Date from, Date to);
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportBetween(EOD_TYPE eod_type, Date from, Date to);
 }

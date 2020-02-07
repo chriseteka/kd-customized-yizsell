@@ -114,7 +114,9 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
 
         customerSet.remove(customerToRemove);
         customerToRemove.setIsLoyal(false);
+        customerToRemove.setThreshold(BigDecimal.ZERO);
         customerToRemove.setNumberOfPurchasesAfterLastReward(0);
+        customerToRemove.setNumberOfPurchaseTimesBeforeReward(0);
         customerToRemove.setRecentPurchasesAmount(BigDecimal.ZERO);
         customerRepository.save(customerToRemove);
 
