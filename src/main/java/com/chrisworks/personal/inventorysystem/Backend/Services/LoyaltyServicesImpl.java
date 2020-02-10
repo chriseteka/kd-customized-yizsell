@@ -49,23 +49,19 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
 
         preAuthorize();
 
-        return loyaltyRepository.findById(loyaltyId).map(loyalty -> {
+        return customerRepository.findById(customerId).map(customer -> {
 
-            if (!loyalty.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
-                throw new InventoryAPIOperationException("Loyalty plan not yours",
-                        "Loyalty plan with id: " + " was not found in your list of loyalty plans", null);
+            if (customer.getIsLoyal()) throw new InventoryAPIOperationException("Customer has been subscribed",
+                    "Customer with id: " + customerId + " have already been subscribed to this or another loyalty plan, " +
+                            "remove this customer from their pre-existing plan, and try again.", null);
 
-            return customerRepository.findById(customerId).map(customer -> {
+            return loyaltyRepository.findById(loyaltyId).map(loyalty -> {
+
+                if (!loyalty.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                    throw new InventoryAPIOperationException("Loyalty plan not yours",
+                            "Loyalty plan with id: " + " was not found in your list of loyalty plans", null);
 
                 Set<Customer> customerSet = loyalty.getCustomers();
-
-                boolean match = customerSet
-                        .stream()
-                        .anyMatch(c -> c.getCustomerPhoneNumber().equalsIgnoreCase(customer.getCustomerPhoneNumber()));
-
-                if (match) throw new InventoryAPIOperationException("Customer has been subscribed",
-                        "Customer with id: " + customerId + " have already been subscribed to this or another loyalty plan, " +
-                                "remove this customer from their pre-existing plan, and try again.", null);
 
                 customer.setIsLoyal(true);
                 customer.setThreshold(loyalty.getThreshold());
@@ -74,10 +70,10 @@ public class LoyaltyServicesImpl implements LoyaltyServices {
                 loyalty.setCustomers(customerSet);
 
                 return loyaltyRepository.save(loyalty);
-            }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Customer not found",
-                    "Customer with id: " + customerId + " was not found.", null));
-        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Loyalty plan not found",
-                "Loyalty plan with id: " + loyaltyId + " was not found.", null));
+            }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Loyalty plan not found",
+            "Loyalty plan with id: " + loyaltyId + " was not found.", null));
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Customer not found",
+                "Customer with id: " + customerId + " was not found.", null));
     }
 
     @Override

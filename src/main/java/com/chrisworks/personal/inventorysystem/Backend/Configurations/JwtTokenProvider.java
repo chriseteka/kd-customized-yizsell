@@ -27,6 +27,7 @@ public class JwtTokenProvider {
         claims.put("businessName", userDetails.getBusinessName());
         claims.put("fullName", userDetails.getBusinessOwnerFullName());
         claims.put("username", userDetails.getUsername());
+        claims.put("phoneNumber", userDetails.getBusinessOwnerPhoneNumber());
         claims.put("isTrialAccount", userDetails.getIsTrialAccount());
         claims.put("expirationDate", userDetails.getExpirationDate());
         claims.put("isVerified", userDetails.getVerified());
