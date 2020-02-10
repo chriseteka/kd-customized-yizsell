@@ -226,22 +226,17 @@ public class ShopStockController {
                                        @RequestBody @Valid Invoice invoice){
 
         if (!invoice.getPaymentModeVal().matches("\\d+")) throw new InventoryAPIDataValidationException
-                ("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300", null);
+                ("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300, 400", null);
 
         invoice.setPaymentModeValue(Integer.parseInt(invoice.getPaymentModeVal()));
 
         IntStream paymentModeValueStream = Arrays.stream(PAYMENT_MODE.values()).mapToInt(PAYMENT_MODE::getPayment_mode_value);
 
         if (paymentModeValueStream.noneMatch(value -> value == invoice.getPaymentModeValue()))
-            throw new InventoryAPIDataValidationException("Payment mode value error", "Payment mode value must be any of these: 100, 200, 300", null);
+            throw new InventoryAPIDataValidationException("Payment mode value error",
+                    "Payment mode value must be any of these: 100, 200, 300, 400", null);
 
-        Invoice newInvoice;
-
-        try {
-            newInvoice = shopStockServices.sellStock(shopId, invoice);
-        }catch (Exception e){
-            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
-        }
+        Invoice newInvoice = shopStockServices.sellStock(shopId, invoice);
 
         if (newInvoice == null)
             throw new InventoryAPIOperationException("Data not saved",

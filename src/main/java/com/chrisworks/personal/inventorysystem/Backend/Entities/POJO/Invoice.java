@@ -12,6 +12,7 @@ import javax.validation.constraints.NotEmpty;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -91,7 +92,6 @@ public class Invoice {
     @NotEmpty(message = "Payment type cannot be null")
     private String paymentModeVal;
 
-
     @Transient
     private PAYMENT_MODE paymentMode;
 
@@ -101,6 +101,11 @@ public class Invoice {
 
     @Transient
     private String reasonForDiscount = null;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "InvoiceMultiplePayments", joinColumns = @JoinColumn(name = "invoiceId",
+            nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "multiplePaymentId"))
+    private List<MultiplePaymentMode> multiplePayment;
 
     @PostLoad
     void fillTransient() {

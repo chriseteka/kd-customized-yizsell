@@ -537,6 +537,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             ShopStocks stockFound = atomicStock.get();
 
+            if (stockFound.getStockQuantityRemaining() == 0)
+                throw new InventoryAPIOperationException("Low stock quantity",
+                        stockFound.getStockName() + " has finished in your shop, remove it from your invoice.", null);
+
             if (stockFound.getStockQuantityRemaining() < stockSold.getQuantitySold()) throw new InventoryAPIOperationException
                     ("Low stock quantity", "The quantity of " + stockFound.getStockName() +
                             " is limited, and you cannot sell above it.", null);
@@ -567,8 +571,16 @@ public class ShopStockServicesImpl implements ShopStockServices {
         });
 
         if (is(invoice.getAmountPaid()).isPositive()) {
+
             String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
-            genericService.addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
+
+            if (invoice.getMultiplePayment().isEmpty())
+                genericService.addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
+            else {
+                invoice.setPaymentModeValue(400);
+                for (MultiplePaymentMode multiplePaymentMode : invoice.getMultiplePayment())
+                    genericService.addIncome(new Income(multiplePaymentMode.getAmountPaid(), 100, incomeDescription));
+            }
         }
 
         String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();

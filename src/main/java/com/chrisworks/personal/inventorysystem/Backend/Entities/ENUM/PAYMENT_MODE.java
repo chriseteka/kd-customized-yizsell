@@ -13,7 +13,9 @@ public enum PAYMENT_MODE {
 
     TRANSFER(200),
 
-    POS(300);
+    POS(300),
+
+    MULTIPLE(400);
 
     private int payment_mode_value;
 
