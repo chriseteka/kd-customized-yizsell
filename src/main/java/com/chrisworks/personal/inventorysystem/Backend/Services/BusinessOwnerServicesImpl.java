@@ -75,7 +75,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 //        } catch (Exception e) {
 //
 //            e.printStackTrace();
-//            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getMessage(), null);
+//            throw new InventoryAPIOperationException(e.getLocalizedMessage(), e.getBody(), null);
 //        }
 
         return businessOwnerCreated;

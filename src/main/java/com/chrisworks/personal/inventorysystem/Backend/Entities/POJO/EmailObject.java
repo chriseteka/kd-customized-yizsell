@@ -21,16 +21,16 @@ import java.util.List;
 @NoArgsConstructor
 public class EmailObject {
 
-    @Email(message = "Invalid message sender, please check sender's email address")
+    @Email(message = "Invalid body sender, please check sender's email address")
     private String messageSender;
 
-    @Email(message = "Invalid message receiver, please check receiver's email address")
+    @Email(message = "Invalid body receiver, please check receiver's email address")
     private String messageReceiver;
 
-    @NotEmpty(message = "message title cannot be empty")
+    @NotEmpty(message = "body title cannot be empty")
     private String messageTitle;
 
-    @NotEmpty(message = "message title cannot be empty")
+    @NotEmpty(message = "body title cannot be empty")
     private String messageBody;
 
     private List<EmailAttachments> attachments = new ArrayList<>(Collections.emptyList());

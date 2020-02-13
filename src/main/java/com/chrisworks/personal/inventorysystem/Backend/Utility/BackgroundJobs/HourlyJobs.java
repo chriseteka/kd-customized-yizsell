@@ -91,7 +91,7 @@ public class HourlyJobs {
                     .parallelStream()
                     .forEach(eventLog -> {
 
-                        //Make this a html organized message.
+                        //Make this a html organized body.
                         EmailObject emailObject = new EmailObject();
                         emailObject.setMessageSender(emailSender);
                         emailObject.setMessageReceiver(eventLog.getNoticeFor());
