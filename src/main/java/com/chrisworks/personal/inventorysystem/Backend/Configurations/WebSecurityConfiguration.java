@@ -20,9 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 //import java.util.Properties;
+import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.*;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.SIGN_IN_URL;
-import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.SIGN_UP_URL;
 
 /**
  * @author Chris_Eteka
@@ -80,6 +79,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                         "/**/*.html",
                         "/**/*.css",
                         "/**/*.js",
+                        CHAT_URL,
                         SIGN_IN_URL + "/**", //Allow forgot password and password reset token urls
                         SIGN_IN_URL, //Allow authentication (sign in) url
                         SIGN_UP_URL //Allow Business Owner sign up url

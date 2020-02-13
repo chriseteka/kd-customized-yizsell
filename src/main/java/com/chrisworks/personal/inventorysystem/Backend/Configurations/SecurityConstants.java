@@ -4,6 +4,7 @@ public class SecurityConstants {
 
     public static final String SIGN_UP_URL = "/BO/createAccount";
     public static final String SIGN_IN_URL = "/auth/*";
+    public static final String CHAT_URL = "/chat/*";
     public static final String SECRET = "InventoryAPI53271514Secret";
     public static final String TOKEN_PREFIX = "Bearer ";
     public static final String HEADER_STRING = "Authorization";
