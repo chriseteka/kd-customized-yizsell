@@ -14,6 +14,8 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
+
+        System.out.println("Request: " + request);
         return new ChatPrincipal(AuthenticatedUserDetails.getUserFullName());
     }
 
