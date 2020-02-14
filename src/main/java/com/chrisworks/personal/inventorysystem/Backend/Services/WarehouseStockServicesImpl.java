@@ -7,6 +7,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCategory;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueWarehouseStocks;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -302,7 +303,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 stock.setLastRestockPurchasedFrom(finalStockSupplier);
                 stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
                 stock.setLastRestockQuantity(newStock.getStockQuantityPurchased());
-                stock.setSellingPricePerStock(newStock.getSellingPricePerStock());
+//                stock.setSellingPricePerStock(newStock.getSellingPricePerStock());
+                stock.setSellingPricePerStock
+                    (computeWeightedPrice(stock.getStockQuantityRemaining(), stock.getSellingPricePerStock(),
+                            newStock.getStockQuantityPurchased(), newStock.getSellingPricePerStock()));
                 stock.setStockQuantityPurchased(newStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
                 stock.setStockQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
                 stock.setPossibleQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getPossibleQuantityRemaining());
@@ -385,6 +389,42 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 "Stock with name: " + stockName + " was not found in your warehouse", null);
 
         return warehouseStockRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+    }
+
+    @Override
+    public List<UniqueWarehouseStocks> fetchAllAuthUserUniqueStocks(Long warehouseId) {
+
+        List<String> stockNames = new ArrayList<>(Collections.emptyList());
+
+        List<WarehouseStocks> warehouseStocksList = this.allStockByWarehouseId(warehouseId);
+
+        stockNames.addAll(
+            warehouseStocksList
+                .parallelStream()
+                .map(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()))
+                .distinct()
+                .collect(Collectors.toList())
+        );
+
+        return stockNames
+            .stream()
+            .map(s -> warehouseStocksList
+                .stream()
+                .filter(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()).equalsIgnoreCase(s))
+                .reduce(new WarehouseStocks(), (s1, s2) -> {
+
+                    if (s1 == null || StringUtils.isEmpty(s1.getStockName())) return s2;
+                    String s1Name = stripStringOfExpiryDate(s1.getStockName());
+                    if (s1Name.equalsIgnoreCase(stripStringOfExpiryDate(s2.getStockName()))) {
+                        s1.setStockQuantityRemaining(s1.getStockQuantityPurchased()
+                                + s2.getStockQuantityRemaining());
+                    }
+                    return s1;
+                }))
+            .map(ws -> new UniqueWarehouseStocks
+                (ws.getWarehouseStockId(), stripStringOfExpiryDate(ws.getStockName()),
+                        ws.getStockQuantityRemaining(), ws.getPricePerStockPurchased(), ws.getSellingPricePerStock()))
+            .collect(Collectors.toList());
     }
 
     private WarehouseStocks addStockToWarehouse(WarehouseStocks stockToAdd, Warehouse warehouse){

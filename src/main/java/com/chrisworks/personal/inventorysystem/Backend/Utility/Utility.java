@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -69,5 +70,20 @@ public class Utility {
                 .toLocalDate();
 
         return localDate.format(formatter);
+    }
+
+    public static String stripStringOfExpiryDate(String s){
+
+        if (s.contains(" Exp: ")) {
+
+            int indexOfExpiryDate = s.indexOf(" Exp: ") + 1;
+            return s.substring(0, indexOfExpiryDate);
+        }
+        return s;
+    }
+
+    public static BigDecimal computeWeightedPrice(int w1, BigDecimal p1, int w2, BigDecimal p2){
+
+        return BigDecimal.ONE;
     }
 }

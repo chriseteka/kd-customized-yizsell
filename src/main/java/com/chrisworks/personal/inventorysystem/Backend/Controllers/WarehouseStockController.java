@@ -61,6 +61,7 @@ public class WarehouseStockController {
         return ResponseEntity.ok(newStockInWarehouse);
     }
 
+    //This function is also used to bulk restock in a warehouse.
     @PostMapping(path = "/create/list", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createStockListInWarehouse(@RequestParam Long warehouseId,
                                                     @RequestBody @Valid List<WarehouseStocks> stockList){
@@ -95,6 +96,12 @@ public class WarehouseStockController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(warehouseStocksList, page, size));
+    }
+
+    @GetMapping(path = "/all/unique/byWarehouse")
+    public ResponseEntity<?> fetchAllUniqueStockByWarehouseId(@RequestParam Long warehouseId){
+
+        return ResponseEntity.ok(warehouseStockServices.fetchAllAuthUserUniqueStocks(warehouseId));
     }
 
     @GetMapping(path = "/all/soonToFinish/byWarehouse")
@@ -158,7 +165,7 @@ public class WarehouseStockController {
     }
 
     @PutMapping(path = "/restock", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> restockExistingShopWarehouseStock(@RequestParam Long warehouseId,
+    public ResponseEntity<?> restockExistingWarehouseStock(@RequestParam Long warehouseId,
                                                       @RequestParam Long stockId,
                                                       @RequestBody @Valid WarehouseStocks stock){
 
