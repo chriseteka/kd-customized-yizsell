@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Websocket;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -14,12 +15,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
-    private static final String USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
-//    private static final String PASSWORD_HEADER = "passcode";
+
+    private static String USERNAME_HEADER;
     private final WebsocketAuthenticatorService webSocketAuthenticatorService;
 
     @Autowired
     public AuthChannelInterceptorAdapter(final WebsocketAuthenticatorService webSocketAuthenticatorService) {
+        new AuthenticatedUserDetails(1L, "chris eteka",ACCOUNT_TYPE.BUSINESS_OWNER, true);
+        USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
         this.webSocketAuthenticatorService = webSocketAuthenticatorService;
     }
 
@@ -28,14 +31,14 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
         final StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         assert accessor != null;
-        if (StompCommand.CONNECT == accessor.getCommand()) {
-            final String username = accessor.getFirstNativeHeader(USERNAME_HEADER);
-//            final String password = accessor.getFirstNativeHeader(PASSWORD_HEADER);
-
-            final UsernamePasswordAuthenticationToken user = webSocketAuthenticatorService.getAuthenticatedOrFail(username);
-
-            accessor.setUser(user);
+        if (accessor.getCommand() == StompCommand.DISCONNECT){
+            System.out.println("You may have been forcefully disconnected");
+            return null;
         }
+        final UsernamePasswordAuthenticationToken user = webSocketAuthenticatorService
+                .getAuthenticatedOrFail(USERNAME_HEADER);
+        if (StompCommand.CONNECT == accessor.getCommand() && accessor.getUser() == null)
+            accessor.setUser(user);
         return message;
     }
 }

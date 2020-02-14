@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Websocket;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -15,8 +17,13 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
-    @Autowired
     private AuthChannelInterceptorAdapter authChannelInterceptorAdapter;
+
+    @Autowired
+    public WebsocketConfiguration(AuthChannelInterceptorAdapter authChannelInterceptorAdapter) {
+        this.authChannelInterceptorAdapter = authChannelInterceptorAdapter;
+
+    }
 
     //Stomp client = ws://localhost:7000/api/inventory/chat
     @Override
@@ -32,12 +39,12 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
     //2. /user/queue/reply => Direct body to single user
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config){
-        config.enableSimpleBroker("/topic/", "/queue/");
+        config.enableSimpleBroker("/topic", "/queue");
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void configureClientInboundChannel(final ChannelRegistration registration) {
-        registration.setInterceptors(authChannelInterceptorAdapter);
+        registration.interceptors(authChannelInterceptorAdapter);
     }
 }

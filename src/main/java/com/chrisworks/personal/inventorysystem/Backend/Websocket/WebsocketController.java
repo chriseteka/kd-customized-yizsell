@@ -1,8 +1,10 @@
 package com.chrisworks.personal.inventorysystem.Backend.Websocket;
 
+import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -21,7 +23,7 @@ public class WebsocketController {
     private SimpMessageSendingOperations messagingTemplate;
 
     //e.g: Direct body to a user goes to: /app/direct/message
-    @MessageMapping("/direct/message")
+    @MessageMapping("/direct")
     @SendToUser("/queue/reply")
     public OutputMessage sendMessageFromUserToUser(@Payload MessageObject message) throws Exception {
         messagingTemplate
@@ -31,20 +33,23 @@ public class WebsocketController {
     }
 
     //e.g: Direct body to a user goes to: /app/group/message
-    @MessageMapping("/group/message")
+    @MessageMapping("/group")
     @SendTo("/topic/general")
-    public OutputMessage sendToGeneral(MessageObject message) throws Exception {
+    public OutputMessage send(@Payload String message) throws Exception {
 
-        messagingTemplate.convertAndSend(message);
+        System.out.println("Auth User: " + AuthenticatedUserDetails.getUserFullName());
+        System.out.println("message: " + message);
+        messagingTemplate.convertAndSend("/topic/general", message);
 
-        return new OutputMessage(message.getFrom(), message.getBody(), message.getTimeSent());
+        return null;
+//        return new OutputMessage(message.getFrom(), message.getBody(), message.getTimeSent());
     }
 
-//    @MessageExceptionHandler
-//    @SendToUser("/queue/errors")
-//    public String handleException(Throwable exception) {
-//        return exception.getMessage();
-//    }
+    @MessageExceptionHandler
+    @SendToUser("/queue")
+    public String handleException(Throwable exception) {
+        return exception.getMessage();
+    }
 
     @Data
     @AllArgsConstructor
