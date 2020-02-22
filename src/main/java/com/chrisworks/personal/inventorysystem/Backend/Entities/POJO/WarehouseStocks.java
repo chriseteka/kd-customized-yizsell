@@ -55,7 +55,7 @@ public class WarehouseStocks {
     @Column(name = "stockName", nullable = false)
     private String stockName;
 
-    @Min(value = 1, message = "Stock quantity purchased must be greater than zero")
+    @Min(value = 0, message = "Stock quantity purchased must be greater than zero")
     @Column(name = "stockQuantityPurchased", nullable = false)
     private int stockQuantityPurchased;
 
@@ -65,22 +65,20 @@ public class WarehouseStocks {
     @Column(name = "stockQuantityRemaining")
     private int stockQuantityRemaining;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Stock purchased total price must be greater than zero")
     @Column(name = "stockPurchasedTotalPrice", nullable = false)
-    private BigDecimal stockPurchasedTotalPrice;
+    private BigDecimal stockPurchasedTotalPrice = BigDecimal.ZERO;
 
     @Column(name = "pricePerStockPurchased")
-    private BigDecimal pricePerStockPurchased;
+    private BigDecimal pricePerStockPurchased = BigDecimal.ZERO;
 
     @Column(name = "stockSoldTotalPrice")
     private BigDecimal stockSoldTotalPrice = BigDecimal.ZERO;
 
     @Column(name = "stockRemainingTotalPrice")
-    private BigDecimal stockRemainingTotalPrice;
+    private BigDecimal stockRemainingTotalPrice = BigDecimal.ZERO;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Selling price per stock must be greater than zero")
     @Column(name = "sellingPricePerStock", nullable = false)
-    private BigDecimal sellingPricePerStock;
+    private BigDecimal sellingPricePerStock = BigDecimal.ZERO;
 
     @Column(name = "lastRestockQuantity")
     private int lastRestockQuantity;
