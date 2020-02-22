@@ -7,7 +7,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.StockCategory;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueWarehouseStocks;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueStock;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -153,7 +153,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                                 " this warehouse because it was not created by you", null);
 
                     return warehouseStockRepository.findAllByWarehouse(warehouse);
-                }).orElse(Collections.emptyList());
+                }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse not found",
+                        "Warehouse with id: " + warehouseId + " was not found", null));
 
     }
 
@@ -296,6 +297,9 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     throw new InventoryAPIOperationException("Stock name mismatch", "Cannot proceed with the restock," +
                             " because incoming stock comes with an expiration date not matching existing stock", null);
 
+                List<BigDecimal> oldAndNewSellingPrices = Arrays.asList(stock.getSellingPricePerStock(), newStock.getSellingPricePerStock());
+                List<BigDecimal> oldAndNewPurchasePrices = Arrays.asList(stock.getPricePerStockPurchased(), newStock.getPricePerStockPurchased());
+                List<Integer> oldAndNewStockQuantity = Arrays.asList(stock.getStockQuantityRemaining(), newStock.getStockQuantityPurchased());
                 Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
                 allSuppliers.add(finalStockSupplier);
                 stock.setUpdateDate(new Date());
@@ -303,10 +307,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 stock.setLastRestockPurchasedFrom(finalStockSupplier);
                 stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
                 stock.setLastRestockQuantity(newStock.getStockQuantityPurchased());
-//                stock.setSellingPricePerStock(newStock.getSellingPricePerStock());
-                stock.setSellingPricePerStock
-                    (computeWeightedPrice(stock.getStockQuantityRemaining(), stock.getSellingPricePerStock(),
-                            newStock.getStockQuantityPurchased(), newStock.getSellingPricePerStock()));
+                stock.setPricePerStockPurchased(computeWeightedPrice(oldAndNewStockQuantity, oldAndNewPurchasePrices));
+                stock.setSellingPricePerStock(computeWeightedPrice(oldAndNewStockQuantity, oldAndNewSellingPrices));
                 stock.setStockQuantityPurchased(newStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
                 stock.setStockQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
                 stock.setPossibleQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getPossibleQuantityRemaining());
@@ -392,39 +394,39 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
     }
 
     @Override
-    public List<UniqueWarehouseStocks> fetchAllAuthUserUniqueStocks(Long warehouseId) {
+    public List<UniqueStock> fetchAllAuthUserUniqueStocks(Long warehouseId) {
 
         List<String> stockNames = new ArrayList<>(Collections.emptyList());
 
         List<WarehouseStocks> warehouseStocksList = this.allStockByWarehouseId(warehouseId);
 
         stockNames.addAll(
-            warehouseStocksList
-                .parallelStream()
-                .map(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()))
-                .distinct()
-                .collect(Collectors.toList())
+                warehouseStocksList
+                        .parallelStream()
+                        .map(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()))
+                        .distinct()
+                        .collect(Collectors.toList())
         );
 
         return stockNames
-            .stream()
-            .map(s -> warehouseStocksList
                 .stream()
-                .filter(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()).equalsIgnoreCase(s))
-                .reduce(new WarehouseStocks(), (s1, s2) -> {
+                .map(s -> warehouseStocksList
+                        .stream()
+                        .filter(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()).equalsIgnoreCase(s))
+                        .reduce(new WarehouseStocks(), (s1, s2) -> {
 
-                    if (s1 == null || StringUtils.isEmpty(s1.getStockName())) return s2;
-                    String s1Name = stripStringOfExpiryDate(s1.getStockName());
-                    if (s1Name.equalsIgnoreCase(stripStringOfExpiryDate(s2.getStockName()))) {
-                        s1.setStockQuantityRemaining(s1.getStockQuantityPurchased()
-                                + s2.getStockQuantityRemaining());
-                    }
-                    return s1;
-                }))
-            .map(ws -> new UniqueWarehouseStocks
-                (ws.getWarehouseStockId(), stripStringOfExpiryDate(ws.getStockName()),
-                        ws.getStockQuantityRemaining(), ws.getPricePerStockPurchased(), ws.getSellingPricePerStock()))
-            .collect(Collectors.toList());
+                            if (s1 == null || StringUtils.isEmpty(s1.getStockName())) return s2;
+                            String s1Name = stripStringOfExpiryDate(s1.getStockName());
+                            if (s1Name.equalsIgnoreCase(stripStringOfExpiryDate(s2.getStockName()))) {
+                                s1.setStockQuantityRemaining(s1.getStockQuantityPurchased()
+                                        + s2.getStockQuantityRemaining());
+                            }
+                            return s1;
+                        }))
+                .map(ws -> new UniqueStock
+                        (ws.getWarehouseStockId(), stripStringOfExpiryDate(ws.getStockName()),
+                                ws.getStockQuantityRemaining(), ws.getPricePerStockPurchased(), ws.getSellingPricePerStock()))
+                .collect(Collectors.toList());
     }
 
     private WarehouseStocks addStockToWarehouse(WarehouseStocks stockToAdd, Warehouse warehouse){
@@ -614,7 +616,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 }
 
                 //If stock has quantity from zero and below
-                if (stockToAdd.getStockQuantityPurchased() <= 0){
+                if (stockToAdd.getStockQuantityPurchased() < 0){
 
                     rejectedStockList.add(stockToAdd);
                     return null;

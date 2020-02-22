@@ -1,8 +1,10 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueStock;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -185,7 +187,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                 " this shop because it was not created by you", null);
 
                     return shopStocksRepository.findAllByShop(shop);
-                }).orElse(Collections.emptyList());
+                }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
+                        "Shop with id: " + shopId + " was not found", null));
     }
 
     @Override
@@ -328,6 +331,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             return optionalShopStock.map(stock -> {
 
+                List<BigDecimal> oldAndNewSellingPrices = Arrays.asList(stock.getSellingPricePerStock(), newStock.getSellingPricePerStock());
+                List<BigDecimal> oldAndNewPurchasePrices = Arrays.asList(stock.getPricePerStockPurchased(), newStock.getPricePerStockPurchased());
+                List<Integer> oldAndNewStockQuantity = Arrays.asList(stock.getStockQuantityRemaining(), newStock.getStockQuantityPurchased());
                 Set<Supplier> allSuppliers = stock.getStockPurchasedFrom();
                 allSuppliers.add(finalStockSupplier);
                 stock.setUpdateDate(new Date());
@@ -335,7 +341,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 stock.setLastRestockPurchasedFrom(finalStockSupplier);
                 stock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
                 stock.setLastRestockQuantity(newStock.getStockQuantityPurchased());
-                stock.setSellingPricePerStock(newStock.getSellingPricePerStock());
+                stock.setPricePerStockPurchased(computeWeightedPrice(oldAndNewStockQuantity, oldAndNewPurchasePrices));
+                stock.setSellingPricePerStock(computeWeightedPrice(oldAndNewStockQuantity, oldAndNewSellingPrices));
                 stock.setStockQuantityPurchased(newStock.getStockQuantityPurchased() + stock.getStockQuantityPurchased());
                 stock.setStockQuantityRemaining(newStock.getStockQuantityPurchased() + stock.getStockQuantityRemaining());
                 newStock.setStockPurchasedTotalPrice(newStock.getPricePerStockPurchased()
@@ -561,7 +568,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             stockFound.setStockRemainingTotalPrice(BigDecimal.valueOf(stockFound.getStockQuantityRemaining())
                     .multiply(stockFound.getPricePerStockPurchased()));
             stockFound.setProfit(stockFound.getProfit().add(
-                    (stockFound.getSellingPricePerStock().subtract(stockFound.getPricePerStockPurchased()))
+                    (stockSold.getPricePerStockSold().subtract(stockSold.getCostPricePerStock()))
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))
             ));
             shopStocksRepository.save(stockFound);
@@ -626,6 +633,53 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     @Transactional
     @Override
+    public ResponseObject reverseSale(Long shopId, String invoiceNumber) {
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Not allowed", "Operation not allowed by the logged in user", null);
+
+        Optional<Shop> optionalShop = shopRepository.findById(shopId);
+
+        if (!optionalShop.isPresent()) throw new InventoryAPIOperationException("Shop not found",
+                "Cannot find shop where sales is to be made from, review your inputs and try again", null);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                && !optionalShop.get().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "You cannot sell from a shop not created by you", null);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
+                && !optionalShop.get().equals(sellerRepository.findDistinctBySellerEmail
+                (AuthenticatedUserDetails.getUserFullName()).getShop()))
+            throw new InventoryAPIOperationException("Not allowed",
+                    "You cannot sell from a shop you were not assigned", null);
+
+        Invoice invoice = invoiceRepository.findDistinctByInvoiceNumber(invoiceNumber);
+
+        if (null == invoice) throw new InventoryAPIResourceNotFoundException("Invoice not found",
+                "Invoice with number " + invoiceNumber + " was not found, review your inputs and try again", null);
+
+        List<ReturnedStock> successfulReturns = new ArrayList<>(Collections.emptyList());
+        Set<StockSold> stockSoldSet = invoice.getStockSold();
+
+        for (StockSold stockSold : stockSoldSet){
+
+            ReturnedStock returnedStock = new ReturnedStock();
+            returnedStock.setReasonForReturn("Sale reversal on invoice number: " + invoiceNumber);
+            returnedStock.setStockName(stockSold.getStockName());
+            returnedStock.setQuantityReturned(stockSold.getQuantitySold());
+            returnedStock.setInvoiceId(invoiceNumber);
+
+            successfulReturns.add(this.processReturn(shopId, returnedStock));
+        }
+
+        if (successfulReturns.size() == stockSoldSet.size())
+            return new ResponseObject(true, "Sales reversal completed successfully");
+        else return new ResponseObject(false, "Sales reversal was not successful, try again later.");
+    }
+
+    @Transactional
+    @Override
     public ReturnedStock processReturn(Long shopId, ReturnedStock returnedStock) {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
@@ -656,7 +710,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
                     return shopStocksRepository
                             .findDistinctByStockNameAndShop(returnedStock.getStockName(), shop);
-                }).orElse(null);
+                }).orElseThrow(()-> new InventoryAPIOperationException("Shop not found",
+                        "Shop with id: " + shopId + " was not found.", null));
 
         if (null == stockRecordFromShop) throw new InventoryAPIResourceNotFoundException
                 ("Stock not found", "The stock about to be returned never existed in any of your shop", null);
@@ -674,15 +729,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
         Customer cust = invoiceRetrieved.getCustomerId();
-        if (cust != null && cust.getIsLoyal()){
+        if (cust != null){
 
-            if (is(cust.getRecentPurchasesAmount()).isPositive()){
+            if (is(cust.getRecentPurchasesAmount()).isPositive() && cust.getIsLoyal()){
                 cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount()
                         .subtract(returnedStock.getStockReturnedCost()));
                 cust = customerRepository.save(cust);
             }
+            returnedStock.setCustomerId(cust);
         }
-        returnedStock.setCustomerId(cust);
         returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                 .multiply(stockRecordFromShop.getSellingPricePerStock()));
 
@@ -693,8 +748,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 stockRecordFromShop.getStockQuantityRemaining());
         stockRecordFromShop.setProfit(stockRecordFromShop.getProfit()
                 .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                        .multiply(stockRecordFromShop.getSellingPricePerStock()
-                                .subtract(stockRecordFromShop.getPricePerStockPurchased()))));
+                        .multiply(stockAboutToBeReturned.getPricePerStockSold()
+                                .subtract(stockAboutToBeReturned.getCostPricePerStock()))));
         stockRecordFromShop.setStockSoldTotalPrice(stockRecordFromShop.getStockSoldTotalPrice()
                 .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
                         .multiply(stockAboutToBeReturned.getPricePerStockSold())));
@@ -766,6 +821,42 @@ public class ShopStockServicesImpl implements ShopStockServices {
         return returnedStockList.stream()
                 .map(returnedStock -> this.processReturn(shopId, returnedStock))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UniqueStock> fetchAllAuthUserUniqueStocks(Long shopId) {
+
+        List<String> stockNames = new ArrayList<>(Collections.emptyList());
+
+        List<ShopStocks> shopStocksList = this.allStockByShopId(shopId);
+
+        stockNames.addAll(
+            shopStocksList
+                .parallelStream()
+                .map(warehouseStocks -> stripStringOfExpiryDate(warehouseStocks.getStockName()))
+                .distinct()
+                .collect(Collectors.toList())
+        );
+
+        return stockNames
+            .stream()
+            .map(s -> shopStocksList
+                .stream()
+                .filter(shopStocks -> stripStringOfExpiryDate(shopStocks.getStockName()).equalsIgnoreCase(s))
+                .reduce(new ShopStocks(), (s1, s2) -> {
+
+                    if (s1 == null || StringUtils.isEmpty(s1.getStockName())) return s2;
+                    String s1Name = stripStringOfExpiryDate(s1.getStockName());
+                    if (s1Name.equalsIgnoreCase(stripStringOfExpiryDate(s2.getStockName()))) {
+                        s1.setStockQuantityRemaining(s1.getStockQuantityPurchased()
+                                + s2.getStockQuantityRemaining());
+                    }
+                    return s1;
+                }))
+            .map(ws -> new UniqueStock
+                (ws.getShopStockId(), stripStringOfExpiryDate(ws.getStockName()),
+                        ws.getStockQuantityRemaining(), ws.getPricePerStockPurchased(), ws.getSellingPricePerStock()))
+            .collect(Collectors.toList());
     }
 
     private ShopStocks changeStockSellingPrice(ShopStocks stock, BigDecimal newSellingPrice) {
@@ -971,8 +1062,6 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         stockToAdd.setStockPurchasedTotalPrice(stockToAdd.getPricePerStockPurchased()
                                 .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
                         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
-                        stockToAdd.setPricePerStockPurchased(stockToAdd.getStockPurchasedTotalPrice()
-                                .divide(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased()), 2));
                         Set<Supplier> supplierSet = new HashSet<>();
                         supplierSet.add(stockToAdd.getLastRestockPurchasedFrom());
                         stockToAdd.setStockPurchasedFrom(supplierSet);

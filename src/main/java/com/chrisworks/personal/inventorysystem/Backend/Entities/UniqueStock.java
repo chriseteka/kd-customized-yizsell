@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UniqueWarehouseStocks {
+public class UniqueStock {
 
     private Long stockId;
 

@@ -97,6 +97,12 @@ public class ShopStockController {
         return ResponseEntity.ok(prepareResponse(shopStocksList, page, size));
     }
 
+    @GetMapping(path = "/all/unique/byShop")
+    public ResponseEntity<?> fetchAllUniqueStockByWarehouseId(@RequestParam Long shopId){
+
+        return ResponseEntity.ok(shopStockServices.fetchAllAuthUserUniqueStocks(shopId));
+    }
+
     @GetMapping(path = "/all/soonToFinish/byShop")
     public ResponseEntity<?> fetchAllSoonToFinishInShop(@RequestParam Long shopId,
                                                   @RequestParam int limit){

@@ -1,10 +1,12 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ShopStocks;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueStock;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -49,7 +51,11 @@ public interface ShopStockServices {
 
     Invoice sellStock(Long shopId, Invoice invoice);
 
+    ResponseObject reverseSale(Long shopId, String invoiceNumber);
+
     ReturnedStock processReturn(Long shopId, ReturnedStock returnedStock);
 
     List<ReturnedStock> processReturnList(Long shopId, List<ReturnedStock> returnedStockList);
+
+    List<UniqueStock> fetchAllAuthUserUniqueStocks(Long shopId);
 }

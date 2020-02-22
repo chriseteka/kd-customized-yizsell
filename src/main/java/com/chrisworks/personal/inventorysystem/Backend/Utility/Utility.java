@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -8,6 +10,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -82,8 +85,20 @@ public class Utility {
         return s;
     }
 
-    public static BigDecimal computeWeightedPrice(int w1, BigDecimal p1, int w2, BigDecimal p2){
+    public static BigDecimal computeWeightedPrice(List<Integer> weights, List<BigDecimal> prices){
 
-        return BigDecimal.ONE;
+        if (weights.size() != prices.size()) throw new InventoryAPIOperationException
+                ("Error in computation", "Error in computing weighted price, review your inputs and try again", null);
+
+        int count;
+        BigDecimal weightedProductSum = BigDecimal.ZERO;
+        BigDecimal weightSum = BigDecimal.valueOf(weights.stream().reduce(0, Integer::sum));
+
+        for (count = 0; count < weights.size(); count++){
+            weightedProductSum = weightedProductSum.add(prices.get(count)
+                    .multiply(BigDecimal.valueOf(weights.get(count))));
+        }
+
+        return weightedProductSum.divide(weightSum, BigDecimal.ROUND_HALF_EVEN);
     }
 }

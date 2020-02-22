@@ -2,7 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.WarehouseStocks;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueWarehouseStocks;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueStock;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -43,5 +43,5 @@ public interface WarehouseStockServices {
 
     WarehouseStocks changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice);
 
-    List<UniqueWarehouseStocks> fetchAllAuthUserUniqueStocks(Long warehouseId);
+    List<UniqueStock> fetchAllAuthUserUniqueStocks(Long warehouseId);
 }
