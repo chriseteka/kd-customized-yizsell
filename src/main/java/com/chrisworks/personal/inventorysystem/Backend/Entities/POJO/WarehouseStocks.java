@@ -65,7 +65,6 @@ public class WarehouseStocks {
     @Column(name = "stockQuantityRemaining")
     private int stockQuantityRemaining;
 
-//     @DecimalMin(value = "0.0", inclusive = true, message = "Stock purchased total price must be greater than zero")
     @Column(name = "stockPurchasedTotalPrice", nullable = false)
     private BigDecimal stockPurchasedTotalPrice = BigDecimal.ZERO;
 
@@ -78,7 +77,6 @@ public class WarehouseStocks {
     @Column(name = "stockRemainingTotalPrice")
     private BigDecimal stockRemainingTotalPrice = BigDecimal.ZERO;
 
-//     @DecimalMin(value = "0.0", inclusive = true, message = "Selling price per stock must be greater than zero")
     @Column(name = "sellingPricePerStock", nullable = false)
     private BigDecimal sellingPricePerStock = BigDecimal.ZERO;
 
