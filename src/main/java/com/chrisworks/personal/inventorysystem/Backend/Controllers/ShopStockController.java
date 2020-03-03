@@ -259,6 +259,13 @@ public class ShopStockController {
         return ResponseEntity.ok(newInvoice);
     }
 
+    @PutMapping(path = "/reverseSale", produces = "application/json")
+    public ResponseEntity<?> reverseSale(@RequestParam Long shopId,
+                                         @RequestParam String invoiceNumber){
+
+        return ResponseEntity.ok(shopStockServices.reverseSale(shopId, invoiceNumber));
+    }
+
     @PostMapping(path = "/returnStock/toShop", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> processReturn(@RequestParam Long shopId,
                                            @RequestBody @Valid ReturnedStock returnedStock){
