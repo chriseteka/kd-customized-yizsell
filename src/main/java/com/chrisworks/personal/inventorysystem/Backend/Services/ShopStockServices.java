@@ -2,10 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.BulkUploadResponseWrapper;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ShopStocks;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.UniqueStock;
 
 import java.math.BigDecimal;
@@ -56,6 +53,10 @@ public interface ShopStockServices {
     ReturnedStock processReturn(Long shopId, ReturnedStock returnedStock);
 
     List<ReturnedStock> processReturnList(Long shopId, List<ReturnedStock> returnedStockList);
+
+    Invoice processExchange(Long shopId, ReturnedStock returnedStock, ExchangedStock receivedStock);
+
+    ResponseObject processExchangeList(Long shopId, List<ReturnedStock> returnedStockList, List<ExchangedStock> receivedStockList);
 
     List<UniqueStock> fetchAllAuthUserUniqueStocks(Long shopId);
 }

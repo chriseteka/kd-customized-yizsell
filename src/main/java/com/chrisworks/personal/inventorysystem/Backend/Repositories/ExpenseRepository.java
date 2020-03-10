@@ -18,4 +18,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findAllByCreatedBy(String createdBy);
 
     List<Expense> findAllByShop(Shop shop);
+
+    List<Expense> findAllByExpenseDescriptionContains(String invoiceNumber);
 }

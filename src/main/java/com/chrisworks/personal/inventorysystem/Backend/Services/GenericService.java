@@ -42,4 +42,6 @@ public interface GenericService {
     List<StockCategory> getAuthUserStockCategories();
 
     List<Supplier> getAuthUserSuppliers();
+
+    Boolean revertCashFlowFromInvoice(String invoiceNumber);
 }

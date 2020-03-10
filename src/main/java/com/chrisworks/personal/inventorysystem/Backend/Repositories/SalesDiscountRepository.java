@@ -8,4 +8,6 @@ import java.util.List;
 public interface SalesDiscountRepository extends JpaRepository<SalesDiscount, Long> {
 
     List<SalesDiscount> findAllByCreatedBy(String createdBy);
+
+    List<SalesDiscount> findAllByInvoiceNumber(String invoiceNumber);
 }

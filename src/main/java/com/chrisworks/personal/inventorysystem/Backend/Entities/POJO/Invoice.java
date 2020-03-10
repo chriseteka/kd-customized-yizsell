@@ -102,6 +102,9 @@ public class Invoice {
     @Transient
     private String reasonForDiscount = null;
 
+    @Transient
+    private String notice = null;
+
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "InvoiceMultiplePayments", joinColumns = @JoinColumn(name = "invoiceId",
             nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "multiplePaymentId"))

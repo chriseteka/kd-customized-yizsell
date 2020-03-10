@@ -17,7 +17,9 @@ public enum EXPENSE_TYPE {
 
     STOCK_WAYBILL(400),
 
-    OTHERS(500);
+    SALE_REVERSAL(500),
+
+    OTHERS(600);
 
     private int expense_type_value;
 

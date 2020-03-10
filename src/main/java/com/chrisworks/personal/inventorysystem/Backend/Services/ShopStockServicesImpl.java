@@ -57,13 +57,16 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final SalesDiscountServices salesDiscountServices;
 
+    private final ExchangedStockRepository exchangedStockRepository;
+
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
                                  ShopRepository shopRepository, GenericService genericService,
                                  InvoiceRepository invoiceRepository, StockSoldRepository stockSoldRepository,
                                  ReturnedStockRepository returnedStockRepository, SupplierRepository supplierRepository,
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
-                                 CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices) {
+                                 CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices,
+                                 ExchangedStockRepository exchangedStockRepository) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
@@ -76,6 +79,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.loyaltyRepository = loyaltyRepository;
         this.customerRepository = customerRepository;
         this.salesDiscountServices = salesDiscountServices;
+        this.exchangedStockRepository = exchangedStockRepository;
     }
 
     @Transactional
@@ -673,7 +677,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             successfulReturns.add(this.processReturn(shopId, returnedStock));
         }
 
-        if (successfulReturns.size() == stockSoldSet.size())
+        if (successfulReturns.size() == stockSoldSet.size() && genericService.revertCashFlowFromInvoice(invoiceNumber))
             return new ResponseObject(true, "Sales reversal completed successfully");
         else return new ResponseObject(false, "Sales reversal was not successful, try again later.");
     }
@@ -727,19 +731,23 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (stockAboutToBeReturned.getQuantitySold() < returnedStock.getQuantityReturned()) throw new InventoryAPIOperationException
                 ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
 
+        returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                .multiply(stockRecordFromShop.getSellingPricePerStock()));
         returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
         Customer cust = invoiceRetrieved.getCustomerId();
+        int sizeOfStockSold = invoiceRetrieved.getStockSold().size();
         if (cust != null){
 
             if (is(cust.getRecentPurchasesAmount()).isPositive() && cust.getIsLoyal()){
                 cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount()
                         .subtract(returnedStock.getStockReturnedCost()));
+                if (sizeOfStockSold == 1)
+                    cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() - 1);
                 cust = customerRepository.save(cust);
             }
             returnedStock.setCustomerId(cust);
         }
-        returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
-                .multiply(stockRecordFromShop.getSellingPricePerStock()));
 
         stockRecordFromShop.setStockRemainingTotalPrice(stockRecordFromShop.getStockRemainingTotalPrice()
                 .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
@@ -776,7 +784,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         }
         else{
 
-            if (invoiceRetrieved.getStockSold().size() == 1){
+            if (sizeOfStockSold == 1){
 
                 invoiceRepository.delete(invoiceRetrieved);
             }else {
@@ -821,6 +829,241 @@ public class ShopStockServicesImpl implements ShopStockServices {
         return returnedStockList.stream()
                 .map(returnedStock -> this.processReturn(shopId, returnedStock))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public Invoice processExchange(Long shopId, ReturnedStock returnedStock, ExchangedStock receivedStock) {
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Not allowed", "Operation not allowed by the logged in user", null);
+
+        if (returnedStock == null || receivedStock == null) throw new InventoryAPIOperationException
+                ("could not find an entity to save", "Could not find returned or/and received stock complete exchange", null);
+
+        Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
+        if (null == invoiceRetrieved) throw new InventoryAPIResourceNotFoundException
+                ("No invoice was found by id", "No invoice with id " + returnedStock.getInvoiceId() + " was found", null);
+
+        Shop shopInAction = shopRepository.findById(shopId)
+            .map(shop -> {
+
+                if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
+                        && !shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                    throw new InventoryAPIOperationException("Operation not allowed",
+                            "You cannot process exchange in a shop that is not created by you", null);
+
+                if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
+                        && !shop.equals(sellerRepository.findDistinctBySellerEmail(
+                        AuthenticatedUserDetails.getUserFullName()).getShop()))
+                    throw new InventoryAPIOperationException("Not allowed",
+                            "You cannot process exchange in a shop you were not assigned", null);
+
+                return shop;
+            }).orElseThrow(() -> new InventoryAPIOperationException("Shop not found",
+                    "Shop with id: " + shopId + " was not found.", null));
+
+        ShopStocks returnedStockRecordInShop = shopStocksRepository
+                .findDistinctByStockNameAndShop(returnedStock.getStockName(), shopInAction);
+
+        ShopStocks exchangedStockRecordInShop = shopStocksRepository
+                .findDistinctByStockNameAndShop(receivedStock.getStockName(), shopInAction);
+
+        if (null == returnedStockRecordInShop) throw new InventoryAPIResourceNotFoundException
+                ("Stock not found", "The stock about to be returned never existed in this shop", null);
+
+        StockSold stockAboutToBeReturned = invoiceRetrieved.getStockSold()
+                .stream()
+                .filter(stockSold -> stockSold.getStockName().equalsIgnoreCase(returnedStock.getStockName()))
+                .collect(toSingleton());
+
+        if (stockAboutToBeReturned.getQuantitySold() < returnedStock.getQuantityReturned()) throw new InventoryAPIOperationException
+                ("Quantity returned is invalid", "Quantity returned is above quantity sold, review your inputs", null);
+
+        if (null == exchangedStockRecordInShop) throw new InventoryAPIResourceNotFoundException
+                ("Stock not found", "The stock about to be exchanged does not exist in this shop", null);
+
+        if (exchangedStockRecordInShop.getStockQuantityRemaining() < receivedStock.getQuantityReceived()) throw new InventoryAPIOperationException
+                ("Quantity returned is invalid", "Quantity about to be exchanged is above the total number of stock in the shop", null);
+
+        returnedStock.setStockReturnedCost(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                .multiply(returnedStockRecordInShop.getSellingPricePerStock()));
+        returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        receivedStock.setStockReceivedCost(BigDecimal.valueOf(receivedStock.getQuantityReceived())
+                .multiply(exchangedStockRecordInShop.getSellingPricePerStock()));
+        returnedStock.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+
+        Customer cust = invoiceRetrieved.getCustomerId();
+        int sizeOfStockSold = invoiceRetrieved.getStockSold().size();
+        BigDecimal stockReceivedCost = receivedStock.getStockReceivedCost();
+        BigDecimal stockReturnedCost = returnedStock.getStockReturnedCost();
+        if (cust != null){
+
+            if (is(cust.getRecentPurchasesAmount()).isPositive() && cust.getIsLoyal()){
+                cust.setRecentPurchasesAmount((cust.getRecentPurchasesAmount()
+                        .subtract(stockReturnedCost))
+                        .add(stockReceivedCost));
+                if (sizeOfStockSold == 1)
+                    cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() - 1);
+                cust = customerRepository.save(cust);
+            }
+            returnedStock.setCustomerId(cust);
+            receivedStock.setCustomerId(cust);
+        }
+
+        returnedStockRecordInShop.setStockRemainingTotalPrice(returnedStockRecordInShop.getStockRemainingTotalPrice()
+                .add(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                        .multiply(stockAboutToBeReturned.getCostPricePerStock())));
+        returnedStockRecordInShop.setStockQuantityRemaining(returnedStock.getQuantityReturned() +
+                returnedStockRecordInShop.getStockQuantityRemaining());
+        returnedStockRecordInShop.setProfit(returnedStockRecordInShop.getProfit()
+                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                        .multiply(stockAboutToBeReturned.getPricePerStockSold()
+                                .subtract(stockAboutToBeReturned.getCostPricePerStock()))));
+        returnedStockRecordInShop.setStockSoldTotalPrice(returnedStockRecordInShop.getStockSoldTotalPrice()
+                .subtract(BigDecimal.valueOf(returnedStock.getQuantityReturned())
+                        .multiply(stockAboutToBeReturned.getPricePerStockSold())));
+        returnedStockRecordInShop.setStockQuantitySold(returnedStockRecordInShop.getStockQuantitySold() -
+                returnedStock.getQuantityReturned());
+        returnedStockRecordInShop.setUpdateDate(new Date());
+
+        exchangedStockRecordInShop.setStockRemainingTotalPrice(exchangedStockRecordInShop.getStockRemainingTotalPrice()
+                .subtract(BigDecimal.valueOf(receivedStock.getQuantityReceived())
+                        .multiply(exchangedStockRecordInShop.getSellingPricePerStock())));
+        exchangedStockRecordInShop.setStockQuantityRemaining(exchangedStockRecordInShop.getStockQuantityRemaining()
+                - receivedStock.getQuantityReceived());
+        exchangedStockRecordInShop.setProfit(exchangedStockRecordInShop.getProfit()
+                .add(BigDecimal.valueOf(receivedStock.getQuantityReceived())
+                        .multiply(exchangedStockRecordInShop.getSellingPricePerStock()
+                                .subtract(exchangedStockRecordInShop.getPricePerStockPurchased()))));
+        exchangedStockRecordInShop.setStockSoldTotalPrice(exchangedStockRecordInShop.getStockSoldTotalPrice()
+                .add(BigDecimal.valueOf(receivedStock.getQuantityReceived())
+                        .multiply(exchangedStockRecordInShop.getSellingPricePerStock())));
+        exchangedStockRecordInShop.setStockQuantitySold(exchangedStockRecordInShop.getStockQuantitySold() +
+                receivedStock.getQuantityReceived());
+        exchangedStockRecordInShop.setUpdateDate(new Date());
+
+        shopStocksRepository.save(returnedStockRecordInShop);
+        shopStocksRepository.save(exchangedStockRecordInShop);
+
+        StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
+                (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
+        initStockSold.setUpdateDate(new Date());
+        initStockSold.setQuantitySold(initStockSold.getQuantitySold() - returnedStock.getQuantityReturned());
+
+        StockSold newStockSoldFromExchange = new StockSold();
+
+        newStockSoldFromExchange.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        newStockSoldFromExchange.setQuantitySold(receivedStock.getQuantityReceived());
+        newStockSoldFromExchange.setStockSoldInvoiceId(invoiceRetrieved.getInvoiceNumber());
+        newStockSoldFromExchange.setCostPricePerStock(exchangedStockRecordInShop.getPricePerStockPurchased());
+        newStockSoldFromExchange.setPricePerStockSold(exchangedStockRecordInShop.getSellingPricePerStock());
+        newStockSoldFromExchange.setStockCategory(exchangedStockRecordInShop.getStockCategory().getCategoryName());
+        newStockSoldFromExchange.setStockName(exchangedStockRecordInShop.getStockName());
+
+        StockSold savedNewStockSold = stockSoldRepository.save(newStockSoldFromExchange);
+
+        Set<StockSold> stockSoldSet = new HashSet<>(invoiceRetrieved.getStockSold());
+
+        stockSoldSet.add(savedNewStockSold);
+        invoiceRetrieved.setStockSold(stockSoldSet);
+
+        if (initStockSold.getQuantitySold() > 0){
+
+            stockSoldSet.remove(stockAboutToBeReturned);
+            stockSoldSet.add(initStockSold);
+            invoiceRetrieved.setStockSold(stockSoldSet);
+            invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
+        }
+        else{
+
+            if (sizeOfStockSold == 1){
+
+                invoiceRepository.delete(invoiceRetrieved);
+            }else {
+
+                stockSoldSet.remove(stockAboutToBeReturned);
+                stockSoldRepository.delete(initStockSold);
+                invoiceRetrieved.setStockSold(stockSoldSet);
+                invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
+            }
+        }
+
+        String status;
+        if (is(stockReceivedCost).eq(stockReturnedCost)) {
+            status = "Returned stock cost equals cost of stock exchanged with it";
+            invoiceRetrieved.setBalance(BigDecimal.ZERO);
+        }
+        else if (is(stockReceivedCost).gt(stockReturnedCost)) {
+            status = "Returned stock cost less than stock exchanged with it, customer is to pay: "
+                    + stockReceivedCost.subtract(stockReturnedCost);
+            invoiceRetrieved.setDebt(invoiceRetrieved.getDebt()
+                    .add(stockReceivedCost
+                    .subtract(stockReturnedCost)));
+        }
+        else{
+            status = "Returned stock cost more than stock exchanged with it, customer is to be balanced: "
+                    + stockReturnedCost.subtract(stockReceivedCost);
+            invoiceRetrieved.setBalance(stockReturnedCost.subtract(stockReceivedCost));
+
+            String expenseDescription = returnedStock.getStockName() + " exchanged with: " + receivedStock.getStockName()
+            + " with reason: " + returnedStock.getReasonForReturn();
+            Expense expenseOnReturn = new Expense(300, returnedStock.getStockReturnedCost(), expenseDescription);
+            genericService.addExpense(expenseOnReturn);
+        }
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
+
+            Shop stockExchangedShop = genericService.shopBySellerName(AuthenticatedUserDetails.getUserFullName());
+            returnedStock.setShop(stockExchangedShop);
+            receivedStock.setShop(stockExchangedShop);
+        }else{
+
+            returnedStock.setApproved(true);
+            returnedStock.setApprovedDate(new Date());
+            returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+
+            receivedStock.setApproved(true);
+            receivedStock.setApprovedDate(new Date());
+            receivedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+        }
+
+        ReturnedStock savedReturnedStock = returnedStockRepository.save(returnedStock);
+        ExchangedStock savedExchangedStock = exchangedStockRepository.save(receivedStock);
+
+        Invoice updatedInvoice = invoiceRepository.save(invoiceRetrieved);
+
+        if (savedReturnedStock == null || savedExchangedStock == null || updatedInvoice == null)
+            throw new InventoryAPIOperationException("Exchange incomplete",
+                    "Exchange not completed successfully, review your inputs and try again.", null);
+
+        updatedInvoice.setNotice(status);
+        return updatedInvoice;
+    }
+
+    @Override
+    public ResponseObject processExchangeList(Long shopId, List<ReturnedStock> returnedStockList, List<ExchangedStock> receivedStockList) {
+
+//        if (null == returnedStockList || returnedStockList.isEmpty()) throw new InventoryAPIOperationException
+//                ("Invalid list of returned stock", "Returned stock list is empty or null", null);
+//
+//        if (null == receivedStockList || receivedStockList.isEmpty()) throw new InventoryAPIOperationException
+//                ("Invalid list of exchanged stock", "Exchanged stock list is empty or null", null);
+//
+//        receivedStockList.stream().map(r -> r.get)
+//        if (returnedStockList.size() == receivedStockList.size()){
+//            for (int i = 0; i < returnedStockList.size(); i++){
+//                 processExchange(shopId, returnedStockList.get(i), receivedStockList.get(i));
+//            }
+//        }else{
+//            List<ReturnedStock> processReturnList = processReturnList(shopId, returnedStockList);
+//            if (processReturnList.size() != returnedStockList.size()) throw new InventoryAPIOperationException
+//                    ("Cannot proceed", "Exchange could not proceed, review inputs and try again", null);
+//
+//        }
+
+        return null;
     }
 
     @Override

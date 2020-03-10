@@ -18,4 +18,6 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     List<Income> findAllByCreatedBy(String createdBy);
 
     List<Income> findAllByShop(Shop shop);
+
+    List<Income> findAllByIncomeReferenceContains(String invoiceNumber);
 }
