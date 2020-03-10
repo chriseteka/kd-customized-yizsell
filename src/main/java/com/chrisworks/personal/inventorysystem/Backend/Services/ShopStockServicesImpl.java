@@ -790,6 +790,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             }else {
 
                 stockSoldSet.remove(stockAboutToBeReturned);
+                initStockSold.setQuantitySold(1);
                 stockSoldRepository.delete(initStockSold);
                 invoiceRetrieved.setStockSold(stockSoldSet);
                 invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
