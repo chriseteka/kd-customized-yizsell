@@ -18,7 +18,7 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
     private final AuthChannelInterceptorAdapter authChannelInterceptorAdapter;
 
-    //Stomp client =
+    //Stomp client = http://localhost:7000/api/inventory/chat
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/chat")
@@ -26,7 +26,8 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
                 .withSockJS();
     }
 
-    //Clients can subscribe to:
+    //Clients can subscribe to, they receive message from there too:
+    //                  /topic/messages/{email}
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry){
         registry.setApplicationDestinationPrefixes("/app")

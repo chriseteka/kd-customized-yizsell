@@ -19,6 +19,7 @@ public class WebsocketController {
     private final SimpMessageSendingOperations simpMessagingTemplate;
     private final MessageUtils messageUtils;
 
+    //Messages will be sent to: /app/chat/{email}
     @MessageMapping("/chat/{to}")
     public void sendMessage(@DestinationVariable String to, MessageDto message) {
 
