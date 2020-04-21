@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Websocket;
+package com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.Impl;
 
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -102,6 +102,9 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "isTrialAccount")
     private Boolean isTrialAccount = true;
 
+    @Column(name = "isChatRegistered")
+    private Boolean isRegisteredForChat = false;
+
     @Transient
     private String subscription;
 

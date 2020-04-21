@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Websocket;
+package com.chrisworks.personal.inventorysystem.Backend.Websocket.configs;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.messaging.MessageSecurityMetadataSourceRegistry;

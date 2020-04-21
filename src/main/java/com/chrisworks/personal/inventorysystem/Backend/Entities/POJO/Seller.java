@@ -88,6 +88,9 @@ public class Seller implements UserDetails {
     @Column(name = "isActive")
     private Boolean isActive = true;
 
+    @Column(name = "isChatRegistered")
+    private Boolean isRegisteredForChat = false;
+
     @Column(name = "createdBy", nullable = false)
     private String createdBy;
 

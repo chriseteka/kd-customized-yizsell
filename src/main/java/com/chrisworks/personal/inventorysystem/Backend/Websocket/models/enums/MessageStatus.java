@@ -1,4 +1,4 @@
-package com.chrisworks.personal.inventorysystem.Backend.Websocket;
+package com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums;
 
 public enum MessageStatus {
 

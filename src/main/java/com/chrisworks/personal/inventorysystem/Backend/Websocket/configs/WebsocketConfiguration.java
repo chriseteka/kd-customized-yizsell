@@ -1,8 +1,6 @@
-package com.chrisworks.personal.inventorysystem.Backend.Websocket;
+package com.chrisworks.personal.inventorysystem.Backend.Websocket.configs;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -15,32 +13,24 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
+@RequiredArgsConstructor
 public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
-    private AuthChannelInterceptorAdapter authChannelInterceptorAdapter;
+    private final AuthChannelInterceptorAdapter authChannelInterceptorAdapter;
 
-    @Autowired
-    public WebsocketConfiguration(AuthChannelInterceptorAdapter authChannelInterceptorAdapter) {
-        this.authChannelInterceptorAdapter = authChannelInterceptorAdapter;
-
-    }
-
-    //Stomp client = ws://localhost:7000/api/inventory/chat
+    //Stomp client =
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/chat")
-                .setHandshakeHandler(new CustomHandshakeHandler())
                 .setAllowedOrigins("*")
                 .withSockJS();
     }
 
     //Clients can subscribe to:
-    //1. /topic/general => General group for everyone
-    //2. /user/queue/reply => Direct body to single user
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config){
-        config.enableSimpleBroker("/topic", "/queue");
-        config.setApplicationDestinationPrefixes("/app");
+    public void configureMessageBroker(MessageBrokerRegistry registry){
+        registry.setApplicationDestinationPrefixes("/app")
+                .enableSimpleBroker("/topic");
     }
 
     @Override

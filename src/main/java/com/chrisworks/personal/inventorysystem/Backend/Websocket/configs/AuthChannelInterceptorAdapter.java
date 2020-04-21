@@ -1,7 +1,7 @@
-package com.chrisworks.personal.inventorysystem.Backend.Websocket;
+package com.chrisworks.personal.inventorysystem.Backend.Websocket.configs;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.Impl.WebsocketAuthenticatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -13,16 +13,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 @Component
 public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
 
     private static String USERNAME_HEADER;
     private final WebsocketAuthenticatorService webSocketAuthenticatorService;
-
     @Autowired
     public AuthChannelInterceptorAdapter(final WebsocketAuthenticatorService webSocketAuthenticatorService) {
-        new AuthenticatedUserDetails(1L, "chris eteka",ACCOUNT_TYPE.BUSINESS_OWNER, true);
-        USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
         this.webSocketAuthenticatorService = webSocketAuthenticatorService;
     }
 
@@ -35,6 +36,7 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
             System.out.println("You may have been forcefully disconnected");
             return null;
         }
+        USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
         final UsernamePasswordAuthenticationToken user = webSocketAuthenticatorService
                 .getAuthenticatedOrFail(USERNAME_HEADER);
         if (StompCommand.CONNECT == accessor.getCommand() && accessor.getUser() == null)
