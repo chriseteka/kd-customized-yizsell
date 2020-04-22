@@ -8,6 +8,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.InvoiceServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +28,15 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
 public class InvoiceController {
 
     private final InvoiceServices invoiceServices;
-
+    private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
+    private String description = null;
 
     @Autowired
-    public InvoiceController(InvoiceServices invoiceServices, ApplicationEventPublisher eventPublisher) {
+    public InvoiceController(InvoiceServices invoiceServices, WebsocketController websocketController,
+                             ApplicationEventPublisher eventPublisher) {
         this.invoiceServices = invoiceServices;
+        this.websocketController = websocketController;
         this.eventPublisher = eventPublisher;
     }
 
@@ -80,10 +84,11 @@ public class InvoiceController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A debt clearance has been recorded with invoice number: " + invoiceNumber +
+                    ", amount paid: " + amountPaid + ", please review this action as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A debt clearance has been recorded with invoice number: " + invoiceNumber +
-                            ", amount paid: " + amountPaid + ", please review this action as soon as possible.",
-                    APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
+                    description, APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
+            websocketController.sendNoticeToUser(description, invoice.getSeller().getCreatedBy());
         }
 
         return ResponseEntity.ok(invoice);

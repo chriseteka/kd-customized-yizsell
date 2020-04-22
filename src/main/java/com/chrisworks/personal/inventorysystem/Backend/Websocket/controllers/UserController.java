@@ -33,4 +33,14 @@ public class UserController {
     public ResponseEntity<?> updateOnlineStatus(@RequestParam String status){
         return ResponseEntity.ok(userUtils.turnUserActiveOrInactive(status));
     }
+
+    @GetMapping(path = "/messages/to")
+    public ResponseEntity<?> fetchMessagesTo(@RequestParam String email){
+        return ResponseEntity.ok(userUtils.fetchAllMessagesTo(email));
+    }
+
+    @GetMapping(path = "/messages/from")
+    public ResponseEntity<?> fetchMessagesFrom(@RequestParam String email){
+        return ResponseEntity.ok(userUtils.fetchAllMessagesFrom(email));
+    }
 }

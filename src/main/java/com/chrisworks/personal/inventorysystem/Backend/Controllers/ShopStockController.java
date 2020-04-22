@@ -12,6 +12,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.ShopStockServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +35,15 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fu
 public class ShopStockController {
 
     private final ShopStockServices shopStockServices;
-
+    private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
+    private String description = null;
 
     @Autowired
-    public ShopStockController(ShopStockServices shopStockServices, ApplicationEventPublisher eventPublisher) {
+    public ShopStockController(ShopStockServices shopStockServices, WebsocketController websocketController,
+                               ApplicationEventPublisher eventPublisher) {
         this.shopStockServices = shopStockServices;
+        this.websocketController = websocketController;
         this.eventPublisher = eventPublisher;
     }
 
@@ -54,9 +58,10 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A new stock with name: " + stock.getStockName() + " has been added to your shop.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A new stock with name: " + stock.getStockName() + " has been added to your shop.",
-                    APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+                    description, APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+            websocketController.sendNoticeToUser(description, newStockInShop.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(newStockInShop);
@@ -77,9 +82,10 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "New stock list with size: " + stockList.size() + " were uploaded to your shop.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "New stock list with size: " + stockList.size() + " were uploaded to your shop.",
-                    APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+                    description, APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(uploadResponse);
@@ -174,10 +180,11 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Restock just occurred on a stock with name: " + stock.getStockName() +
+                    " has been added to previously existing ones in your shop.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Restock just occurred on a stock with name: " + stock.getStockName() +
-                            " has been added to previously existing ones in your shop.",
-                    APPLICATION_EVENTS.RESTOCK_EVENT));
+                    description, APPLICATION_EVENTS.RESTOCK_EVENT));
+            websocketController.sendNoticeToUser(description, reStockToShop.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(reStockToShop);
@@ -195,10 +202,11 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Selling price of stock in your shop with name: " + shopStock.getStockName() +
+                    " has been changed to: " + newSellingPrice;
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Selling price of stock in your shop with name: " + shopStock.getStockName() +
-                            " has been changed to: " + newSellingPrice,
-                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+                    description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+            websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(shopStock);
@@ -218,10 +226,11 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Selling price of stock in your shop with name: " + stockName +
+                    " has been changed to: " + newSellingPrice;
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Selling price of stock in your shop with name: " + stockName +
-                            " has been changed to: " + newSellingPrice,
-                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+                    description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+            websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(shopStock);
@@ -250,10 +259,11 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A sale has been made in your shop with invoice number: " + newInvoice.getInvoiceNumber()
+                    + ", invoice amounts to: " + newInvoice.getInvoiceTotalAmount() + ", amount paid: " + newInvoice.getAmountPaid();
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A sale has been made in your shop with invoice number: " + newInvoice.getInvoiceNumber()
-                    + ", invoice amounts to: " + newInvoice.getInvoiceTotalAmount() + ", amount paid: " + newInvoice.getAmountPaid(),
-                    APPLICATION_EVENTS.SALE_EVENT));
+                    description, APPLICATION_EVENTS.SALE_EVENT));
+            websocketController.sendNoticeToUser(description, newInvoice.getSeller().getCreatedBy());
         }
 
         return ResponseEntity.ok(newInvoice);
@@ -284,11 +294,12 @@ public class ShopStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A return has been made in your shop with invoice number: " + newReturnedStock.getInvoiceId()
+            description = "A return has been made in your shop with invoice number: " + newReturnedStock.getInvoiceId()
                     + ", name of stock returned: " + newReturnedStock.getStockName()
-                            + ", worth of the stock returned is: " + newReturnedStock.getStockReturnedCost(),
-                    APPLICATION_EVENTS.RETURN_SALE_EVENT));
+                    + ", worth of the stock returned is: " + newReturnedStock.getStockReturnedCost();
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    description, APPLICATION_EVENTS.RETURN_SALE_EVENT));
+            websocketController.sendNoticeToUser(description, newReturnedStock.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(newReturnedStock);

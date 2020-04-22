@@ -3,12 +3,14 @@ package com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.I
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.Message;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.MessageDto;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.UserMiniProfile;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.MessageStatus;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.ONLINE_STATUS;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.MessageRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.MessageUtils;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,16 +50,75 @@ public class UtilsImpl implements UserUtils, MessageUtils {
     }
 
     @Override
-    public boolean verifyEmail(String... args){
+    public List<MessageDto> fetchAllMessagesTo(String email) {
 
-        if (args.length == 0) return false;
+        if (email == null || email.isEmpty()) return Collections.emptyList();
 
-        for (String email: args){
-            if (profileRepository.findDistinctByEmail(email) == null)
+        UserMiniProfile miniProfile = fetchUserByEmail(email);
+        if(miniProfile == null) return Collections.emptyList();
+
+        List<Message> messagesTo = messageRepository.findAllByTo(miniProfile);
+
+        return messagesTo.stream().map(this::fromMessageToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MessageDto> fetchAllMessagesFrom(String email) {
+
+        if (email == null || email.isEmpty()) return Collections.emptyList();
+
+        UserMiniProfile miniProfile = fetchUserByEmail(email);
+        if(miniProfile == null) return Collections.emptyList();
+
+        List<Message> messagesFrom = messageRepository.findAllByFrom(miniProfile);
+
+        return messagesFrom.stream().map(this::fromMessageToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean verifyEmail(List<String> emails){
+
+        if (emails.size() == 0) return false;
+
+        for (String email: emails){
+            if (fetchUserByEmail(email) == null)
                 return false;
         }
 
         return true;
+    }
+
+    @Override
+    public List<MessageDto> notifyWarehouseAttendants(Warehouse warehouse, String notice) {
+
+        if (warehouse == null || notice == null || notice.isEmpty()) return Collections.emptyList();
+
+        return sellerRepository.findAllByWarehouse(warehouse)
+                .stream()
+                .map(attendant ->
+                    prepareMessageDTO(attendant.getSellerEmail(), notice)
+                ).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MessageDto> notifyUser(String notice, String... emails) {
+
+        if (emails == null || emails.length <= 0 || notice == null || notice.isEmpty())
+            return null;
+
+        return Arrays.stream(emails)
+                .map(email -> prepareMessageDTO(email, notice))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getBusinessManagerMail() {
+
+        Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+
+        if (seller == null) return null;
+
+        return seller.getCreatedBy();
     }
 
     @Override
@@ -66,7 +128,7 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         ACCOUNT_TYPE accountType = AuthenticatedUserDetails.getAccount_type();
         String userEmail = AuthenticatedUserDetails.getUserFullName();
 
-        UserMiniProfile existingUser = profileRepository.findDistinctByEmail(userEmail);
+        UserMiniProfile existingUser = fetchUserByEmail(userEmail);
         if (existingUser != null) return existingUser;
 
         if (accountType == null) return null;
@@ -110,7 +172,7 @@ public class UtilsImpl implements UserUtils, MessageUtils {
     public List<UserMiniProfile> fetchUsers(){
 
         String userEmail = AuthenticatedUserDetails.getUserFullName();
-        UserMiniProfile user = profileRepository.findDistinctByEmail(userEmail);
+        UserMiniProfile user = fetchUserByEmail(userEmail);
 
         if (user == null) return Collections.emptyList();
 
@@ -125,7 +187,7 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         ONLINE_STATUS online_status = ONLINE_STATUS.valueOf(status.toUpperCase());
 
         String email = AuthenticatedUserDetails.getUserFullName();
-        UserMiniProfile user = profileRepository.findDistinctByEmail(email);
+        UserMiniProfile user = fetchUserByEmail(email);
 
         if (user == null) return false;
         user.setStatus(online_status);
@@ -140,11 +202,27 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         String from = messageDto.getFromEmail();
         String to = messageDto.getToEmail();
 
-        UserMiniProfile userFrom = profileRepository.findDistinctByEmail(from);
-        UserMiniProfile userTo = profileRepository.findDistinctByEmail(to);
+        UserMiniProfile userFrom = fetchUserByEmail(from);
+        UserMiniProfile userTo = fetchUserByEmail(to);
 
         if (userFrom == null || userTo == null) return null;
 
         return new Message(userFrom, userTo, messageDto.getBody(), messageDto.getAttachment());
+    }
+
+    private UserMiniProfile fetchUserByEmail(String email) {
+        return profileRepository.findDistinctByEmail(email);
+    }
+
+    private MessageDto prepareMessageDTO(String email, String notice){
+
+        MessageDto messageDto = new MessageDto();
+        messageDto.setBody(notice);
+        messageDto.setToEmail(email);
+        messageDto.setStatus(MessageStatus.SENT);
+        messageDto.setFromEmail(AuthenticatedUserDetails.getUserFullName());
+
+        return messageDto;
+
     }
 }

@@ -10,6 +10,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.IncomeServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +32,15 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
 public class IncomeController {
 
     private final IncomeServices incomeServices;
-
+    private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
+    private String description = null;
 
     @Autowired
-    public IncomeController(IncomeServices incomeServices, ApplicationEventPublisher eventPublisher) {
+    public IncomeController(IncomeServices incomeServices, WebsocketController websocketController,
+                            ApplicationEventPublisher eventPublisher) {
         this.incomeServices = incomeServices;
+        this.websocketController = websocketController;
         this.eventPublisher = eventPublisher;
     }
 
@@ -62,10 +66,11 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A new income has been created, with amount: " + income.getIncomeAmount() +
+                    " review and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A new income has been created, with amount: " + income.getIncomeAmount() +
-                            " review and approve this income as soon as possible.",
-                    APPLICATION_EVENTS.INCOME_CREATE_EVENT));
+                    description, APPLICATION_EVENTS.INCOME_CREATE_EVENT));
+            websocketController.sendNoticeToUser(description, incomeCreated.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(incomeCreated);
@@ -82,10 +87,11 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "An income has been updated, with it current amount: " + income.getIncomeAmount() +
+                    " review and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "An income has been updated, with it current amount: " + income.getIncomeAmount() +
-                            " review and approve this income as soon as possible.",
-                    APPLICATION_EVENTS.INCOME_UPDATE_EVENT));
+                    description, APPLICATION_EVENTS.INCOME_UPDATE_EVENT));
+            websocketController.sendNoticeToUser(description, updatedIncome.getShop().getCreatedBy());
         }
 
         return ResponseEntity.ok(updatedIncome);

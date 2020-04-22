@@ -9,6 +9,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.WaybillServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +35,15 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
 public class WaybillController {
 
     private final WaybillServices waybillServices;
-
+    private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
+    private String description = null;
 
     @Autowired
-    public WaybillController(WaybillServices waybillServices, ApplicationEventPublisher eventPublisher) {
+    public WaybillController(WaybillServices waybillServices, WebsocketController websocketController,
+                             ApplicationEventPublisher eventPublisher) {
         this.waybillServices = waybillServices;
+        this.websocketController = websocketController;
         this.eventPublisher = eventPublisher;
     }
 
@@ -54,11 +58,13 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A ware bill request has been placed from: " + waybillInvoice.getShop().getShopName()
+            description = "A ware bill request has been placed from: " + waybillInvoice.getShop().getShopName()
                     + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
-                    + " to warehouse: " + waybillInvoice.getWarehouse().getWarehouseName(),
-                    APPLICATION_EVENTS.WARE_BILL_REQUEST_EVENT));
+                    + " to warehouse: " + waybillInvoice.getWarehouse().getWarehouseName();
+            eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
+                    description, APPLICATION_EVENTS.WARE_BILL_REQUEST_EVENT));
+            websocketController.sendNoticeToWarehouseAttendants(waybillInvoice.getWarehouse(), description);
+            websocketController.sendNoticeToUser(description, waybillInvoice.getSellerRequesting().getCreatedBy());
         }
 
         return ResponseEntity.ok(waybillInvoice);
@@ -76,12 +82,14 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A ware bill request has been confirmed and shipped from warehouse: "
+                    + waybillInvoice.getWarehouse().getWarehouseName()
+                    + " by: " + waybillInvoice.getSellerIssuing().getSellerFullName()
+                    + " to shop: " + waybillInvoice.getShop().getShopName();
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A ware bill request has been confirmed and shipped from warehouse: "
-                            + waybillInvoice.getWarehouse().getWarehouseName()
-                            + " by: " + waybillInvoice.getSellerIssuing().getSellerFullName()
-                            + " to shop: " + waybillInvoice.getShop().getShopName(),
-                    APPLICATION_EVENTS.WARE_BILL_ISSUED_AND_SHIPPED_EVENT));
+                    description, APPLICATION_EVENTS.WARE_BILL_ISSUED_AND_SHIPPED_EVENT));
+            websocketController.sendNoticeToUser(description, waybillInvoice.getCreatedBy(),
+                    waybillInvoice.getSellerIssuing().getCreatedBy());
         }
 
         return ResponseEntity.ok(waybillInvoice);
@@ -97,12 +105,14 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "A ware bill request has been received and recorded to shop: "
+                    + waybillInvoice.getShop().getShopName()
+                    + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
+                    + " at shop: " + waybillInvoice.getShop().getShopName();
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A ware bill request has been received and recorded to shop: "
-                            + waybillInvoice.getShop().getShopName()
-                            + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
-                            + " at shop: " + waybillInvoice.getShop().getShopName(),
-                    APPLICATION_EVENTS.WARE_BILL_RECEIVED_EVENT));
+                    description, APPLICATION_EVENTS.WARE_BILL_RECEIVED_EVENT));
+            websocketController.sendNoticeToUser(description, waybillInvoice.getIssuedBy(),
+                    waybillInvoice.getSellerRequesting().getCreatedBy());
         }
 
         return ResponseEntity.ok(waybillInvoice);

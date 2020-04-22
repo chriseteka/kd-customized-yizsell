@@ -8,6 +8,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.WarehouseStockServices;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -33,12 +34,15 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fu
 public class WarehouseStockController {
 
     private final WarehouseStockServices warehouseStockServices;
-
+    private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
+    private String description = null;
 
     @Autowired
-    public WarehouseStockController(WarehouseStockServices warehouseStockServices, ApplicationEventPublisher eventPublisher) {
+    public WarehouseStockController(WarehouseStockServices warehouseStockServices, WebsocketController websocketController,
+                                    ApplicationEventPublisher eventPublisher) {
         this.warehouseStockServices = warehouseStockServices;
+        this.websocketController = websocketController;
         this.eventPublisher = eventPublisher;
     }
 
@@ -53,9 +57,10 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            String description = "A new stock with name: " + stock.getStockName() + " has been added to your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "A new stock with name: " + stock.getStockName() + " has been added to your warehouse.",
-                    APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
+                    description, APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
+            websocketController.sendNoticeToUser(description, newStockInWarehouse.getWarehouse().getCreatedBy());
         }
 
         return ResponseEntity.ok(newStockInWarehouse);
@@ -78,9 +83,10 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "New stock list with size: " + stockList.size() + " were uploaded to your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "New stock list with size: " + stockList.size() + " were uploaded to your warehouse.",
-                    APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
+                    description, APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
         return ResponseEntity.ok(uploadResponse);
     }
@@ -176,10 +182,11 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Restock just occurred on a stock with name: " + stock.getStockName() +
+                    " has been added to previously existing ones in your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Restock just occurred on a stock with name: " + stock.getStockName() +
-                            " has been added to previously existing ones in your warehouse.",
-                    APPLICATION_EVENTS.RESTOCK_EVENT));
+                    description, APPLICATION_EVENTS.RESTOCK_EVENT));
+            websocketController.sendNoticeToUser(description, reStockToWarehouse.getWarehouse().getCreatedBy());
         }
 
         return ResponseEntity.ok(reStockToWarehouse);
@@ -197,10 +204,11 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Selling price of stock in your warehouse with name: " + warehouseStock.getStockName() +
+                    " has been changed to: " + newSellingPrice;
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Selling price of stock in your warehouse with name: " + warehouseStock.getStockName() +
-                            " has been changed to: " + newSellingPrice,
-                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+                    description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+            websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
         }
 
         return ResponseEntity.ok(warehouseStock);
@@ -220,10 +228,11 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
+            description = "Selling price of stock in your warehouse with name: " + stockName +
+                    " has been changed to: " + newSellingPrice;
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
-                    "Selling price of stock in your warehouse with name: " + stockName +
-                            " has been changed to: " + newSellingPrice,
-                    APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+                    description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
+            websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
         }
 
         return ResponseEntity.ok(warehouseStock);
