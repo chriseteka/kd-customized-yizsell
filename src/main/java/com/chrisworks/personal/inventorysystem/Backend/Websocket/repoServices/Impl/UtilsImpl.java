@@ -158,7 +158,9 @@ public class UtilsImpl implements UserUtils, MessageUtils {
             profile.setDescription(description);
             profile.setStatus(ONLINE_STATUS.ONLINE);
             profile.setFullName(seller.getSellerFullName());
-            profile.setBusinessId(seller.getWarehouse().getBusinessOwner().getBusinessOwnerId());
+            if (accountType.equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+                profile.setBusinessId(seller.getWarehouse().getBusinessOwner().getBusinessOwnerId());
+            else profile.setBusinessId(seller.getShop().getBusinessOwner().getBusinessOwnerId());
 
             seller.setIsRegisteredForChat(true);
             if (sellerRepository.save(seller) == null) return null;
