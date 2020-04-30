@@ -5,8 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
-import java.util.UUID;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.REFRESH_TOKEN_EXPIRATION_DAYS;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
@@ -51,7 +52,14 @@ public class RefreshToken {
 
     @PrePersist
     void fillTransients(){
-        this.token = UUID.randomUUID().toString();
+        this.token = generateUUID();
         this.expirationDate = futureDate(REFRESH_TOKEN_EXPIRATION_DAYS);
+    }
+
+    private String generateUUID(){
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] bytes = new byte[128];
+        secureRandom.nextBytes(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 }
