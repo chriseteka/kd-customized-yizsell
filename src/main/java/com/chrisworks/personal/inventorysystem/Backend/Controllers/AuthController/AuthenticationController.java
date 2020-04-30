@@ -157,8 +157,10 @@ public class AuthenticationController {
         ResponseObject responseObject;
 
         if (account_type.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            responseObject = new ResponseObject(true, tokenProvider.generateBusinessOwnerToken((BusinessOwner) object));
-        else responseObject = new ResponseObject(true, tokenProvider.generateSellerToken((Seller) object));
+            responseObject = new ResponseObject(true,
+                    TOKEN_PREFIX + tokenProvider.generateBusinessOwnerToken((BusinessOwner) object));
+        else responseObject = new ResponseObject(true,
+                TOKEN_PREFIX + tokenProvider.generateSellerToken((Seller) object));
 
         return ResponseEntity.ok(responseObject);
     }
