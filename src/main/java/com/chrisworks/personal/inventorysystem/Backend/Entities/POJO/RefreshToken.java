@@ -60,6 +60,6 @@ public class RefreshToken {
         SecureRandom secureRandom = new SecureRandom();
         byte[] bytes = new byte[128];
         secureRandom.nextBytes(bytes);
-        return Base64.getEncoder().encodeToString(bytes);
+        return Base64.getEncoder().encodeToString(bytes).replaceAll("[^a-zA-Z0-9_-]", "");
     }
 }
