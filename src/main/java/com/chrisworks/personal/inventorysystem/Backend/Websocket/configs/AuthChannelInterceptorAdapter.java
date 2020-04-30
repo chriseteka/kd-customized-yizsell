@@ -13,14 +13,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 @Component
 public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
 
-    private static String USERNAME_HEADER;
     private final WebsocketAuthenticatorService webSocketAuthenticatorService;
     @Autowired
     public AuthChannelInterceptorAdapter(final WebsocketAuthenticatorService webSocketAuthenticatorService) {
@@ -36,7 +31,7 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
             System.out.println("You may have been forcefully disconnected");
             return null;
         }
-        USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
+        String USERNAME_HEADER = AuthenticatedUserDetails.getUserFullName();
         final UsernamePasswordAuthenticationToken user = webSocketAuthenticatorService
                 .getAuthenticatedOrFail(USERNAME_HEADER);
         if (StompCommand.CONNECT == accessor.getCommand() && accessor.getUser() == null)

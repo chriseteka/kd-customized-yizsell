@@ -4,10 +4,12 @@ import com.chrisworks.personal.inventorysystem.Backend.Configurations.JwtTokenPr
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.PasswordResetObject;
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.RequestObject;
 import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.AuthenticationService;
+import com.chrisworks.personal.inventorysystem.Backend.Services.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,12 +38,15 @@ public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
 
+    private final RefreshTokenService refreshTokenService;
+
     @Autowired
     public AuthenticationController(JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager,
-                                    AuthenticationService authenticationService) {
+                                    AuthenticationService authenticationService, RefreshTokenService refreshTokenService) {
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
         this.authenticationService = authenticationService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping(path = "/signIn", consumes = "application/json", produces = "application/json")
@@ -135,6 +140,27 @@ public class AuthenticationController {
                 "Could not resend password reset token, review your inputs and try again", null);
 
         return ResponseEntity.ok(true);
+    }
+
+    @GetMapping(path = "/refresh")
+    public ResponseEntity<?> refreshAuthToken(@RequestParam String token, @RequestParam int accountType){
+
+        ACCOUNT_TYPE account_type = ACCOUNT_TYPE.of(accountType);
+
+        if (account_type == null) throw new InventoryAPIOperationException("Invalid account type",
+                "Invalid account type passed, account type can ony be 100, 200 or 300", null);
+
+        Object object = refreshTokenService.refreshLoggedInUserToken(token, account_type);
+
+        if (object == null) return ResponseEntity.badRequest().build();
+
+        ResponseObject responseObject;
+
+        if (account_type.equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            responseObject = new ResponseObject(true, tokenProvider.generateBusinessOwnerToken((BusinessOwner) object));
+        else responseObject = new ResponseObject(true, tokenProvider.generateSellerToken((Seller) object));
+
+        return ResponseEntity.ok(responseObject);
     }
 }
 

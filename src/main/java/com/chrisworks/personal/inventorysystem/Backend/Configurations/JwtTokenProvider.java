@@ -4,7 +4,9 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYP
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.Services.RefreshTokenService;
 import io.jsonwebtoken.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -15,7 +17,10 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
 import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.TOKEN_EXPIRATION_TIME;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final RefreshTokenService refreshTokenService;
 
     //Generate token for business owner login
     public String generateBusinessOwnerToken(BusinessOwner userDetails){
@@ -34,6 +39,7 @@ public class JwtTokenProvider {
         claims.put("isActive", userDetails.getIsActive());
         claims.put("hasWarehouse", userDetails.getHasWarehouse());
         claims.put("accountType", userDetails.getAccountType().toString());
+        claims.put("refreshToken", refreshTokenService.generateRefreshToken(userDetails.getBusinessOwnerEmail()));
 
         return jwtToken(userId, claims);
     }
@@ -70,6 +76,7 @@ public class JwtTokenProvider {
         claims.put("username", userDetails.getUsername());
         claims.put("isActive", userDetails.getIsActive());
         claims.put("accountType", userDetails.getAccountType().toString());
+        claims.put("refreshToken", refreshTokenService.generateRefreshToken(userDetails.getSellerEmail()));
 
         return jwtToken(userId, claims);
     }

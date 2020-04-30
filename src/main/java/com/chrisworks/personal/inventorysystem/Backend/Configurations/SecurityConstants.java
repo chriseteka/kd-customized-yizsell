@@ -9,4 +9,5 @@ public class SecurityConstants {
     public static final String TOKEN_PREFIX = "Bearer ";
     public static final String HEADER_STRING = "Authorization";
     public static final Long TOKEN_EXPIRATION_TIME = Long.parseLong("259200000"); // 3days
+    public static final int REFRESH_TOKEN_EXPIRATION_DAYS = 7;
 }
