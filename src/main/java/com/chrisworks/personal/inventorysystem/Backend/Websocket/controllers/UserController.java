@@ -43,4 +43,9 @@ public class UserController {
     public ResponseEntity<?> fetchMessagesFrom(@RequestParam String email){
         return ResponseEntity.ok(userUtils.fetchAllMessagesFrom(email));
     }
+
+    @GetMapping(path = "/recent/messages")
+    public ResponseEntity<?> fetchRecentMessages(@RequestParam int page){
+        return ResponseEntity.ok(userUtils.fetchRecentMessages(page));
+    }
 }

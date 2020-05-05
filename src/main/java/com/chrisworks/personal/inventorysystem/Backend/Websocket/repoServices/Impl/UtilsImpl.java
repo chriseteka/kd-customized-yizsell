@@ -9,7 +9,9 @@ import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerReposi
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.Message;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.MessageDto;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.RecentMessages;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.UserMiniProfile;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.MESSAGE_FLOW;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.MessageStatus;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.ONLINE_STATUS;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.MessageRepository;
@@ -20,9 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -197,6 +197,51 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         return profileRepository.save(user) != null;
     }
 
+    @Override
+    public Map<String, List<RecentMessages>> fetchRecentMessages(int page) {
+
+        String authUserEmail = AuthenticatedUserDetails.getUserFullName();
+        UserMiniProfile authUser = fetchUserByEmail(authUserEmail);
+        if (authUser == null) return Collections.emptyMap();
+
+        List<UserMiniProfile> authUserColleagues = fetchUsers();
+        if (authUserColleagues.isEmpty()) return Collections.emptyMap();
+
+        List<String> authUserColleaguesMails = authUserColleagues.stream()
+                .map(UserMiniProfile::getEmail).collect(Collectors.toList());
+
+        List<Message> authUserOutwardMessages = new ArrayList<>();
+        List<Message> authUserInwardMessages = new ArrayList<>();
+
+        authUserColleagues
+            .forEach(colleague -> {
+                authUserOutwardMessages.addAll(messageRepository.findAllByFromAndTo(authUser, colleague));
+                authUserInwardMessages.addAll(messageRepository.findAllByFromAndTo(colleague, authUser));
+            });
+        if (authUserOutwardMessages.isEmpty() && authUserInwardMessages.isEmpty()) return Collections.emptyMap();
+
+        Map<String, List<RecentMessages>> recentMessages = new HashMap<>();
+        List<RecentMessages> messages = new ArrayList<>();
+
+        authUserColleaguesMails
+            .forEach(colleagueMail -> {
+
+                messages.addAll(authUserOutwardMessages.stream()
+                        .filter(message -> message.getTo().getEmail().equalsIgnoreCase(colleagueMail))
+                        .map(this::fromMessageToRecentTo).collect(Collectors.toList()));
+                messages.addAll(authUserInwardMessages.stream()
+                        .filter(message -> message.getFrom().getEmail().equalsIgnoreCase(colleagueMail))
+                        .map(this::fromMessageToRecentFrom).collect(Collectors.toList()));
+                //Sorting by date and then by time and then return the first 20 items
+                messages.sort(Comparator.comparing(RecentMessages::getDateSent));
+                messages.sort(Comparator.comparing(RecentMessages::getTimeSent));
+
+                recentMessages.put(colleagueMail, messages.subList(page - 1, 20 * page));
+            });
+
+        return recentMessages;
+    }
+
     private Message fromDTOtoMessage(MessageDto messageDto){
 
         if (messageDto == null) return null;
@@ -226,5 +271,15 @@ public class UtilsImpl implements UserUtils, MessageUtils {
 
         return messageDto;
 
+    }
+
+    private RecentMessages fromMessageToRecentTo(Message message){
+        return new RecentMessages(message.getBody(), message.getAttachment(),
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.TO);
+    }
+
+    private RecentMessages fromMessageToRecentFrom(Message message){
+        return new RecentMessages(message.getBody(), message.getAttachment(),
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.FROM);
     }
 }
