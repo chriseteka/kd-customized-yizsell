@@ -207,36 +207,23 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         List<UserMiniProfile> authUserColleagues = fetchUsers();
         if (authUserColleagues.isEmpty()) return Collections.emptyMap();
 
-        List<String> authUserColleaguesMails = authUserColleagues.stream()
-                .map(UserMiniProfile::getEmail).collect(Collectors.toList());
-
-        List<Message> authUserOutwardMessages = new ArrayList<>();
-        List<Message> authUserInwardMessages = new ArrayList<>();
+        Map<String, List<RecentMessages>> recentMessages = new HashMap<>();
 
         authUserColleagues
             .forEach(colleague -> {
-                authUserOutwardMessages.addAll(messageRepository.findAllByFromAndTo(authUser, colleague));
-                authUserInwardMessages.addAll(messageRepository.findAllByFromAndTo(colleague, authUser));
-            });
-        if (authUserOutwardMessages.isEmpty() && authUserInwardMessages.isEmpty()) return Collections.emptyMap();
+                List<RecentMessages> messages = new ArrayList<>();
 
-        Map<String, List<RecentMessages>> recentMessages = new HashMap<>();
-        List<RecentMessages> messages = new ArrayList<>();
+                messages.addAll(
+                    messageRepository.findAllByFromAndTo(authUser, colleague)
+                    .stream().map(this::fromMessageToRecentlySent).collect(Collectors.toList())
+                );
+                messages.addAll(
+                    messageRepository.findAllByFromAndTo(colleague, authUser)
+                    .stream().map(this::fromMessageToRecentlyReceived).collect(Collectors.toList())
+                );
 
-        authUserColleaguesMails
-            .forEach(colleagueMail -> {
-
-                messages.addAll(authUserOutwardMessages.stream()
-                        .filter(message -> message.getTo().getEmail().equalsIgnoreCase(colleagueMail))
-                        .map(this::fromMessageToRecentTo).collect(Collectors.toList()));
-                messages.addAll(authUserInwardMessages.stream()
-                        .filter(message -> message.getFrom().getEmail().equalsIgnoreCase(colleagueMail))
-                        .map(this::fromMessageToRecentFrom).collect(Collectors.toList()));
-                //Sorting by date and then by time and then return the first 20 items
-                messages.sort(Comparator.comparing(RecentMessages::getDateSent));
-                messages.sort(Comparator.comparing(RecentMessages::getTimeSent));
-
-                recentMessages.put(colleagueMail, messages.subList(page - 1, 20 * page));
+                if (messages.isEmpty()) return;
+                recentMessages.put(colleague.getEmail(), formatOutputMessage(messages, page));
             });
 
         return recentMessages;
@@ -273,13 +260,22 @@ public class UtilsImpl implements UserUtils, MessageUtils {
 
     }
 
-    private RecentMessages fromMessageToRecentTo(Message message){
+    private RecentMessages fromMessageToRecentlySent(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.TO);
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.SENT);
     }
 
-    private RecentMessages fromMessageToRecentFrom(Message message){
+    private RecentMessages fromMessageToRecentlyReceived(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.FROM);
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.RECEIVED);
+    }
+
+    private List<RecentMessages> formatOutputMessage(List<RecentMessages> messages, int page){
+
+        if (page == 0) return messages;
+        else return messages.stream()
+                    .skip((20 * (page - 1)))
+                    .limit(20)
+                    .collect(Collectors.toList());
     }
 }
