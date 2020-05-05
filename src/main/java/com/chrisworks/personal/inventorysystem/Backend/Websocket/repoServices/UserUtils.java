@@ -19,5 +19,5 @@ public interface UserUtils {
 
     boolean turnUserActiveOrInactive(String status);
 
-    Map<String, List<MessageDto>> fetchRecentMessages(int page);
+    Map<String, List<RecentMessages>> fetchRecentMessages(int page);
 }

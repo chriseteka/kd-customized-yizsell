@@ -20,4 +20,6 @@ public class RecentMessages {
     @Temporal(TemporalType.TIME)
     private Date timeSent = new Date();
     private MESSAGE_FLOW flow;
+    private String fromEmail;
+    private String toEmail;
 }

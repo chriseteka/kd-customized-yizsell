@@ -198,7 +198,7 @@ public class UtilsImpl implements UserUtils, MessageUtils {
     }
 
     @Override
-    public Map<String, List<MessageDto>> fetchRecentMessages(int page) {
+    public Map<String, List<RecentMessages>> fetchRecentMessages(int page) {
 
         String authUserEmail = AuthenticatedUserDetails.getUserFullName();
         UserMiniProfile authUser = fetchUserByEmail(authUserEmail);
@@ -207,19 +207,19 @@ public class UtilsImpl implements UserUtils, MessageUtils {
         List<UserMiniProfile> authUserColleagues = fetchUsers();
         if (authUserColleagues.isEmpty()) return Collections.emptyMap();
 
-        Map<String, List<MessageDto>> recentMessages = new HashMap<>();
+        Map<String, List<RecentMessages>> recentMessages = new HashMap<>();
 
         authUserColleagues
             .forEach(colleague -> {
-                List<MessageDto> messages = new ArrayList<>();
+                List<RecentMessages> messages = new ArrayList<>();
 
                 messages.addAll(
                     messageRepository.findAllByFromAndTo(authUser, colleague)
-                    .stream().map(this::fromMessageToDTO).collect(Collectors.toList())
+                    .stream().map(this::fromMessageToRecentlySent).collect(Collectors.toList())
                 );
                 messages.addAll(
                     messageRepository.findAllByFromAndTo(colleague, authUser)
-                    .stream().map(this::fromMessageToDTO).collect(Collectors.toList())
+                    .stream().map(this::fromMessageToRecentlyReceived).collect(Collectors.toList())
                 );
 
                 if (messages.isEmpty()) return;
@@ -262,15 +262,17 @@ public class UtilsImpl implements UserUtils, MessageUtils {
 
     private RecentMessages fromMessageToRecentlySent(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.SENT);
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.SENT,
+                message.getFrom().getEmail(), message.getTo().getEmail());
     }
 
     private RecentMessages fromMessageToRecentlyReceived(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.RECEIVED);
+                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.RECEIVED,
+                message.getFrom().getEmail(), message.getTo().getEmail());
     }
 
-    private List<MessageDto> formatOutputMessage(List<MessageDto> messages, int page){
+    private List<RecentMessages> formatOutputMessage(List<RecentMessages> messages, int page){
 
         if (page == 0) return messages;
         else return messages.stream()
