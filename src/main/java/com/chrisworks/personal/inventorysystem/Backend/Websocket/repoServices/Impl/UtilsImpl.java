@@ -223,6 +223,8 @@ public class UtilsImpl implements UserUtils, MessageUtils {
                 );
 
                 if (messages.isEmpty()) return;
+                messages.sort(Comparator.comparing(RecentMessages::getDateSent));
+                messages.sort(Comparator.comparing(RecentMessages::getTimeSent));
                 recentMessages.put(colleague.getEmail(), formatOutputMessage(messages, page));
             });
 
