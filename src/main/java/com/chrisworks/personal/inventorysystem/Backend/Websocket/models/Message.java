@@ -31,9 +31,9 @@ public class Message {
     private String body;
     private byte[] attachment;
     @Temporal(TemporalType.DATE)
-    private Date dateSent = new Date();
+    private Date sentDate = new Date();
     @Temporal(TemporalType.TIME)
-    private Date timeSent = new Date();
+    private Date sentTime = new Date();
 
     private MessageStatus status = MessageStatus.SENT;
 

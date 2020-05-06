@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import java.util.Date;
 
 @Data
@@ -15,10 +13,8 @@ import java.util.Date;
 public class RecentMessages {
     private String body;
     private byte[] attachment;
-    @Temporal(TemporalType.DATE)
-    private Date dateSent = new Date();
-    @Temporal(TemporalType.TIME)
-    private Date timeSent = new Date();
+    private Date sentDate;
+    private Date sentTime;
     private MESSAGE_FLOW flow;
     private String fromEmail;
     private String toEmail;

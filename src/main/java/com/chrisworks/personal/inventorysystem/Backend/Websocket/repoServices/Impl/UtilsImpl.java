@@ -45,8 +45,8 @@ public class UtilsImpl implements UserUtils, MessageUtils {
 
         if (message == null) return null;
         return new MessageDto(message.getFrom().getEmail(), message.getTo().getEmail(),
-                message.getBody(), message.getAttachment(), message.getDateSent(),
-                message.getTimeSent(), message.getStatus());
+                message.getBody(), message.getAttachment(), message.getSentDate(),
+                message.getSentTime(), message.getStatus());
     }
 
     @Override
@@ -223,8 +223,8 @@ public class UtilsImpl implements UserUtils, MessageUtils {
                 );
 
                 if (messages.isEmpty()) return;
-                messages.sort(Comparator.comparing(RecentMessages::getDateSent)
-                    .thenComparing(RecentMessages::getTimeSent).reversed());
+                messages.sort(Comparator.comparing(RecentMessages::getSentDate)
+                    .thenComparing(RecentMessages::getSentTime).reversed());
                 recentMessages.put(colleague.getEmail(), formatOutputMessage(messages, page));
             });
 
@@ -264,13 +264,13 @@ public class UtilsImpl implements UserUtils, MessageUtils {
 
     private RecentMessages fromMessageToRecentlySent(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.SENT,
+                message.getSentDate(), message.getSentTime(), MESSAGE_FLOW.SENT,
                 message.getFrom().getEmail(), message.getTo().getEmail());
     }
 
     private RecentMessages fromMessageToRecentlyReceived(Message message){
         return new RecentMessages(message.getBody(), message.getAttachment(),
-                message.getDateSent(), message.getTimeSent(), MESSAGE_FLOW.RECEIVED,
+                message.getSentDate(), message.getSentTime(), MESSAGE_FLOW.RECEIVED,
                 message.getFrom().getEmail(), message.getTo().getEmail());
     }
 
