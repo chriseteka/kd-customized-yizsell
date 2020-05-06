@@ -27,11 +27,7 @@ public class WebsocketController {
     @MessageMapping("/chat/{to}")
     public void sendMessage(@DestinationVariable String to, MessageDto message) {
 
-        simpMessagingTemplate.convertAndSend("/topic/messages/" + to, message);
-
         if (!to.equalsIgnoreCase(message.getToEmail())) return;
-
-        System.out.println("handling send message: " + message + " to: " + to);
 
         boolean isExists = messageUtils.verifyEmail(Arrays.asList(to, message.getFromEmail()));
 
