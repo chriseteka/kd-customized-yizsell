@@ -10,12 +10,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatDate;
+import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Interceptors.CustomInterceptor.URI_MAP;
 
 /**
  * @author Chris_Eteka
@@ -106,5 +107,11 @@ public class HourlyJobs {
                         }
                     });
         }
+    }
+
+    @Scheduled(initialDelay = JOB_FIXED_RATE_TIME, fixedRate = JOB_FIXED_RATE_TIME)
+    private void RemoveExpiredData(){
+        //Remove data from the global map created to hold URIs that may trigger twice
+        URI_MAP.entrySet().removeIf(a -> a.getValue().getExpirationTime().isBefore(LocalDateTime.now()));
     }
 }
