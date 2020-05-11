@@ -30,7 +30,6 @@ public class InvoiceController {
     private final InvoiceServices invoiceServices;
     private final WebsocketController websocketController;
     private final ApplicationEventPublisher eventPublisher;
-    private String description = null;
 
     @Autowired
     public InvoiceController(InvoiceServices invoiceServices, WebsocketController websocketController,
@@ -84,7 +83,7 @@ public class InvoiceController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A debt clearance has been recorded with invoice number: " + invoiceNumber +
+            String description = "A debt clearance has been recorded with invoice number: " + invoiceNumber +
                     ", amount paid: " + amountPaid + ", please review this action as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
@@ -131,9 +130,14 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/withDebt")
-    public ResponseEntity<?> fetchInvoicesWithDebts(){
+    public ResponseEntity<?> fetchInvoicesWithDebts(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(invoiceServices.fetchAllInvoiceWithDebt());
+        List<Invoice> invoiceList = invoiceServices.fetchAllInvoiceWithDebt()
+                .stream()
+                .sorted(Comparator.comparing(Invoice::getCreatedDate).reversed())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(prepareResponse(invoiceList, page, size));
     }
 
     @GetMapping(path = "/byPaymentMode")
