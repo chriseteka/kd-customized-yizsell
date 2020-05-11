@@ -72,9 +72,14 @@ public class CustomerController {
     }
 
     @GetMapping(path = "/withDebt")
-    public ResponseEntity<?> fetchAllCustomersWithDebt(){
+    public ResponseEntity<?> fetchAllCustomersWithDebt(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(customerService.fetchAllCustomersWithDebt());
+        List<Customer> customerList = customerService.fetchAllCustomersWithDebt()
+                .stream()
+                .sorted(Comparator.comparing(Customer::getCreatedDate).reversed())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(prepareResponse(customerList,page, size));
     }
 
     @GetMapping(path = "/withReturns")
