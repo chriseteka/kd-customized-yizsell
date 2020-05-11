@@ -72,9 +72,9 @@ public class CustomerController {
     }
 
     @GetMapping(path = "/withDebt")
-    public ResponseEntity<?> fetchAllCustomersWithDebt(@RequestParam BigDecimal debtLimit){
+    public ResponseEntity<?> fetchAllCustomersWithDebt(){
 
-        return ResponseEntity.ok(customerService.fetchAllCustomersWithDebt(debtLimit));
+        return ResponseEntity.ok(customerService.fetchAllCustomersWithDebt());
     }
 
     @GetMapping(path = "/withReturns")

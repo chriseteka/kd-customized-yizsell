@@ -69,4 +69,11 @@ public class Customer {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "threshold")
     private BigDecimal threshold = BigDecimal.ZERO;
+
+    @Transient
+    private BigDecimal debt = BigDecimal.ZERO;
+
+    public void setDebt(BigDecimal debt){
+        this.debt = debt;
+    }
 }

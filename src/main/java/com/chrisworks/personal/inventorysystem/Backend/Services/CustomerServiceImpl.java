@@ -117,7 +117,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public List<Customer> fetchAllCustomersWithDebt(BigDecimal debtLimit) {
+    public List<Customer> fetchAllCustomersWithDebt() {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Not allowed", "Logged in user cannot perform this operation", null);
@@ -128,14 +128,14 @@ public class CustomerServiceImpl implements CustomerService {
 
             customersWithDebt.addAll(genericService.sellersByAuthUserId().stream()
                     .filter(seller -> seller.getShop() != null)
-                    .map(seller -> invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, debtLimit))
+                    .map(seller -> invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, BigDecimal.ZERO))
                     .flatMap(List::parallelStream)
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
 
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gte(debtLimit))
+                    .filter(invoice -> is(invoice.getDebt()).gte(BigDecimal.ZERO))
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }
@@ -151,16 +151,19 @@ public class CustomerServiceImpl implements CustomerService {
 
             customersWithDebt.addAll(sellerList
                     .stream()
-                    .map(s -> invoiceRepository.findAllBySellerAndDebtGreaterThan(s, debtLimit))
+                    .map(s -> invoiceRepository.findAllBySellerAndDebtGreaterThan(s, BigDecimal.ZERO))
                     .flatMap(List::parallelStream)
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(seller.getCreatedBy())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gte(debtLimit))
+                    .filter(invoice -> is(invoice.getDebt()).gte(BigDecimal.ZERO))
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }
+
+        if (!customersWithDebt.isEmpty())
+            customersWithDebt.forEach(customer -> customer.setDebt(computeCustomerDebt(customer)));
 
         return new ArrayList<>(customersWithDebt);
     }
@@ -295,8 +298,13 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public BigDecimal fetchCustomerDebt(Long customerId) {
 
+        return computeCustomerDebt(fetchCustomerById(customerId));
+    }
+
+    private BigDecimal computeCustomerDebt(Customer customer){
+
         return invoiceRepository
-                .findAllByCustomerId(fetchCustomerById(customerId))
+                .findAllByCustomerIdAndDebtGreaterThan(customer, BigDecimal.ZERO)
                 .stream()
                 .map(Invoice::getDebt)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

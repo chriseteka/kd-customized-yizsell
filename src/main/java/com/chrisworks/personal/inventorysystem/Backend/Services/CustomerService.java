@@ -20,7 +20,7 @@ public interface CustomerService {
 
     List<Customer> fetchAllCustomers();
 
-    List<Customer> fetchAllCustomersWithDebt(BigDecimal debtLimit);
+    List<Customer> fetchAllCustomersWithDebt();
 
     List<Customer> fetchAllCustomersWithReturnedPurchases();
 
