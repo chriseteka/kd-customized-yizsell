@@ -138,7 +138,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
                     "Logged in user is not allowed to perform this operation", null);
 
         Invoice invoiceFound = invoiceRepository
-                .findDistinctByInvoiceNumberAndDebtGreaterThan(invoiceNumber, BigDecimal.ONE);
+                .findDistinctByInvoiceNumberAndDebtGreaterThan(invoiceNumber, BigDecimal.ZERO);
 
         if (null == invoiceFound) throw new InventoryAPIResourceNotFoundException("Invoice not found",
                 "Invoice with invoice number: " + invoiceNumber + " was not found in the list of invoices with debt," +

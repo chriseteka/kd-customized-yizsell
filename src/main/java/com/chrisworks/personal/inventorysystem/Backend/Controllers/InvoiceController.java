@@ -130,14 +130,9 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/withDebt")
-    public ResponseEntity<?> fetchInvoicesWithDebts(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> fetchInvoicesWithDebts(){
 
-        List<Invoice> invoiceList = invoiceServices.fetchAllInvoiceWithDebt()
-                .stream()
-                .sorted(Comparator.comparing(Invoice::getCreatedDate).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(invoiceList, page, size));
+        return ResponseEntity.ok(invoiceServices.fetchAllInvoiceWithDebt());
     }
 
     @GetMapping(path = "/byPaymentMode")
