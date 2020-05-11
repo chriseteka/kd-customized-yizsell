@@ -280,6 +280,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
         return getEntityList()
                 .stream()
                 .filter(invoice -> is(invoice.getDebt()).isPositive())
+                .peek(invoice -> invoice.getCustomerId().setDebt(invoice.getDebt()))
                 .collect(Collectors.toList());
     }
 
