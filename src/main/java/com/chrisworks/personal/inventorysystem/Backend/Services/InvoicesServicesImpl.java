@@ -346,7 +346,8 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
         Income incomeOnDebtClearance = new Income(amount,200,
                 "Debt cleared on invoice with id: " + invoiceFound.getInvoiceNumber());
-        incomeOnDebtClearance.setShop(invoiceFound.getSeller().getShop());
+        if (invoiceFound.getSeller() != null)
+            incomeOnDebtClearance.setShop(invoiceFound.getSeller().getShop());
         incomeOnDebtClearance.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
