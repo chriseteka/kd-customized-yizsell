@@ -135,7 +135,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gte(BigDecimal.ZERO))
+                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO))
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }
@@ -157,7 +157,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .collect(Collectors.toList()));
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(seller.getCreatedBy())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gte(BigDecimal.ZERO))
+                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO))
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }
