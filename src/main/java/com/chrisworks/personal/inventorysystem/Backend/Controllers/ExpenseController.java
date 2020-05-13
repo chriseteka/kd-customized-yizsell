@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 
 @RestController
 @RequestMapping("/expense")
@@ -65,7 +66,7 @@ public class ExpenseController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A new expense has been created, with amount: " + expense.getExpenseAmount() +
+            description = "A new expense has been created, with amount: " + formatMoney(expense.getExpenseAmount()) +
                     " review and approve this expense as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.EXPENSE_CREATE_EVENT));
@@ -86,8 +87,8 @@ public class ExpenseController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "An expense has been updated, with it current amount: " + expense.getExpenseAmount() +
-                    " review and approve this expense as soon as possible.";
+            description = "An expense has been updated, with it current amount: " + formatMoney(expense.getExpenseAmount())
+                    + " review and approve this expense as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.EXPENSE_UPDATE_EVENT));
             websocketController.sendNoticeToUser(description, updatedExpense.getShop().getCreatedBy());

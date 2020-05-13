@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 
 /**
  * @author Chris_Eteka
@@ -58,9 +59,9 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A ware bill request has been placed from: " + waybillInvoice.getShop().getShopName()
-                    + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
-                    + " to warehouse: " + waybillInvoice.getWarehouse().getWarehouseName();
+            description = "A ware bill request has been placed, details: \nfrom: " + waybillInvoice.getShop().getShopName()
+                    + "\nby: " + waybillInvoice.getSellerRequesting().getSellerFullName()
+                    + "\nto warehouse: " + waybillInvoice.getWarehouse().getWarehouseName();
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_REQUEST_EVENT));
             websocketController.sendNoticeToWarehouseAttendants(waybillInvoice.getWarehouse(), description);
@@ -82,10 +83,11 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A ware bill request has been confirmed and shipped from warehouse: "
-                    + waybillInvoice.getWarehouse().getWarehouseName()
-                    + " by: " + waybillInvoice.getSellerIssuing().getSellerFullName()
-                    + " to shop: " + waybillInvoice.getShop().getShopName();
+            description = "A ware bill request has been confirmed and shipped, details: "
+                    + "\nfrom warehouse: " + waybillInvoice.getWarehouse().getWarehouseName()
+                    + "\nby: " + waybillInvoice.getSellerIssuing().getSellerFullName()
+                    + "\nto shop: " + waybillInvoice.getShop().getShopName()
+                    +"\nStock worth: " + formatMoney(waybillInvoice.getWaybillInvoiceTotalAmount());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_ISSUED_AND_SHIPPED_EVENT));
             websocketController.sendNoticeToUser(description, waybillInvoice.getCreatedBy(),
@@ -105,10 +107,11 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A ware bill request has been received and recorded to shop: "
-                    + waybillInvoice.getShop().getShopName()
-                    + " by: " + waybillInvoice.getSellerRequesting().getSellerFullName()
-                    + " at shop: " + waybillInvoice.getShop().getShopName();
+            description = "A ware bill request has been received and recorded, details:"
+                    + "\nto shop: " + waybillInvoice.getShop().getShopName()
+                    + "\nby: " + waybillInvoice.getSellerRequesting().getSellerFullName()
+                    + "\nat shop: " + waybillInvoice.getShop().getShopName()
+                    + "\nStock Worth: " + formatMoney(waybillInvoice.getWaybillInvoiceTotalAmount());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_RECEIVED_EVENT));
             websocketController.sendNoticeToUser(description, waybillInvoice.getIssuedBy(),

@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 
 @RestController
 @RequestMapping("/income")
@@ -66,7 +67,7 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A new income has been created, with amount: " + income.getIncomeAmount() +
+            description = "A new income has been created, with amount: " + formatMoney(income.getIncomeAmount()) +
                     " review and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_CREATE_EVENT));
@@ -87,7 +88,7 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "An income has been updated, with it current amount: " + income.getIncomeAmount() +
+            description = "An income has been updated, with it current amount: " + formatMoney(income.getIncomeAmount()) +
                     " review and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_UPDATE_EVENT));

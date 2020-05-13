@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 
 @RestController
@@ -203,7 +204,7 @@ public class ShopStockController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             description = "Selling price of stock in your shop with name: " + shopStock.getStockName() +
-                    " has been changed to: " + newSellingPrice;
+                    " has been changed to: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
@@ -227,7 +228,7 @@ public class ShopStockController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             description = "Selling price of stock in your shop with name: " + stockName +
-                    " has been changed to: " + newSellingPrice;
+                    " has been changed to: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
@@ -260,7 +261,8 @@ public class ShopStockController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             description = "A sale has been made in your shop with invoice number: " + newInvoice.getInvoiceNumber()
-                    + ", invoice amounts to: " + newInvoice.getInvoiceTotalAmount() + ", amount paid: " + newInvoice.getAmountPaid();
+                    + ", invoice amounts to: " + formatMoney(newInvoice.getInvoiceTotalAmount()) + ", amount paid: "
+                    + formatMoney(newInvoice.getAmountPaid());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SALE_EVENT));
             websocketController.sendNoticeToUser(description, newInvoice.getSeller().getCreatedBy());
@@ -296,7 +298,7 @@ public class ShopStockController {
 
             description = "A return has been made in your shop with invoice number: " + newReturnedStock.getInvoiceId()
                     + ", name of stock returned: " + newReturnedStock.getStockName()
-                    + ", worth of the stock returned is: " + newReturnedStock.getStockReturnedCost();
+                    + ", worth of the stock returned is: " + formatMoney(newReturnedStock.getStockReturnedCost());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.RETURN_SALE_EVENT));
             websocketController.sendNoticeToUser(description, newReturnedStock.getShop().getCreatedBy());

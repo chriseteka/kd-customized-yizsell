@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Utility;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
  * @email chriseteka@gmail.com
  */
 public class Utility {
+
+    private static final String NAIRA_SIGN = "\u20a6 ";
 
     //Method for returning a singleton from a stream
     public static <T> Collector<T, ?, T> toSingleton() {
@@ -100,5 +103,10 @@ public class Utility {
         }
 
         return weightedProductSum.divide(weightSum, BigDecimal.ROUND_HALF_EVEN);
+    }
+
+    public static String formatMoney(Object money){
+        DecimalFormat df = new DecimalFormat("#, ###.00");
+        return NAIRA_SIGN + df.format(money);
     }
 }

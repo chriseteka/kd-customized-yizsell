@@ -364,7 +364,14 @@ public class InvoicesServicesImpl implements InvoiceServices {
                         if (i.getSeller() != null) i.getSeller().setShop(null);
                     });
                 })
-                .map(d -> new LedgerReport(d.getKey(), d.getValue()))
+                .map(d -> {
+                    List<Invoice> values = d.getValue();
+                    List<Income> incomeList = values.stream()
+                            .map(v -> incomeRepository.findAllByIncomeReferenceContains(v.getInvoiceNumber()))
+                            .flatMap(List::parallelStream)
+                            .collect(Collectors.toList());
+                    return new LedgerReport(d.getKey(), values, incomeList);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -385,9 +392,12 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
         invoiceFound.setPaymentModeVal(String.valueOf(invoiceFound.getPaymentModeValue()));
         invoiceFound.setUpdateDate(new Date());
-        invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
+        if (is(amount).gt(invoiceFound.getDebt())){
+            invoiceFound.setDebt(BigDecimal.ZERO);
+            invoiceFound.setBalance(amount.subtract(invoiceFound.getDebt()));
+        }
+        else invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
         invoiceFound.setAmountPaid(invoiceFound.getAmountPaid().add(amount));
-        //TODO: In case a debtor over pays, record this as a balance that should be returned to the customer
 
         incomeRepository.save(incomeOnDebtClearance);
 

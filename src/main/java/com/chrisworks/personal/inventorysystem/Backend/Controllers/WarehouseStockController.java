@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.futureDate;
 
 /**
@@ -57,7 +58,7 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            String description = "A new stock with name: " + stock.getStockName() + " has been added to your warehouse.";
+            description = "A new stock with name: " + stock.getStockName() + " has been added to your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
             websocketController.sendNoticeToUser(description, newStockInWarehouse.getWarehouse().getCreatedBy());
@@ -205,7 +206,7 @@ public class WarehouseStockController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             description = "Selling price of stock in your warehouse with name: " + warehouseStock.getStockName() +
-                    " has been changed to: " + newSellingPrice;
+                    " has been changed to: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
@@ -229,7 +230,7 @@ public class WarehouseStockController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             description = "Selling price of stock in your warehouse with name: " + stockName +
-                    " has been changed to: " + newSellingPrice;
+                    " has been changed to: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());

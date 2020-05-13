@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.formatMoney;
 
 @RestController
 @RequestMapping("/invoice")
@@ -90,7 +91,7 @@ public class InvoiceController {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
             String description = "A debt clearance has been recorded with invoice number: " + invoiceNumber +
-                    ", amount paid: " + amountPaid + ", please review this action as soon as possible.";
+                    ", amount paid: " + formatMoney(amountPaid) + ", please review this action as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
             websocketController.sendNoticeToUser(description, invoice.getSeller().getCreatedBy());

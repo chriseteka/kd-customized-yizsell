@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -44,4 +45,5 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 class LedgerReport {
     private Customer customer;
     private List<Invoice> invoices;
+    private List<Income> incomeList;
 }
