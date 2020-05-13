@@ -342,6 +342,32 @@ public class InvoicesServicesImpl implements InvoiceServices {
         }).orElse(null);
     }
 
+    @Override
+    public List<LedgerReport> fetchInvoicesGroupByCustomers() {
+
+        return getEntityList()
+            .stream()
+            .collect(Collectors.groupingBy(Invoice::getCustomerId))
+            .entrySet()
+                .stream()
+                .peek(d -> {
+                    Customer key = d.getKey();
+                    List<Invoice> value = d.getValue();
+
+                    key.setDebt(value.stream().map(Invoice::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add));
+                    key.setThreshold(value.stream().map(Invoice::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add));
+                    key.setRecentPurchasesAmount(value.stream().map(Invoice::getInvoiceTotalAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+                    value.forEach(i -> {
+                        i.setCustomerId(null);
+                        if (i.getSeller() != null) i.getSeller().setShop(null);
+                    });
+                })
+                .map(d -> new LedgerReport(d.getKey(), d.getValue()))
+                .collect(Collectors.toList());
+    }
+
     private Invoice proceedWithDebtClearance(Invoice invoiceFound, BigDecimal amount) {
 
         Income incomeOnDebtClearance = new Income(amount,200,
@@ -361,6 +387,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
         invoiceFound.setUpdateDate(new Date());
         invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
         invoiceFound.setAmountPaid(invoiceFound.getAmountPaid().add(amount));
+        //TODO: In case a debtor over pays, record this as a balance that should be returned to the customer
 
         incomeRepository.save(incomeOnDebtClearance);
 

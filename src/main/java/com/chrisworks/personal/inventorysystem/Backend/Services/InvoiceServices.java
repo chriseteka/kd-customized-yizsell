@@ -1,6 +1,9 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -32,4 +35,13 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
     List<Invoice> fetchAllInvoicesBySeller(Long sellerId);
 
     List<Invoice> fetchInvoicesByCustomer(Long customerId);
+
+    List<LedgerReport> fetchInvoicesGroupByCustomers();
+}
+
+@Data
+@AllArgsConstructor
+class LedgerReport {
+    private Customer customer;
+    private List<Invoice> invoices;
 }
