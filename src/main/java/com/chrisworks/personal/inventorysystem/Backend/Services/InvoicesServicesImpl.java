@@ -393,8 +393,8 @@ public class InvoicesServicesImpl implements InvoiceServices {
         invoiceFound.setPaymentModeVal(String.valueOf(invoiceFound.getPaymentModeValue()));
         invoiceFound.setUpdateDate(new Date());
         if (is(amount).gt(invoiceFound.getDebt())){
-            invoiceFound.setDebt(BigDecimal.ZERO);
             invoiceFound.setBalance(amount.subtract(invoiceFound.getDebt()));
+            invoiceFound.setDebt(BigDecimal.ZERO);
         }
         else invoiceFound.setDebt(invoiceFound.getDebt().subtract(amount));
         invoiceFound.setAmountPaid(invoiceFound.getAmountPaid().add(amount));
