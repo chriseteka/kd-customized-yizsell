@@ -67,8 +67,9 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A new income has been created, with amount: " + formatMoney(income.getIncomeAmount()) +
-                    " review and approve this income as soon as possible.";
+            description = "A new income has been created, details:"
+                    + "\namount: " + formatMoney(income.getIncomeAmount())
+                    + "\nreview and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_CREATE_EVENT));
             websocketController.sendNoticeToUser(description, incomeCreated.getShop().getCreatedBy());
@@ -88,8 +89,9 @@ public class IncomeController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "An income has been updated, with it current amount: " + formatMoney(income.getIncomeAmount()) +
-                    " review and approve this income as soon as possible.";
+            description = "An income has been updated, details:"
+                    + "\namount: " + formatMoney(income.getIncomeAmount())
+                    + "\nreview and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_UPDATE_EVENT));
             websocketController.sendNoticeToUser(description, updatedIncome.getShop().getCreatedBy());

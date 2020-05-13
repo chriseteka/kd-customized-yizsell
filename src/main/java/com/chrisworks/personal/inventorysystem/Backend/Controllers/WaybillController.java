@@ -59,7 +59,8 @@ public class WaybillController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "A ware bill request has been placed, details: \nfrom: " + waybillInvoice.getShop().getShopName()
+            description = "A ware bill request has been placed, details: "
+                    + "\nfrom: " + waybillInvoice.getShop().getShopName()
                     + "\nby: " + waybillInvoice.getSellerRequesting().getSellerFullName()
                     + "\nto warehouse: " + waybillInvoice.getWarehouse().getWarehouseName();
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),

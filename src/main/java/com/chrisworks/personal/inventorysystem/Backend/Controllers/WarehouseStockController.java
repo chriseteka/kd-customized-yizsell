@@ -205,8 +205,9 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "Selling price of stock in your warehouse with name: " + warehouseStock.getStockName() +
-                    " has been changed to: " + formatMoney(newSellingPrice);
+            description = "Selling price of stock in your warehouse has been changed, details: "
+                    + "\nStock Name: " + warehouseStock.getStockName()
+                    + "\nNew Selling Price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
@@ -229,8 +230,9 @@ public class WarehouseStockController {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
 
-            description = "Selling price of stock in your warehouse with name: " + stockName +
-                    " has been changed to: " + formatMoney(newSellingPrice);
+            description = "Selling price of stock in your warehouse has been changed, details: "
+                    + "\nStock Name: " + stockName
+                    + "\nNew Selling Price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
             websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
