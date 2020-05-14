@@ -128,4 +128,7 @@ public class ShopStocks {
     @JoinTable(name = "stocksInShops", joinColumns = @JoinColumn(name = "shopStockId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
+
+    @Transient
+    private boolean hasPromo = false;
 }

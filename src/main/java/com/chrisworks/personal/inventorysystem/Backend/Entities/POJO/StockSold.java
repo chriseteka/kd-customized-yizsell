@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -66,4 +65,10 @@ public class StockSold {
 
     @Column(name = "createdBy")
     private String createdBy;
+
+    private boolean isSoldOnPromo = false;
+
+    //This must be set from the front end if the application must take not of the promo applied
+    @Transient
+    private boolean isPromoApplied = false;
 }
