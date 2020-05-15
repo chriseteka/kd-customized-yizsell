@@ -29,12 +29,6 @@ public class PromoController {
         return ResponseEntity.ok(promoServices.updateEntity(promoId, promo));
     }
 
-    @PutMapping(path = "/update/status", produces = "application/json")
-    public ResponseEntity<?> endOrStartPromo(@RequestParam Long promoId){
-
-        return ResponseEntity.ok(promoServices.endOrStartPromo(promoId));
-    }
-
     @PutMapping(path = "/add/stock", produces = "application/json")
     public ResponseEntity<?> addStockToPromo(@RequestParam Long promoId,
                                          @RequestParam Long stockId){
@@ -59,24 +53,6 @@ public class PromoController {
     public ResponseEntity<?> fetchAllPromo(){
 
         return ResponseEntity.ok(promoServices.getEntityList());
-    }
-
-    @GetMapping(path = "/all/active", produces = "application/json")
-    public ResponseEntity<?> fetchAllActivePromo(){
-
-        return ResponseEntity.ok(promoServices.fetchAllActivePromo());
-    }
-
-    @GetMapping(path = "/all/stock/withPromo", produces = "application/json")
-    public ResponseEntity<?> fetchAllStockWithPromo(){
-
-        return ResponseEntity.ok(promoServices.fetchAllStockWithPromo());
-    }
-
-    @GetMapping(path = "/all/stock/withActivePromo", produces = "application/json")
-    public ResponseEntity<?> fetchAllStockWithActivePromo(){
-
-        return ResponseEntity.ok(promoServices.fetchAllStockWithActivePromo());
     }
 
     @DeleteMapping(path = "/delete", produces = "application/json")

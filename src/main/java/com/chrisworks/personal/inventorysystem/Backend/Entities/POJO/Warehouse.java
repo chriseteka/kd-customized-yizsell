@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Date;
 
@@ -39,7 +38,7 @@ public class Warehouse {
     private Date updateDate = new Date();
 
     @Size(min = 3, message = "Warehouse name must contain at least two characters")
-    @Column(name = "warehouseName", nullable = false, unique = true)
+    @Column(name = "warehouseName", nullable = false)
     private String warehouseName;
 
     @Size(min = 3, message = "Address must contain at least two characters")

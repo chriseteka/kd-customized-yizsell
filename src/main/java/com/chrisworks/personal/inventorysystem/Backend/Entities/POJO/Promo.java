@@ -1,7 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,7 +50,6 @@ public class Promo {
 
     private boolean isActive = true;
 
-    @JsonIgnore
     @OneToMany(cascade = CascadeType.MERGE)
     @JoinTable(name = "promoStock", joinColumns = @JoinColumn(name = "promoId",
             nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "stockId"))

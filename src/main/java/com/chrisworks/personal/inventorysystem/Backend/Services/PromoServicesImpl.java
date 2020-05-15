@@ -43,9 +43,14 @@ public class PromoServicesImpl implements PromoServices {
                     throw new InventoryAPIOperationException("Stock not found", "Stock with id: " + stockId
                     + " was not found in any of your shops, hence operation cannot proceed", null);
 
+                if (stock.isHasPromo())
+                    throw new InventoryAPIOperationException("Stock already has a promo", "Stock with id: " + stockId +
+                            " already have an ongoing promo attached to it, and cannot be assigned another promo", null);
+
                 Promo existingPromo = getSingleEntity(promoId);
                 Set<ShopStocks> existingStock = new HashSet<>(existingPromo.getPromoOnStock());
-                existingStock.add(stock);
+                stock.setHasPromo(true);
+                existingStock.add(shopStocksRepository.save(stock));
                 existingPromo.setPromoOnStock(existingStock);
 
                 return promoRepository.save(existingPromo);
@@ -57,49 +62,27 @@ public class PromoServicesImpl implements PromoServices {
     public Promo removeStockFromPromo(Long promoId, Long stockId) {
 
         preAuthorize();
-        Promo existingPromo = getSingleEntity(promoId);
-        Set<ShopStocks> existingStock = new HashSet<>(existingPromo.getPromoOnStock());
-        existingStock.removeIf(s -> s.getShopStockId().equals(stockId));
-        existingPromo.setPromoOnStock(existingStock);
+        return shopStocksRepository.findById(stockId).map(stock -> {
 
-        return promoRepository.save(existingPromo);
-    }
+            if (!stock.getShop().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Stock not found", "Stock with id: " + stockId
+                        + " was not found in any of your shops, hence operation cannot proceed", null);
 
-    @Override
-    public Promo endOrStartPromo(Long promoId) {
+            if (!stock.isHasPromo())
+                throw new InventoryAPIOperationException("Stock never had a promo", "Stock wit id: "
+                + stockId + " does not have a promo attached to it, hence cannot be unassigned", null);
 
-        preAuthorize();
-        Promo existingPromo = getSingleEntity(promoId);
-        if(existingPromo.isActive()) existingPromo.setActive(false);
-        else existingPromo.setActive(true);
+            Promo existingPromo = getSingleEntity(promoId);
+            Set<ShopStocks> existingStock = new HashSet<>(existingPromo.getPromoOnStock());
+            existingStock.removeIf(s -> s.getShopStockId().equals(stockId));
+            stock.setHasPromo(false);
+            shopStocksRepository.save(stock);
+            existingPromo.setPromoOnStock(existingStock);
+            return promoRepository.save(existingPromo);
 
-        return promoRepository.save(existingPromo);
-    }
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Stock not found",
+                "Stock with id: " + stockId + " was not found.", null));
 
-    @Override
-    public List<Promo> fetchAllActivePromo() {
-
-        String email;
-        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
-            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
-            email = seller.getCreatedBy();
-        }
-
-        else email = AuthenticatedUserDetails.getUserFullName();
-
-        return promoRepository.findAllByCreatedBy(email).stream().filter(Promo::isActive).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ShopStocks> fetchAllStockWithPromo() {
-
-        return processPromoList(getEntityList());
-    }
-
-    @Override
-    public List<ShopStocks> fetchAllStockWithActivePromo() {
-
-        return processPromoList(fetchAllActivePromo());
     }
 
     @Override
@@ -130,7 +113,7 @@ public class PromoServicesImpl implements PromoServices {
                         "You are trying to update a promo with a name already existing in your list of promos", null);
         }
 
-        return promoRepository.save(promo);
+        return promoRepository.save(existingPromo);
     }
 
     @Override
@@ -151,8 +134,15 @@ public class PromoServicesImpl implements PromoServices {
     @Override
     public List<Promo> getEntityList() {
 
-        preAuthorize();
-        return promoRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        String email;
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            email = seller.getCreatedBy();
+        }
+
+        else email = AuthenticatedUserDetails.getUserFullName();
+
+        return promoRepository.findAllByCreatedBy(email).stream().filter(Promo::isActive).collect(Collectors.toList());
     }
 
     @Override
@@ -160,6 +150,10 @@ public class PromoServicesImpl implements PromoServices {
 
         preAuthorize();
         Promo promo = getSingleEntity(entityId);
+        promo.getPromoOnStock().forEach(s -> {
+            s.setHasPromo(false);
+            shopStocksRepository.save(s);
+        });
         promo.setPromoOnStock(null);
         promoRepository.delete(promo);
         return promo;
@@ -170,14 +164,5 @@ public class PromoServicesImpl implements PromoServices {
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user is not allowed to perform this operation", null);
-    }
-
-    private List<ShopStocks> processPromoList(List<Promo> promoList){
-        return promoList
-                .stream()
-                .map(Promo::getPromoOnStock)
-                .flatMap(Set::parallelStream)
-                .peek(s -> s.setHasPromo(true))
-                .collect(Collectors.toList());
     }
 }

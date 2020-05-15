@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 /**
@@ -44,7 +42,8 @@ public class ShopServicesImpl implements ShopServices {
         if (!businessOwner.isPresent()) throw new InventoryAPIOperationException
                 ("Unknown user", "Could not detect the user trying to create a new shop", null);
 
-        if (shopRepository.findDistinctByShopName(shop.getShopName()) != null) throw new InventoryAPIOperationException
+        if (shopRepository.findDistinctByShopNameAndCreatedBy(shop.getShopName(),
+                AuthenticatedUserDetails.getUserFullName()) != null) throw new InventoryAPIOperationException
                 ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
 
         shop.setCreatedBy(AuthenticatedUserDetails.getUserFullName());

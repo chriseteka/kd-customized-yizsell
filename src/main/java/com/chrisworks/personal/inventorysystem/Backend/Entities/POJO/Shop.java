@@ -38,7 +38,7 @@ public class Shop {
     private Date updateDate = new Date();
 
     @Size(min = 3, message = "Shop name must contain at least three characters")
-    @Column(name = "shopName", nullable = false, unique = true)
+    @Column(name = "shopName", nullable = false)
     private String shopName;
 
     @Size(min = 3, message = "Address must contain at least three characters")

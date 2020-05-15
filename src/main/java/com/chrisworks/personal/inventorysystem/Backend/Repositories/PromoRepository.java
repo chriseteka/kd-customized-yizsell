@@ -13,5 +13,5 @@ import java.util.List;
 public interface PromoRepository extends JpaRepository<Promo, Long> {
 
     List<Promo> findAllByCreatedBy(String createdBy);
-    List<Promo> findDistinctByPromoNameAndCreatedBy(String promoName, String createdBy);
+    Promo findDistinctByPromoNameAndCreatedBy(String promoName, String createdBy);
 }

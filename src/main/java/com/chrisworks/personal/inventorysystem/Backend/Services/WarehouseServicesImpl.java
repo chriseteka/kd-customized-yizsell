@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -116,7 +114,8 @@ public class WarehouseServicesImpl implements WarehouseServices {
         if (!businessOwnerId.equals(AuthenticatedUserDetails.getUserId())) throw new InventoryAPIOperationException
                 ("business owner id error", "Authenticated id does not match id used for this request", null);
 
-        if (warehouseRepository.findDistinctByWarehouseName(warehouse.getWarehouseName()) != null) throw new
+        if (warehouseRepository.findDistinctByWarehouseNameAndCreatedBy(warehouse.getWarehouseName(),
+                AuthenticatedUserDetails.getUserFullName()) != null) throw new
                 InventoryAPIOperationException("Warehouse name already exist",
                 "A warehouse exist with the warehouse name: " + warehouse.getWarehouseName(), null);
 

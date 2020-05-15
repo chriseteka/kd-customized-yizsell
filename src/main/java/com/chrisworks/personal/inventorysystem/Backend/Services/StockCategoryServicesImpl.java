@@ -71,9 +71,9 @@ public class StockCategoryServicesImpl implements StockCategoryServices {
                 boolean match = genericService.sellersByAuthUserId()
                         .stream()
                         .map(Seller::getSellerEmail)
-                        .anyMatch(sellerName -> sellerName.equalsIgnoreCase(stockCategory.getCreatedBy()));
+                        .anyMatch(sellerName -> sellerName.equalsIgnoreCase(stockCategoryFound.getCreatedBy()));
 
-                if (!match && !stockCategory.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                if (!match && !stockCategoryFound.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
                     throw new InventoryAPIOperationException("Operation not allowed",
                             "You cannot update a stock category not created by you or any of your sellers.", null);
             }

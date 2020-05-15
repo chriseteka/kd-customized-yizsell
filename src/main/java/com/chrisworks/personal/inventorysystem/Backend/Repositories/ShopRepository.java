@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface ShopRepository extends JpaRepository<Shop, Long> {
 
-    Shop findDistinctByShopName(String shopName);
+    Shop findDistinctByShopNameAndCreatedBy(String shopName, String createdBy);
 
     List<Shop> findAllByCreatedBy(String createdBy);
 }

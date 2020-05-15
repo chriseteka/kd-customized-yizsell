@@ -129,6 +129,5 @@ public class ShopStocks {
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
-    @Transient
     private boolean hasPromo = false;
 }
