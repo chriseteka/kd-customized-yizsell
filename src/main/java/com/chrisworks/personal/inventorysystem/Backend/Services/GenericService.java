@@ -44,4 +44,6 @@ public interface GenericService {
     List<Supplier> getAuthUserSuppliers();
 
     Boolean revertCashFlowFromInvoice(String invoiceNumber);
+
+    Invoice processPromoIfExist(Invoice invoice);
 }

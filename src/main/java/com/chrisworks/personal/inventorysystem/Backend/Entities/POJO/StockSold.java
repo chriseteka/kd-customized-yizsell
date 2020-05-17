@@ -68,6 +68,8 @@ public class StockSold {
 
     private boolean isSoldOnPromo = false;
 
+    private int quantitySoldOnPromo = 0;
+
     //This must be set from the front end if the application must take not of the promo applied
     @Transient
     private boolean isPromoApplied = false;

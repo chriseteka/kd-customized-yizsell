@@ -9,6 +9,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,13 +42,15 @@ public class GenericServiceImpl implements GenericService {
 
     private SalesDiscountRepository salesDiscountRepository;
 
+    private PromoSideService promoSideService;
+
     @Autowired
     public GenericServiceImpl
             (SupplierRepository supplierRepository, CustomerRepository customerRepository,
              ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
              SellerRepository sellerRepository, WarehouseRepository warehouseRepository,
              StockCategoryRepository stockCategoryRepository, ShopRepository shopRepository,
-             SalesDiscountRepository salesDiscountRepository) {
+             SalesDiscountRepository salesDiscountRepository, PromoSideService promoSideService) {
         this.supplierRepository = supplierRepository;
         this.customerRepository = customerRepository;
         this.expenseRepository = expenseRepository;
@@ -57,6 +60,7 @@ public class GenericServiceImpl implements GenericService {
         this.stockCategoryRepository = stockCategoryRepository;
         this.shopRepository = shopRepository;
         this.salesDiscountRepository = salesDiscountRepository;
+        this.promoSideService = promoSideService;
     }
 
     @Override
@@ -599,5 +603,56 @@ public class GenericServiceImpl implements GenericService {
         if (!salesDiscountList.isEmpty()) salesDiscountRepository.deleteAll(salesDiscountList);
 
         return true;
+    }
+
+    @Override
+    public Invoice processPromoIfExist(Invoice invoice) {
+
+        //If in all the invoices none has promo applied to them, return invoice unchanged
+        if(invoice.getStockSold().stream().noneMatch(StockSold::isPromoApplied))
+            return invoice;
+
+        //Get the list of promo permissible to this business
+        List<Promo> promoList = promoSideService.retrieveAllPromo();
+
+        //Stream through the stock about to be sold filter out those that flag
+        // "isPromoApplied" was set to true
+        invoice.getStockSold().stream()
+            .filter(s -> !s.isPromoApplied())
+            .forEach(s -> {
+                //Find the promo that matches the stock Name that has promo applied
+                //Searching here operates with the notion that a stock can only belong
+                //to only one promo entity for any business.
+                Promo promo = promoList.stream()
+                    .filter(p -> p.getPromoOnStock().stream()
+                        .anyMatch(ps -> ps.getStockName().equalsIgnoreCase(s.getStockName())))
+                    .collect(toSingleton());
+
+                //Return from this function when no promo was retrieved
+                //This may be an attempt to sell a stock with promo flag when this stock
+                //has not been added to a promo object, hence return with an error message
+                if (promo == null) throw new InventoryAPIOperationException("Sale cannot proceed",
+                        "You are trying to sell this stock with promo flag when the stock has no promo assigned to it", null);
+
+                //Get rule set for this promo and then apply the rule
+                int quantitySold = s.getQuantitySold();
+                int minimumPurchaseBeforeBonus = promo.getMinimumPurchase();
+                if (quantitySold < minimumPurchaseBeforeBonus) return;
+
+                int promoBonus = (quantitySold / minimumPurchaseBeforeBonus) * promo.getRewardPerMinimum();
+                BigDecimal promoWorth = BigDecimal.valueOf((long) promoBonus).multiply(s.getPricePerStockSold());
+
+                s.setSoldOnPromo(true);
+                s.setQuantitySold(quantitySold + promoBonus);
+                s.setQuantitySoldOnPromo(promoBonus);
+                if (invoice.getDiscount() == null) invoice.setDiscount(promoWorth);
+                else invoice.setDiscount(invoice.getDiscount().add(promoWorth));
+                if (invoice.getReasonForDiscount().isEmpty())
+                    invoice.setReasonForDiscount("Promo was given to this invoice");
+                invoice.setInvoiceTotalAmount(invoice.getInvoiceTotalAmount().add(promoWorth));
+
+            });
+
+        return invoice;
     }
 }

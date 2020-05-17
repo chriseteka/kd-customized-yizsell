@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class PromoServicesImpl implements PromoServices {
+public class PromoServicesImpl implements PromoServices, PromoSideService {
 
     private final PromoRepository promoRepository;
     private final ShopStocksRepository shopStocksRepository;
@@ -157,6 +157,11 @@ public class PromoServicesImpl implements PromoServices {
         promo.setPromoOnStock(null);
         promoRepository.delete(promo);
         return promo;
+    }
+
+    @Override
+    public List<Promo> retrieveAllPromo(){
+        return getEntityList();
     }
 
     private void preAuthorize(){

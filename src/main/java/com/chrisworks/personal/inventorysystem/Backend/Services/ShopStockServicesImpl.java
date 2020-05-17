@@ -531,15 +531,18 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 && invoice.getCustomerId().getCustomerFullName() != null)
             customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
-        BigDecimal totalToAmountPaidDiff = invoice.getInvoiceTotalAmount()
-                .subtract(invoice.getAmountPaid()
-                        .add(invoice.getDiscount())
-                        .add(invoice.getLoyaltyDiscount()));
-        if (is(totalToAmountPaidDiff).isPositive()) invoice.setDebt(totalToAmountPaidDiff.abs());
-        else invoice.setBalance(totalToAmountPaidDiff.abs());
+        //Process the incoming invoice to take note of any promo that maybe attached
+        final Invoice preProcessedInvoice = genericService.processPromoIfExist(invoice);
 
-        invoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
-        invoice.getStockSold().forEach(stockSold -> {
+        BigDecimal totalToAmountPaidDiff = preProcessedInvoice.getInvoiceTotalAmount()
+                .subtract(preProcessedInvoice.getAmountPaid()
+                        .add(preProcessedInvoice.getDiscount())
+                        .add(preProcessedInvoice.getLoyaltyDiscount()));
+        if (is(totalToAmountPaidDiff).isPositive()) preProcessedInvoice.setDebt(totalToAmountPaidDiff.abs());
+        else preProcessedInvoice.setBalance(totalToAmountPaidDiff.abs());
+
+        preProcessedInvoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
+        preProcessedInvoice.getStockSold().forEach(stockSold -> {
 
             atomicStock.set(shopStocksRepository
                     .findDistinctByStockNameAndShop(stockSold.getStockName(), optionalShop.get()));
@@ -558,12 +561,12 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             stockSold.setCostPricePerStock(stockFound.getPricePerStockPurchased());
             stockSold.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
-            stockSold.setStockSoldInvoiceId(invoice.getInvoiceNumber());
+            stockSold.setStockSoldInvoiceId(preProcessedInvoice.getInvoiceNumber());
             stockSoldSet.add(stockSoldRepository.save(stockSold));
 
             //Generate discount on this stock sold if it exists
             salesDiscountServices.generateDiscountOnStockSold(stockSold, stockFound.getSellingPricePerStock(),
-                    invoice.getInvoiceNumber(), invoice.getCustomerId().getCustomerFullName());
+                    preProcessedInvoice.getInvoiceNumber(), preProcessedInvoice.getCustomerId().getCustomerFullName());
 
             stockFound.setStockQuantitySold(stockFound.getStockQuantitySold() + stockSold.getQuantitySold());
             stockFound.setStockSoldTotalPrice(stockFound.getStockSoldTotalPrice().add(stockSold.getPricePerStockSold()
@@ -581,15 +584,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
         });
 
-        if (is(invoice.getAmountPaid()).isPositive()) {
+        if (is(preProcessedInvoice.getAmountPaid()).isPositive()) {
 
-            String incomeDescription = "Income generated from sale of stock with invoice number: " + invoice.getInvoiceNumber();
+            String incomeDescription = "Income generated from sale of stock with invoice number: " + preProcessedInvoice.getInvoiceNumber();
 
-            if (invoice.getMultiplePayment().isEmpty())
-                genericService.addIncome(new Income(invoice.getAmountPaid(), 100, incomeDescription));
+            if (preProcessedInvoice.getMultiplePayment().isEmpty())
+                genericService.addIncome(new Income(preProcessedInvoice.getAmountPaid(), 100, incomeDescription));
             else {
-                invoice.setPaymentModeValue(400);
-                for (MultiplePaymentMode multiplePaymentMode : invoice.getMultiplePayment())
+                preProcessedInvoice.setPaymentModeValue(400);
+                for (MultiplePaymentMode multiplePaymentMode : preProcessedInvoice.getMultiplePayment())
                     genericService.addIncome(new Income(multiplePaymentMode.getAmountPaid(), 100, incomeDescription));
             }
         }
@@ -597,15 +600,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
         String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();
 
         Customer cust = customer.get();
-        invoice.getStockSold().clear();
-        invoice.setStockSold(stockSoldSet);
+        preProcessedInvoice.getStockSold().clear();
+        preProcessedInvoice.setStockSold(stockSoldSet);
         if (cust != null && cust.getIsLoyal()){
 
             Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);
             if (null != loyaltyPlan){
-                if (is(invoice.getLoyaltyDiscount()).lte(0.0)) {
+                if (is(preProcessedInvoice.getLoyaltyDiscount()).lte(0.0)) {
 
-                    cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(invoice.getAmountPaid()));
+                    cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount().add(preProcessedInvoice.getAmountPaid()));
                     cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() + 1);
                     customer.set(customerRepository.save(cust));
                 }
@@ -616,23 +619,23 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     customer.set(customerRepository.save(cust));
 
                     //Generate discount on invoice if it exists
-                    salesDiscountServices.generateDiscountOnLoyalCustomers(customer.get(), invoice);
+                    salesDiscountServices.generateDiscountOnLoyalCustomers(customer.get(), preProcessedInvoice);
                 }
             }
         }
 
-        if (invoice.getCustomerId() != null && invoice.getCustomerId().getCustomerPhoneNumber() != null)
-            invoice.setCustomerId(customer.get());
+        if (preProcessedInvoice.getCustomerId() != null && preProcessedInvoice.getCustomerId().getCustomerPhoneNumber() != null)
+            preProcessedInvoice.setCustomerId(customer.get());
 
         //Generate discount on invoice if it exists
-        if (is(invoice.getDiscount()).isPositive())
-            salesDiscountServices.generateDiscountOnInvoice(invoice);
-        invoice.setCreatedBy(invoiceGeneratedBy);
+        if (is(preProcessedInvoice.getDiscount()).isPositive())
+            salesDiscountServices.generateDiscountOnInvoice(preProcessedInvoice);
+        preProcessedInvoice.setCreatedBy(invoiceGeneratedBy);
 
         if (ACCOUNT_TYPE.SHOP_SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
-            invoice.setSeller(sellerRepository.findDistinctBySellerFullNameOrSellerEmail(invoiceGeneratedBy, invoiceGeneratedBy));
+            preProcessedInvoice.setSeller(sellerRepository.findDistinctBySellerFullNameOrSellerEmail(invoiceGeneratedBy, invoiceGeneratedBy));
 
-        return invoiceRepository.save(invoice);
+        return invoiceRepository.save(preProcessedInvoice);
     }
 
     @Transactional
@@ -664,20 +667,17 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 "Invoice with number " + invoiceNumber + " was not found, review your inputs and try again", null);
 
         List<ReturnedStock> successfulReturns = new ArrayList<>(Collections.emptyList());
-        Set<StockSold> stockSoldSet = invoice.getStockSold();
 
-        for (StockSold stockSold : stockSoldSet){
-
+        invoice.getStockSold().forEach(stockSold -> {
             ReturnedStock returnedStock = new ReturnedStock();
             returnedStock.setReasonForReturn("Sale reversal on invoice number: " + invoiceNumber);
             returnedStock.setStockName(stockSold.getStockName());
             returnedStock.setQuantityReturned(stockSold.getQuantitySold());
             returnedStock.setInvoiceId(invoiceNumber);
-
             successfulReturns.add(this.processReturn(shopId, returnedStock));
-        }
+        });
 
-        if (successfulReturns.size() == stockSoldSet.size() && genericService.revertCashFlowFromInvoice(invoiceNumber))
+        if (successfulReturns.size() == invoice.getStockSold().size() && genericService.revertCashFlowFromInvoice(invoiceNumber))
             return new ResponseObject(true, "Sales reversal completed successfully");
         else return new ResponseObject(false, "Sales reversal was not successful, try again later.");
     }
