@@ -72,5 +72,6 @@ public class StockSold {
 
     //This must be set from the front end if the application must take not of the promo applied
     @Transient
+    @JsonProperty
     private boolean isPromoApplied = false;
 }

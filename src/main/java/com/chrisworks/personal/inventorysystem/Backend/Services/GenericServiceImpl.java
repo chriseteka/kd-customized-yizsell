@@ -618,7 +618,7 @@ public class GenericServiceImpl implements GenericService {
         //Stream through the stock about to be sold filter out those that flag
         // "isPromoApplied" was set to true
         invoice.getStockSold().stream()
-            .filter(s -> !s.isPromoApplied())
+            .filter(StockSold::isPromoApplied)
             .forEach(s -> {
                 //Find the promo that matches the stock Name that has promo applied
                 //Searching here operates with the notion that a stock can only belong
@@ -647,7 +647,7 @@ public class GenericServiceImpl implements GenericService {
                 s.setQuantitySoldOnPromo(promoBonus);
                 if (invoice.getDiscount() == null) invoice.setDiscount(promoWorth);
                 else invoice.setDiscount(invoice.getDiscount().add(promoWorth));
-                if (invoice.getReasonForDiscount().isEmpty())
+                if (invoice.getReasonForDiscount() == null || invoice.getReasonForDiscount().isEmpty())
                     invoice.setReasonForDiscount("Promo was given to this invoice");
                 invoice.setInvoiceTotalAmount(invoice.getInvoiceTotalAmount().add(promoWorth));
 
