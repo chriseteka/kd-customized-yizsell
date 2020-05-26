@@ -441,6 +441,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 throw new InventoryAPIOperationException("Warehouse Stock not yours",
                         "You are attempting to modify a warehouse stock that is not in your warehouse", null);
 
+            warehouseStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
             warehouseStock.setStockQuantitySold(0);
             warehouseStock.setStockQuantityRemaining(newQuantity);
             warehouseStock.setStockQuantityPurchased(newQuantity);
@@ -452,6 +453,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             warehouseStock.setLastRestockQuantity(newQuantity);
             warehouseStock.setProfit(BigDecimal.ZERO);
             warehouseStock.setStockSoldTotalPrice(BigDecimal.ZERO);
+            warehouseStock.setUpdateDate(new Date());
 
             return warehouseStockRepository.save(warehouseStock);
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse stock not found",

@@ -1103,6 +1103,35 @@ public class ShopStockServicesImpl implements ShopStockServices {
             .collect(Collectors.toList());
     }
 
+    @Override
+    public ShopStocks forceChangeStockQuantity(Long stockId, int newQuantity) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) throw new
+                InventoryAPIOperationException("Not allowed", "Operation not allowed for logged in user.", null);
+
+        return shopStocksRepository.findById(stockId).map(shopStock -> {
+
+            if (!shopStock.getShop().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Shop Stock not yours",
+                        "You are attempting to modify a shop stock that is not in your warehouse", null);
+
+            shopStock.setStockQuantitySold(0);
+            shopStock.setStockQuantityRemaining(newQuantity);
+            shopStock.setStockQuantityPurchased(newQuantity);
+            shopStock.setStockPurchasedTotalPrice(BigDecimal.valueOf(newQuantity)
+                    .multiply(shopStock.getPricePerStockPurchased()));
+            shopStock.setStockRemainingTotalPrice(BigDecimal.valueOf(newQuantity)
+                    .multiply(shopStock.getSellingPricePerStock()));
+            shopStock.setLastRestockQuantity(newQuantity);
+            shopStock.setStockSoldTotalPrice(BigDecimal.ZERO);
+            shopStock.setUpdateDate(new Date());
+            shopStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
+
+            return shopStocksRepository.save(shopStock);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop stock not found",
+                "shop stock with id: " + stockId + " was not found", null));
+    }
+
     private ShopStocks changeStockSellingPrice(ShopStocks stock, BigDecimal newSellingPrice) {
 
         stock.setUpdateDate(new Date());

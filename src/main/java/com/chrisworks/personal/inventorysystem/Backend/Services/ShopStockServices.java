@@ -59,4 +59,6 @@ public interface ShopStockServices {
     ResponseObject processExchangeList(Long shopId, List<ReturnedStock> returnedStockList, List<ExchangedStock> receivedStockList);
 
     List<UniqueStock> fetchAllAuthUserUniqueStocks(Long shopId);
+
+    ShopStocks forceChangeStockQuantity(Long stockId, int newQuantity);
 }

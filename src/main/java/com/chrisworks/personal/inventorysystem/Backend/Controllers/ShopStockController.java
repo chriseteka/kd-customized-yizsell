@@ -322,4 +322,11 @@ public class ShopStockController {
 
         return ResponseEntity.ok(newReturnedStockList);
     }
+
+    @PutMapping(path = "/change/stockQuantity", produces = "application/json")
+    public ResponseEntity<?> changeStockQuantity(@RequestParam Long stockId,
+                                                 @RequestParam int newQuantity){
+
+        return ResponseEntity.ok(shopStockServices.forceChangeStockQuantity(stockId, newQuantity));
+    }
 }

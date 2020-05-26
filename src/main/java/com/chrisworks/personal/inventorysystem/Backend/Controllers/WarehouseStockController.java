@@ -242,10 +242,9 @@ public class WarehouseStockController {
     }
 
     @PutMapping(path = "/change/stockQuantity", produces = "application/json")
-    public ResponseEntity<?> changeStockQuantity(@RequestParam String stockId,
-                                                 @RequestParam String newQuantity){
+    public ResponseEntity<?> changeStockQuantity(@RequestParam Long stockId,
+                                                 @RequestParam int newQuantity){
 
-        return ResponseEntity.ok(warehouseStockServices.forceChangeStockQuantity
-                (Long.valueOf(stockId), Integer.parseInt(newQuantity)));
+        return ResponseEntity.ok(warehouseStockServices.forceChangeStockQuantity(stockId, newQuantity));
     }
 }
