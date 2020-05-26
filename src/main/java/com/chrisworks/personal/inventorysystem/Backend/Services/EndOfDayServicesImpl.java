@@ -24,10 +24,6 @@ import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 @Service
 public class EndOfDayServicesImpl implements EndOfDayServices {
 
-    private Date fromDate = null;
-
-    private Date toDate = null;
-
     private final InvoiceRepository invoiceRepository;
 
     private final IncomeRepository incomeRepository;
@@ -60,7 +56,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
     }
 
     @Override
-    public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport(EOD_TYPE eod_type) {
+    public EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport(EOD_TYPE eod_type, Date fromDate, Date toDate) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null)
             throw new InventoryAPIOperationException("Not allowed",
@@ -73,7 +69,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT)) {
 
-            Seller seller = sellerRepository.findDistinctBySellerEmail(AuthenticatedUserDetails.getUserFullName());
+            Seller seller = sellerRepository.findDistinctBySellerEmail(loggedInUser);
             List<WarehouseAttendantEndOfDay> attendantEndOfDayList =
                 computeWarehouseAttendantEndOfDay(fromDate, toDate, seller.getCreatedBy());
 
@@ -107,9 +103,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         if (anyDate == null) throw new InventoryAPIOperationException("Not allowed",
                 "Please pass in a valid date to compute end of day", null);
 
-        fromDate = anyDate;
-
-        return this.generateEndOfDayReport(eod_type);
+        return this.generateEndOfDayReport(eod_type, anyDate, null);
 
     }
 
@@ -119,10 +113,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         if (from == null || to == null) throw new InventoryAPIOperationException("Not allowed",
                 "Please pass in a valid date to compute end of day, between given date intervals", null);
 
-        fromDate = from;
-        toDate = to;
-
-        return this.generateEndOfDayReport(eod_type);
+        return this.generateEndOfDayReport(eod_type, from, to);
 
     }
 
@@ -313,9 +304,6 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
             ? ACCOUNT_STATUS.BALANCED
             : ACCOUNT_STATUS.NOT_BALANCED);
         endOfDayReport.setWarehouseAttendantEndOfDayList(attendantEndOfDay);
-
-        fromDate = null;
-        toDate = null;
 
         return endOfDayReport;
     }

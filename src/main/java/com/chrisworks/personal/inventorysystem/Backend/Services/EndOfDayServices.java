@@ -6,7 +6,7 @@ import java.util.Date;
 
 public interface EndOfDayServices {
 
-    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport(EOD_TYPE eod_type);
+    EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReport(EOD_TYPE eod_type, Date fromDate, Date toDate);
 
     EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportFor(EOD_TYPE eod_type, Date anyDate);
 

@@ -25,7 +25,7 @@ public class EndOfDayController {
     @GetMapping(path = "/compute", produces = "application/json")
     public ResponseEntity<?> getEndOfDay(@RequestParam(defaultValue = "complete") String eodFor){
 
-        return ResponseEntity.ok(endOfDayServices.generateEndOfDayReport(getEODTypeFromRequest(eodFor)));
+        return ResponseEntity.ok(endOfDayServices.generateEndOfDayReport(getEODTypeFromRequest(eodFor), null, null));
     }
 
     @GetMapping(path = "/byDate", produces = "application/json")
