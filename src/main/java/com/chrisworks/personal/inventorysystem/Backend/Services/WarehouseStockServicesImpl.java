@@ -429,6 +429,35 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public WarehouseStocks forceChangeStockQuantity(Long stockId, int newQuantity) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) throw new
+                InventoryAPIOperationException("Not allowed", "Operation not allowed for logged in user.", null);
+
+        return warehouseStockRepository.findById(stockId).map(warehouseStock -> {
+
+            if (!warehouseStock.getWarehouse().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                throw new InventoryAPIOperationException("Warehouse Stock not yours",
+                        "You are attempting to modify a warehouse stock that is not in your warehouse", null);
+
+            warehouseStock.setStockQuantitySold(0);
+            warehouseStock.setStockQuantityRemaining(newQuantity);
+            warehouseStock.setStockQuantityPurchased(newQuantity);
+            warehouseStock.setStockPurchasedTotalPrice(BigDecimal.valueOf(newQuantity)
+                    .multiply(warehouseStock.getPricePerStockPurchased()));
+            warehouseStock.setPossibleQuantityRemaining(newQuantity);
+            warehouseStock.setStockRemainingTotalPrice(BigDecimal.valueOf(newQuantity)
+                    .multiply(warehouseStock.getSellingPricePerStock()));
+            warehouseStock.setLastRestockQuantity(newQuantity);
+            warehouseStock.setProfit(BigDecimal.ZERO);
+            warehouseStock.setStockSoldTotalPrice(BigDecimal.ZERO);
+
+            return warehouseStockRepository.save(warehouseStock);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse stock not found",
+                "warehouse stock with id: " + stockId + " was not found", null));
+    }
+
     private WarehouseStocks addStockToWarehouse(WarehouseStocks stockToAdd, Warehouse warehouse){
 
         if (null == stockToAdd) throw new InventoryAPIOperationException

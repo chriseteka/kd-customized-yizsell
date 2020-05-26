@@ -44,4 +44,6 @@ public interface WarehouseStockServices {
     WarehouseStocks changeStockSellingPriceByWarehouseIdAndStockName(Long warehouseId, String stockName, BigDecimal newSellingPrice);
 
     List<UniqueStock> fetchAllAuthUserUniqueStocks(Long warehouseId);
+
+    WarehouseStocks forceChangeStockQuantity(Long stockId, int newQuantity);
 }
