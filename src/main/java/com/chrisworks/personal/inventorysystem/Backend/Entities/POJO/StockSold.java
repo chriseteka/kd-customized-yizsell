@@ -66,12 +66,15 @@ public class StockSold {
     @Column(name = "createdBy")
     private String createdBy;
 
-    private boolean isSoldOnPromo = false;
+    private boolean soldOnPromo = false;
 
     private int quantitySoldOnPromo = 0;
 
     //This must be set from the front end if the application must take not of the promo applied
     @Transient
     @JsonProperty
-    private boolean isPromoApplied = false;
+    private boolean promoApplied = false;
+
+    @PostLoad
+    private void setTransients(){ this.promoApplied = this.soldOnPromo; }
 }

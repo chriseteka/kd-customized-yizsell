@@ -71,7 +71,7 @@ public class ExpenseController {
                     + "\nreview and approve this expense as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.EXPENSE_CREATE_EVENT));
-            websocketController.sendNoticeToUser(description, expenseCreated.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(expenseCreated);
@@ -93,7 +93,7 @@ public class ExpenseController {
                     + "\nreview and approve this expense as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.EXPENSE_UPDATE_EVENT));
-            websocketController.sendNoticeToUser(description, updatedExpense.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(updatedExpense);

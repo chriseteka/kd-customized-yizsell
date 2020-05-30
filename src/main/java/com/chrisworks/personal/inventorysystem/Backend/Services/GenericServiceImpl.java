@@ -288,6 +288,10 @@ public class GenericServiceImpl implements GenericService {
         if (null == income) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find income entity to save", null);
 
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "You are not allowed to perform this operation", null);
+
         income.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {

@@ -66,7 +66,7 @@ public class WaybillController {
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_REQUEST_EVENT));
             websocketController.sendNoticeToWarehouseAttendants(waybillInvoice.getWarehouse(), description);
-            websocketController.sendNoticeToUser(description, waybillInvoice.getSellerRequesting().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(waybillInvoice);
@@ -92,7 +92,7 @@ public class WaybillController {
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_ISSUED_AND_SHIPPED_EVENT));
             websocketController.sendNoticeToUser(description, waybillInvoice.getCreatedBy(),
-                    waybillInvoice.getSellerIssuing().getCreatedBy());
+                    websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(waybillInvoice);
@@ -116,7 +116,7 @@ public class WaybillController {
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WARE_BILL_RECEIVED_EVENT));
             websocketController.sendNoticeToUser(description, waybillInvoice.getIssuedBy(),
-                    waybillInvoice.getSellerRequesting().getCreatedBy());
+                    websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(waybillInvoice);

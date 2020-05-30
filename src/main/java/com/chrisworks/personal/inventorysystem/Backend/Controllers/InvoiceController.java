@@ -96,7 +96,7 @@ public class InvoiceController {
                     + "\nplease review this action as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.DEBT_CLEARANCE_EVENT));
-            websocketController.sendNoticeToUser(description, invoice.getSeller().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(invoice);

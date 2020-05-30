@@ -61,7 +61,7 @@ public class WarehouseStockController {
             description = "A new stock with name: " + stock.getStockName() + " has been added to your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.WAREHOUSE_STOCK_UP_EVENT));
-            websocketController.sendNoticeToUser(description, newStockInWarehouse.getWarehouse().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(newStockInWarehouse);
@@ -187,7 +187,7 @@ public class WarehouseStockController {
                     " has been added to previously existing ones in your warehouse.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.RESTOCK_EVENT));
-            websocketController.sendNoticeToUser(description, reStockToWarehouse.getWarehouse().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(reStockToWarehouse);
@@ -210,7 +210,7 @@ public class WarehouseStockController {
                     + "\nNew Selling Price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
-            websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(warehouseStock);
@@ -235,7 +235,7 @@ public class WarehouseStockController {
                     + "\nNew Selling Price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
-            websocketController.sendNoticeToUser(description, warehouseStock.getWarehouse().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(warehouseStock);

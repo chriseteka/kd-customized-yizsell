@@ -72,7 +72,7 @@ public class IncomeController {
                     + "\nreview and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_CREATE_EVENT));
-            websocketController.sendNoticeToUser(description, incomeCreated.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(incomeCreated);
@@ -94,7 +94,7 @@ public class IncomeController {
                     + "\nreview and approve this income as soon as possible.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.INCOME_UPDATE_EVENT));
-            websocketController.sendNoticeToUser(description, updatedIncome.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(updatedIncome);

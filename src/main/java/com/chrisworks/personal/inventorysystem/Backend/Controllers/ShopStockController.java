@@ -62,7 +62,7 @@ public class ShopStockController {
             description = "A new stock with name: " + stock.getStockName() + " has been added to your shop.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SHOP_STOCK_UP_EVENT));
-            websocketController.sendNoticeToUser(description, newStockInShop.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(newStockInShop);
@@ -185,7 +185,7 @@ public class ShopStockController {
                     " has been added to previously existing ones in your shop.";
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.RESTOCK_EVENT));
-            websocketController.sendNoticeToUser(description, reStockToShop.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(reStockToShop);
@@ -208,7 +208,7 @@ public class ShopStockController {
                     + "\nNew Selling price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
-            websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(shopStock);
@@ -233,7 +233,7 @@ public class ShopStockController {
                     + "\nNew Selling price: " + formatMoney(newSellingPrice);
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SELLING_PRICE_CHANGED_EVENT));
-            websocketController.sendNoticeToUser(description, shopStock.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(shopStock);
@@ -268,7 +268,7 @@ public class ShopStockController {
                     + "\nAmount Paid: " + formatMoney(newInvoice.getAmountPaid());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.SALE_EVENT));
-            websocketController.sendNoticeToUser(description, newInvoice.getSeller().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(newInvoice);
@@ -305,7 +305,7 @@ public class ShopStockController {
                     + "\nworth of the stock returned is: " + formatMoney(newReturnedStock.getStockReturnedCost());
             eventPublisher.publishEvent(new SellerTriggeredEvent(AuthenticatedUserDetails.getUserFullName(),
                     description, APPLICATION_EVENTS.RETURN_SALE_EVENT));
-            websocketController.sendNoticeToUser(description, newReturnedStock.getShop().getCreatedBy());
+            websocketController.sendNoticeToUser(description, websocketController.businessOwnerMail());
         }
 
         return ResponseEntity.ok(newReturnedStock);

@@ -3,7 +3,6 @@ package com.chrisworks.personal.inventorysystem.Backend.Utility;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @author Chris_Eteka
@@ -13,7 +12,6 @@ import lombok.NoArgsConstructor;
 //This object is created on successful authentication, and they form the requirements(claims) for jwt
 @Data
 @AllArgsConstructor
-//@NoArgsConstructor
 public class AuthenticatedUserDetails {
 
     private static Long userId;

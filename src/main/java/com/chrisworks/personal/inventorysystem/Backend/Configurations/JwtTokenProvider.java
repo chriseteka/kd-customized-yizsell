@@ -30,6 +30,7 @@ public class JwtTokenProvider {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", (Long.toString(userDetails.getBusinessOwnerId())));
         claims.put("businessName", userDetails.getBusinessName());
+        claims.put("businessEmail", userDetails.getBusinessOwnerEmail());
         claims.put("fullName", userDetails.getBusinessOwnerFullName());
         claims.put("username", userDetails.getUsername());
         claims.put("phoneNumber", userDetails.getBusinessOwnerPhoneNumber());
@@ -68,10 +69,16 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", (Long.toString(userDetails.getSellerId())));
-        if (userDetails.getShop() != null)
+        if (userDetails.getShop() != null) {
             claims.put("businessName", userDetails.getShop().getBusinessOwner().getBusinessName());
-        if (userDetails.getWarehouse() != null)
+            claims.put("businessPhone", userDetails.getShop().getBusinessOwner().getBusinessOwnerPhoneNumber());
+            claims.put("businessEmail", userDetails.getShop().getBusinessOwner().getBusinessOwnerEmail());
+        }
+        if (userDetails.getWarehouse() != null) {
             claims.put("businessName", userDetails.getWarehouse().getBusinessOwner().getBusinessName());
+            claims.put("businessPhone", userDetails.getWarehouse().getBusinessOwner().getBusinessOwnerPhoneNumber());
+            claims.put("businessEmail", userDetails.getWarehouse().getBusinessOwner().getBusinessOwnerEmail());
+        }
         claims.put("fullName", userDetails.getSellerFullName());
         claims.put("username", userDetails.getUsername());
         claims.put("isActive", userDetails.getIsActive());
@@ -82,7 +89,7 @@ public class JwtTokenProvider {
     }
 
     //Validate the token
-    public boolean validateToken(String token){
+    boolean validateToken(String token){
 
         try {
 
@@ -103,7 +110,7 @@ public class JwtTokenProvider {
     }
 
     //Get user Id from the token
-    public Long userIdFromJwt(String token){
+    Long userIdFromJwt(String token){
 
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
 
@@ -112,16 +119,16 @@ public class JwtTokenProvider {
         return Long.parseLong(id);
     }
 
-    //Get user Id from the token
-    public String userEmailFromJwt(String token){
+    //Get user Email from the token
+    String userEmailFromJwt(String token){
 
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
 
        return  (String) claims.get("username");
     }
 
-    //Get user Id from the token
-    public ACCOUNT_TYPE userAccountTypeJwt(String token){
+    //Get user Account type from the token
+    ACCOUNT_TYPE userAccountTypeJwt(String token){
 
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
 
@@ -130,7 +137,7 @@ public class JwtTokenProvider {
         return ACCOUNT_TYPE.valueOf(accountType);
     }
 
-    public Boolean hasWarehouseFromJwt(String token){
+    Boolean hasWarehouseFromJwt(String token){
 
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
 
