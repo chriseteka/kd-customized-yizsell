@@ -161,4 +161,10 @@ public class InvoiceController {
 
         return ResponseEntity.ok(invoiceServices.fetchInvoicesByCustomer(customerId));
     }
+
+    @PutMapping(path = "/clearDebt/byCustomerId", produces = "application/json")
+    public ResponseEntity<?> clearDebtByCustomerId(@RequestParam Long custId,
+                                                   @RequestParam BigDecimal amount){
+        return ResponseEntity.ok(invoiceServices.clearDebtByCustomerId(custId, amount));
+    }
 }

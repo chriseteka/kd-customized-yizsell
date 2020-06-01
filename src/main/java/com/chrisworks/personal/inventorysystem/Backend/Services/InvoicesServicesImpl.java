@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
@@ -373,6 +374,29 @@ public class InvoicesServicesImpl implements InvoiceServices {
                     return new LedgerReport(d.getKey(), values, incomeList);
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Invoice> clearDebtByCustomerId(Long customerId, BigDecimal amount) {
+
+        AtomicReference<BigDecimal> customerPayment = new AtomicReference<>(amount);
+
+        return fetchInvoicesByCustomer(customerId)
+            .stream()
+            .filter(invoice -> is(invoice.getDebt()).isPositive())
+            .peek(invoice -> {
+
+                BigDecimal amountPaid = customerPayment.get();
+                BigDecimal debt = invoice.getDebt();
+
+                if (is(amountPaid).gte(debt)) {
+                    if (is(amountPaid).gt(debt)) proceedWithDebtClearance(invoice, debt);
+                    else proceedWithDebtClearance(invoice, amountPaid);
+                    customerPayment.set(amountPaid.subtract(debt));
+                }
+            })
+            .filter(invoice -> isDateEqual(invoice.getUpdateDate(), new Date()))
+            .collect(Collectors.toList());
     }
 
     private Invoice proceedWithDebtClearance(Invoice invoiceFound, BigDecimal amount) {
