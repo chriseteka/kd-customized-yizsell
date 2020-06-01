@@ -389,7 +389,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
                 BigDecimal amountPaid = customerPayment.get();
                 BigDecimal debt = invoice.getDebt();
 
-                if (is(amountPaid).gte(debt)) {
+                if (is(amountPaid).isPositive()) {
                     if (is(amountPaid).gt(debt)) proceedWithDebtClearance(invoice, debt);
                     else proceedWithDebtClearance(invoice, amountPaid);
                     customerPayment.set(amountPaid.subtract(debt));
