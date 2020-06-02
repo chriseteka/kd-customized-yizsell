@@ -173,6 +173,12 @@ public class ExpenseServicesImpl implements ExpenseServices {
     }
 
     @Override
+    public List<Expense> fetchExpensesByDescription(String description) {
+
+        return expenseRepository.findAllByExpenseDescriptionContains(description);
+    }
+
+    @Override
     public List<Expense> fetchAllExpensesCreatedOn(Date createdOn) {
 
         return getEntityList()

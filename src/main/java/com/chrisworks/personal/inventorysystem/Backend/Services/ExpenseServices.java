@@ -13,6 +13,8 @@ public interface ExpenseServices extends CRUDServices<Expense> {
 
     List<Expense> fetchExpensesCreatedBy(String createdBy);
 
+    List<Expense> fetchExpensesByDescription(String description);
+
     List<Expense> fetchAllExpensesCreatedOn(Date createdOn);
 
     List<Expense> fetchAllExpensesBetween(Date from, Date to);
