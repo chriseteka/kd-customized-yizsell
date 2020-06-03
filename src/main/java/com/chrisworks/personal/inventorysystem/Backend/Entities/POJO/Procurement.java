@@ -7,11 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotEmpty;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Set;
 
@@ -42,26 +38,20 @@ public class Procurement {
     @Temporal(TemporalType.DATE)
     private Date updateDate = new Date();
 
-    @NotEmpty(message = "Please provide the waybill id used to make this procurement")
-    private String waybillId;
+    private String waybillId = "";
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "stocksInProcurement", joinColumns = @JoinColumn(name = "procurementId",
             nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "stockId"))
     private Set<ProcuredStock> stocks;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Procurement amount must be greater than zero")
-    private BigDecimal amount;
+    private BigDecimal amount = BigDecimal.ZERO;
 
     private boolean recordAsExpense = false;
 
     private String createdBy;
 
     public boolean equals(Procurement p){
-        ArrayList<ProcuredStock> procuredStocks = new ArrayList<>(this.stocks);
-        ArrayList<ProcuredStock> incomingStock = new ArrayList<>(p.getStocks());
-        procuredStocks.sort(Comparator.comparing(ProcuredStock::getStockName));
-        incomingStock.sort(Comparator.comparing(ProcuredStock::getStockName));
 
         return this.waybillId.equalsIgnoreCase(p.getWaybillId())
                 && is(this.amount).eq(p.getAmount())

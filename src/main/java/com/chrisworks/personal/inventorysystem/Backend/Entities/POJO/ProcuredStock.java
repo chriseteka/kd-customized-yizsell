@@ -29,9 +29,9 @@ public class ProcuredStock {
 
     private int quantity;
 
-    private BigDecimal pricePerStockPurchased;
+    private BigDecimal pricePerStockPurchased = BigDecimal.ZERO;
 
-    private BigDecimal stockTotalPrice;
+    private BigDecimal stockTotalPrice = BigDecimal.ZERO;
 
     public boolean equals(ProcuredStock ps){
         return this.stockName.equalsIgnoreCase(ps.getStockName())

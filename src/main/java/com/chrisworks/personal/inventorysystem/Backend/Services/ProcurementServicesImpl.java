@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
@@ -38,15 +39,21 @@ public class ProcurementServicesImpl implements ProcurementServices {
 
         preAuthorize();
 
-        if (procurementRepository.findDistinctByWaybillIdAndCreatedBy
-                (procurement.getWaybillId(), AuthenticatedUserDetails.getUserFullName()).isPresent())
-            throw new InventoryAPIDuplicateEntryException("Duplicate Entry",
-                    "Procurement already exist with the id: " + procurement.getWaybillId() + " in your business", null);
+        String waybillId = procurement.getWaybillId();
+        BigDecimal procurementAmount = procurement.getAmount();
 
-        if (procurement.isRecordAsExpense()) {
-            Expense expense = new Expense(100, procurement.getAmount(),
-                    "Procurement made with waybillId: " + procurement.getWaybillId());
-            expenseServices.createEntity(expense);
+        if (!waybillId.isEmpty()) {
+
+            if (procurementRepository.findDistinctByWaybillIdAndCreatedBy
+                    (waybillId, AuthenticatedUserDetails.getUserFullName()).isPresent())
+                throw new InventoryAPIDuplicateEntryException("Duplicate Entry",
+                        "Procurement already exist with the id: " + waybillId + " in your business", null);
+
+            if (procurement.isRecordAsExpense() && is(procurementAmount).isPositive()) {
+                Expense expense = new Expense(100, procurementAmount,
+                        "Procurement made with waybillId: " + waybillId);
+                expenseServices.createEntity(expense);
+            }
         }
 
         return procurementRepository.save(procurement);
@@ -59,35 +66,60 @@ public class ProcurementServicesImpl implements ProcurementServices {
         return Optional.of(getSingleEntity(entityId))
             .map(existingProcurement -> {
 
-                if (procurement.procurementAmountInAccurate()){
+                if (procurement.procurementAmountInAccurate())
                     throw new InventoryAPIOperationException("Total Procurement Amount Mismatch",
                             "Total procurement amount does not tally with the sum of the individual stock total amount", null);
-                }
 
                 if (procurement.equals(existingProcurement)) throw new InventoryAPIOperationException("Cannot Update",
                         "You cannot update this procurement since there are no changes to the old values", null);
 
-                existingProcurement.setUpdateDate(new Date());
+                String waybillId = procurement.getWaybillId();
+                BigDecimal procurementAmount = procurement.getAmount();
+
+                if (!waybillId.isEmpty()){
+
+                    Optional<Procurement> optionalProcurement = procurementRepository
+                            .findDistinctByWaybillIdAndCreatedBy(waybillId, AuthenticatedUserDetails.getUserFullName());
+
+                    if (optionalProcurement.isPresent() && !optionalProcurement.get().getProcurementId().equals(entityId))
+                        throw new InventoryAPIOperationException("Operation not allowed", "You are trying to update a " +
+                                "procurement with a waybillId that is attached to another procurement", null);
+
+                    existingProcurement.setWaybillId(waybillId);
+
+                    if (!existingProcurement.isRecordAsExpense() && procurement.isRecordAsExpense()
+                            && is(procurementAmount).isPositive()){
+
+                        Expense expense = new Expense(100, procurementAmount,
+                                "Procurement made with waybillId: " + waybillId);
+                        expenseServices.createEntity(expense);
+                        existingProcurement.setRecordAsExpense(procurement.isRecordAsExpense());
+                    }
+                    else if (existingProcurement.isRecordAsExpense() && is(procurementAmount).isPositive()
+                            && is(procurementAmount).notEq(existingProcurement.getAmount())){
+
+                        Expense existingExpense = expenseServices.fetchExpensesByDescription(waybillId)
+                                .stream().collect(toSingleton());
+
+                        existingExpense.setExpenseTypeVal(String.valueOf(existingExpense.getExpenseTypeValue()));
+                        existingExpense.setExpenseDescription("Procurement made with waybillId: " + waybillId);
+                        existingExpense.setExpenseAmount(procurementAmount);
+                        expenseServices.updateEntity(existingExpense.getExpenseId(), existingExpense);
+                    }
+                }
+
                 Set<ProcuredStock> incomingStocks = procurement.getStocks();
                 if (!incomingStocks.isEmpty()) {
                     Set<ProcuredStock> existingStocks = existingProcurement.getStocks();
-                    existingProcurement.setStocks(null);
-                    procuredStockRepository.deleteAll(existingStocks);
+                    if (!existingStocks.isEmpty()) {
+                        existingProcurement.setStocks(null);
+                        procuredStockRepository.deleteAll(existingStocks);
+                    }
                     existingProcurement.setStocks(incomingStocks);
                 }
 
-                if (existingProcurement.isRecordAsExpense()
-                        && is(procurement.getAmount()).notEq(existingProcurement.getAmount())){
-
-                    Expense existingExpense = expenseServices.fetchExpensesByDescription(procurement.getWaybillId())
-                            .stream().collect(toSingleton());
-
-                    existingExpense.setExpenseTypeVal(String.valueOf(existingExpense.getExpenseTypeValue()));
-                    existingExpense.setExpenseDescription("Procurement made with waybillId: " + procurement.getWaybillId());
-                    existingExpense.setExpenseAmount(procurement.getAmount());
-                    expenseServices.updateEntity(existingExpense.getExpenseId(), existingExpense);
-                }
-
+                existingProcurement.setUpdateDate(new Date());
+                existingProcurement.setAmount(procurementAmount);
                 return procurementRepository.save(existingProcurement);
             })
             .orElseThrow(() -> new InventoryAPIOperationException("Could not update",
@@ -121,9 +153,13 @@ public class ProcurementServicesImpl implements ProcurementServices {
     }
 
     @Override
+    @Transactional
     public Procurement deleteEntity(Long entityId) {
 
         Procurement procurement = getSingleEntity(entityId);
+        Expense expense = expenseServices.fetchExpensesByDescription(procurement.getWaybillId())
+                .stream().collect(toSingleton());
+        expenseServices.deleteEntity(expense.getExpenseId());
 
         procurementRepository.delete(procurement);
 
