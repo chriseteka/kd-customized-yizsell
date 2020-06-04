@@ -7,18 +7,20 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Services.RefreshTokenService;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.SECRET;
-import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.TOKEN_EXPIRATION_TIME;
 
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    @Value("${JWT_SECRET}") private String SECRET;
+    @Value("${JWT_EXPIRATION_TIME}") private Long TOKEN_EXPIRATION_TIME; //3days
 
     private final RefreshTokenService refreshTokenService;
 

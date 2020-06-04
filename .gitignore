@@ -26,6 +26,7 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
+/front-end/
 /front-end/**
 front-end/**
 

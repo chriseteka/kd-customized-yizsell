@@ -33,6 +33,8 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
 @EnableGlobalMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+    @Value("${SEND_GRID_KEY}") private String SEND_GRID_KEY;
+
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
@@ -90,6 +92,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     public SendGrid getSendGrid(){
-        return new SendGrid("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");
+        return new SendGrid(SEND_GRID_KEY);
     }
 }
