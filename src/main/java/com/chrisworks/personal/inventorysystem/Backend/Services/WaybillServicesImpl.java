@@ -63,7 +63,7 @@ public class WaybillServicesImpl implements WaybillServices {
     public WaybillInvoice requestStockFromWarehouse(Long warehouseId, List<WaybillOrder> stocks) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null ||
-                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
+                AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Unknown/Unauthorised user",
                 "Operation not allowed, logged in user is not allowed to perform this operation", null);
 
@@ -136,7 +136,7 @@ public class WaybillServicesImpl implements WaybillServices {
     public WaybillInvoice confirmAndShipWaybill(Long warehouseId, String waybillInvoiceNumber, BigDecimal expense) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null ||
-                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
+                AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
             throw new InventoryAPIOperationException("Unknown/Unauthorised user",
                     "Operation not allowed, logged in user is not allowed to perform this operation", null);
 
@@ -202,7 +202,7 @@ public class WaybillServicesImpl implements WaybillServices {
     public WaybillInvoice confirmShipment(String waybillInvoiceNumber) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null ||
-                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
+                AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Unknown/Unauthorised user",
                     "Operation not allowed, logged in user is not allowed to perform this operation", null);
 
@@ -332,7 +332,7 @@ public class WaybillServicesImpl implements WaybillServices {
     public List<WaybillInvoice> findAllInWarehouse(Long warehouseId) {
 
         if (AuthenticatedUserDetails.getAccount_type() == null ||
-                !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+                AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
             throw new InventoryAPIOperationException("Unknown/Unauthorised user",
                     "Operation not allowed, logged in user is not allowed to perform this operation", null);
 

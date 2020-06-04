@@ -4,11 +4,13 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYP
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ProcuredStock;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Procurement;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ProcuredStockRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ProcurementRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.SupplierRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class ProcurementServicesImpl implements ProcurementServices {
     private final ProcurementRepository procurementRepository;
     private final ProcuredStockRepository procuredStockRepository;
     private final ExpenseServices expenseServices;
+    private final SupplierRepository supplierRepository;
 
     @Override
     @Transactional
@@ -41,6 +44,7 @@ public class ProcurementServicesImpl implements ProcurementServices {
 
         String waybillId = procurement.getWaybillId();
         BigDecimal procurementAmount = procurement.getAmount();
+        Supplier supplier = procurement.getSupplier();
 
         if (!waybillId.isEmpty()) {
 
@@ -55,6 +59,11 @@ public class ProcurementServicesImpl implements ProcurementServices {
                 expenseServices.createEntity(expense);
             }
         }
+
+        procurement.setSupplier(supplierRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName())
+                .stream().filter(s -> s.getSupplierEmail().equalsIgnoreCase(supplier.getSupplierEmail())
+                        && s.getSupplierPhoneNumber().equalsIgnoreCase(supplier.getSupplierPhoneNumber()))
+                .collect(toSingleton()));
 
         return procurementRepository.save(procurement);
     }
@@ -85,8 +94,6 @@ public class ProcurementServicesImpl implements ProcurementServices {
                         throw new InventoryAPIOperationException("Operation not allowed", "You are trying to update a " +
                                 "procurement with a waybillId that is attached to another procurement", null);
 
-                    existingProcurement.setWaybillId(waybillId);
-
                     if (!existingProcurement.isRecordAsExpense() && procurement.isRecordAsExpense()
                             && is(procurementAmount).isPositive()){
 
@@ -95,17 +102,37 @@ public class ProcurementServicesImpl implements ProcurementServices {
                         expenseServices.createEntity(expense);
                         existingProcurement.setRecordAsExpense(procurement.isRecordAsExpense());
                     }
-                    else if (existingProcurement.isRecordAsExpense() && is(procurementAmount).isPositive()
-                            && is(procurementAmount).notEq(existingProcurement.getAmount())){
+                    else if (existingProcurement.isRecordAsExpense()) {
 
                         Expense existingExpense = expenseServices.fetchExpensesByDescription(waybillId)
                                 .stream().collect(toSingleton());
 
-                        existingExpense.setExpenseTypeVal(String.valueOf(existingExpense.getExpenseTypeValue()));
-                        existingExpense.setExpenseDescription("Procurement made with waybillId: " + waybillId);
-                        existingExpense.setExpenseAmount(procurementAmount);
-                        expenseServices.updateEntity(existingExpense.getExpenseId(), existingExpense);
+                        if (!procurement.isRecordAsExpense()){
+
+                            if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+                                throw new InventoryAPIOperationException("Operation not allowed", "You cannot edit this " +
+                                        "procurement, since you are trying to remove expense attached to it, only admin can do this", null);
+
+                            existingProcurement.setRecordAsExpense(procurement.isRecordAsExpense());
+                            expenseServices.deleteEntity(existingExpense.getExpenseId());
+                        }
+                        else if (is(procurementAmount).isPositive() && is(procurementAmount).notEq(existingProcurement.getAmount())) {
+
+                            existingExpense.setExpenseTypeVal(String.valueOf(existingExpense.getExpenseTypeValue()));
+                            existingExpense.setExpenseDescription("Procurement made with waybillId: " + waybillId);
+                            existingExpense.setExpenseAmount(procurementAmount);
+                            expenseServices.updateEntity(existingExpense.getExpenseId(), existingExpense);
+                        }
+                        if (!existingProcurement.getWaybillId().equalsIgnoreCase(waybillId)
+                                && procurement.isRecordAsExpense()){
+
+                            existingExpense.setExpenseTypeVal(String.valueOf(existingExpense.getExpenseTypeValue()));
+                            existingExpense.setExpenseDescription("Procurement made with waybillId: " + waybillId);
+                            expenseServices.updateEntity(existingExpense.getExpenseId(), existingExpense);
+                        }
                     }
+
+                    existingProcurement.setWaybillId(waybillId);
                 }
 
                 Set<ProcuredStock> incomingStocks = procurement.getStocks();

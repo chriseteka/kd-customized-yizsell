@@ -51,6 +51,11 @@ public class Procurement {
 
     private String createdBy;
 
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "procurementSuppliers", joinColumns = @JoinColumn(name = "procurementId"),
+            inverseJoinColumns = @JoinColumn(name = "supplierId"))
+    private Supplier supplier;
+
     public boolean equals(Procurement p){
 
         return this.waybillId.equalsIgnoreCase(p.getWaybillId())
