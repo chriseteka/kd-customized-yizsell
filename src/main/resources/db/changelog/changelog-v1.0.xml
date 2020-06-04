@@ -1,0 +1,1288 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-3.9.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd">
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-1">
+        <createTable tableName="business_owner_reset_token">
+            <column name="business_owner_id" type="BIGINT"/>
+            <column name="token_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-2">
+        <createTable tableName="business_owner_shops">
+            <column name="business_owner_id" type="BIGINT"/>
+            <column name="shop_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-3">
+        <createTable tableName="business_owner_verification_tokens">
+            <column name="business_owner_id" type="BIGINT"/>
+            <column name="token_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-4">
+        <createTable tableName="business_owner_warehouses">
+            <column name="business_owner_id" type="BIGINT"/>
+            <column name="warehouse_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-5">
+        <createTable tableName="business_owners">
+            <column name="business_owner_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="account_type" type="INT"/>
+            <column name="business_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_owner_email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="business_owner_full_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_owner_password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_owner_phone_number" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_total_expenses" type="DECIMAL(2)"/>
+            <column name="business_total_income" type="DECIMAL(2)"/>
+            <column name="business_total_profit" type="DECIMAL(2)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expiration_date" type="date"/>
+            <column name="has_warehouse" type="BIT(1)"/>
+            <column name="is_active" type="BIT(1)"/>
+            <column name="is_chat_registered" type="BIT(1)"/>
+            <column name="is_trial_account" type="BIT(1)"/>
+            <column name="update_date" type="date"/>
+            <column name="verified" type="BIT(1)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-6">
+        <createTable tableName="customer_exchanges">
+            <column name="customer_id" type="BIGINT"/>
+            <column name="exchanged_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-7">
+        <createTable tableName="customer_returns">
+            <column name="customer_id" type="BIGINT"/>
+            <column name="returned_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-8">
+        <createTable tableName="customers">
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="customer_email" type="VARCHAR(255)"/>
+            <column name="customer_full_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_phone_number" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_loyal" type="BIT(1)"/>
+            <column name="purchase_times_before_next_reward" type="INT"/>
+            <column name="purchases_after_last_reward" type="INT"/>
+            <column name="recent_purchases_amount" type="DECIMAL(19, 2)"/>
+            <column name="threshold" type="DECIMAL(19, 2)"/>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-9">
+        <createTable tableName="customers_invoices">
+            <column name="customer_id" type="BIGINT"/>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-10">
+        <createTable tableName="discount_models">
+            <column autoIncrement="true" name="discount_model_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="discount_name" type="VARCHAR(255)"/>
+            <column name="discount_percentage" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-11">
+        <createTable tableName="event_logs">
+            <column autoIncrement="true" name="event_log_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="admin_notified" type="BIT(1)"/>
+            <column name="event_body" type="LONGTEXT"/>
+            <column name="event_date" type="date"/>
+            <column name="event_occurred_in" type="VARCHAR(255)"/>
+            <column name="event_place_address" type="VARCHAR(255)"/>
+            <column name="event_place_name" type="VARCHAR(255)"/>
+            <column name="event_time" type="time"/>
+            <column name="event_type" type="VARCHAR(255)"/>
+            <column name="notice_for" type="VARCHAR(255)"/>
+            <column name="seller_mail" type="VARCHAR(255)"/>
+            <column name="seller_name" type="VARCHAR(255)"/>
+            <column name="seller_phone" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-12">
+        <createTable tableName="exchanged_stocks">
+            <column autoIncrement="true" name="exchanged_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="invoice_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity_returned" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_returned_cost" type="DECIMAL(19, 2)"/>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-13">
+        <createTable tableName="expenses">
+            <column name="expense_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expense_amount" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expense_description" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expense_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-14">
+        <createTable tableName="from_shop">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-15">
+        <createTable tableName="hibernate_sequence">
+            <column name="next_val" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-16">
+        <createTable tableName="income">
+            <column name="income_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="income_amount" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="income_reference" type="VARCHAR(255)"/>
+            <column name="income_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-17">
+        <createTable tableName="invoice_multiple_payments">
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="multiple_payment_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-18">
+        <createTable tableName="invoices">
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="amount_paid" type="DECIMAL(19, 2)"/>
+            <column name="balance" type="DECIMAL(19, 2)"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="debt" type="DECIMAL(19, 2)"/>
+            <column name="discount" type="DECIMAL(19, 2)"/>
+            <column name="invoice_number" type="VARCHAR(255)">
+                <constraints unique="true"/>
+            </column>
+            <column name="invoice_total_amount" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_mode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-19">
+        <createTable tableName="loyal_customers">
+            <column name="loyalty_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-20">
+        <createTable tableName="loyalties">
+            <column autoIncrement="true" name="loyalty_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="loyalty_name" type="VARCHAR(255)"/>
+            <column name="number_of_days_before_reward" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="threshold" type="DECIMAL(19, 2)"/>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-21">
+        <createTable tableName="messages">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="attachment" type="TINYBLOB"/>
+            <column name="body" type="LONGTEXT"/>
+            <column name="sent_date" type="date"/>
+            <column name="sent_time" type="time"/>
+            <column name="status" type="INT"/>
+            <column name="from_id" type="BIGINT"/>
+            <column name="to_id" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-22">
+        <createTable tableName="multiple_payment_modes">
+            <column autoIncrement="true" name="multiple_payment_mode_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="amount_paid" type="DECIMAL(19, 2)"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="payment_mode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-23">
+        <createTable tableName="password_reset_tokens">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="expiry_date" type="datetime"/>
+            <column name="token" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-24">
+        <createTable tableName="procured_stocks">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="price_per_stock_purchased" type="DECIMAL(19, 2)"/>
+            <column name="quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_name" type="VARCHAR(255)"/>
+            <column name="stock_total_price" type="DECIMAL(19, 2)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-25">
+        <createTable tableName="procurements">
+            <column autoIncrement="true" name="procurement_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="amount" type="DECIMAL(19, 2)"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="record_as_expense" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+            <column name="waybill_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-26">
+        <createTable tableName="promo_stock">
+            <column name="promo_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-27">
+        <createTable tableName="promos">
+            <column autoIncrement="true" name="promo_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="is_active" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minimum_purchase" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="promo_name" type="VARCHAR(255)"/>
+            <column name="reward_per_minimum" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-28">
+        <createTable tableName="refresh_tokens">
+            <column name="refresh_token_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expiration_date" type="datetime"/>
+            <column name="refresh_token" type="VARCHAR(255)"/>
+            <column name="update_date" type="date"/>
+            <column name="user_email" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-29">
+        <createTable tableName="returned_stocks">
+            <column name="returned_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="invoice_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity_returned" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason_for_return" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_returned_cost" type="DECIMAL(19, 2)"/>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-30">
+        <createTable tableName="sales_discounts">
+            <column autoIncrement="true" name="sales_discount_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="discount_amount" type="DECIMAL(19, 2)"/>
+            <column name="discount_issued_to" type="VARCHAR(255)"/>
+            <column name="discount_percentage" type="DOUBLE"/>
+            <column name="discount_type" type="VARCHAR(255)"/>
+            <column name="invoice_number" type="VARCHAR(255)"/>
+            <column name="reason_for_discount" type="VARCHAR(255)"/>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-31">
+        <createTable tableName="seller_invoices">
+            <column name="seller_id" type="BIGINT"/>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-32">
+        <createTable tableName="sellers">
+            <column name="seller_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="account_type" type="INT"/>
+            <column name="created_by" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="is_active" type="BIT(1)"/>
+            <column name="is_chat_registered" type="BIT(1)"/>
+            <column name="last_login_date" type="date"/>
+            <column name="last_login_time" type="time"/>
+            <column name="last_logout_time" type="time"/>
+            <column name="seller_address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seller_email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="seller_full_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seller_password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seller_phone_number" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-33">
+        <createTable tableName="sellers_in_shop">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="seller_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-34">
+        <createTable tableName="sellers_in_warehouse">
+            <column name="warehouse_id" type="BIGINT"/>
+            <column name="seller_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-35">
+        <createTable tableName="shop_exchanges">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="exchanged_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-36">
+        <createTable tableName="shop_expenses">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="expense_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-37">
+        <createTable tableName="shop_income">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="income_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-38">
+        <createTable tableName="shop_restock_supplier">
+            <column name="supplier_id" type="BIGINT"/>
+            <column name="shop_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-39">
+        <createTable tableName="shop_returns">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="returned_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-40">
+        <createTable tableName="shop_stock_stock_category">
+            <column name="stock_category_id" type="BIGINT"/>
+            <column name="shop_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-41">
+        <createTable tableName="shop_stock_supplier">
+            <column name="shop_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-42">
+        <createTable tableName="shop_stocks">
+            <column name="shop_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expiry_date" type="date"/>
+            <column name="has_promo" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_restock_by" type="VARCHAR(255)"/>
+            <column name="last_restock_quantity" type="INT"/>
+            <column name="price_per_stock_purchased" type="DECIMAL(19, 2)"/>
+            <column name="profit" type="DECIMAL(19, 2)"/>
+            <column name="selling_price_per_stock" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_bar_code_id" type="VARCHAR(255)"/>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_purchased_total_price" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_quantity_purchased" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_quantity_remaining" type="INT"/>
+            <column name="stock_quantity_sold" type="INT"/>
+            <column name="stock_remaining_total_price" type="DECIMAL(19, 2)"/>
+            <column name="stock_sold_total_price" type="DECIMAL(19, 2)"/>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-43">
+        <createTable tableName="shops">
+            <column name="shop_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="shop_address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shop_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-44">
+        <createTable tableName="stock_category">
+            <column autoIncrement="true" name="stock_category_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="category_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-45">
+        <createTable tableName="stock_sold">
+            <column name="stock_sold_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="cost_price_per_stock" type="DECIMAL(19, 2)"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="sold_on_promo" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price_per_stock_sold" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity_sold" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_category" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_sold_invoice_id" type="VARCHAR(255)"/>
+            <column name="updated_date" type="date"/>
+            <column name="quantity_sold_on_promo" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-46">
+        <createTable tableName="stock_sold_in_invoice">
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="stock_sold_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-47">
+        <createTable tableName="stocks_in_procurement">
+            <column name="procurement_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-48">
+        <createTable tableName="stocks_in_shops">
+            <column name="shop_id" type="BIGINT"/>
+            <column name="shop_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-49">
+        <createTable tableName="stocks_in_warehouse">
+            <column name="warehouse_id" type="BIGINT"/>
+            <column name="warehouse_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-50">
+        <createTable tableName="summary_reports">
+            <column autoIncrement="true" name="summary_report_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="data" type="LONGBLOB"/>
+            <column name="delivered" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="report_for" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-51">
+        <createTable tableName="suppliers">
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="supplier_email" type="VARCHAR(255)"/>
+            <column name="supplier_full_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supplier_phone_number" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-52">
+        <createTable tableName="to_warehouse">
+            <column name="warehouse_id" type="BIGINT"/>
+            <column name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-53">
+        <createTable tableName="user_mini_profiles">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="business_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="email" type="VARCHAR(255)">
+                <constraints unique="true"/>
+            </column>
+            <column name="full_name" type="VARCHAR(255)"/>
+            <column name="status" type="INT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-54">
+        <createTable tableName="verification_tokens">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="expiry_date" type="datetime"/>
+            <column name="token" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-55">
+        <createTable tableName="warehouse">
+            <column name="warehouse_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="updated_date" type="date"/>
+            <column name="warehouse_address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="warehouse_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-56">
+        <createTable tableName="warehouse_restock_supplier">
+            <column name="supplier_id" type="BIGINT"/>
+            <column name="warehouse_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-57">
+        <createTable tableName="warehouse_stock_stock_category">
+            <column name="stock_category_id" type="BIGINT"/>
+            <column name="warehouse_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-58">
+        <createTable tableName="warehouse_stock_supplier">
+            <column name="warehouse_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-59">
+        <createTable tableName="warehouse_stocks">
+            <column name="warehouse_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="approved" type="BIT(1)"/>
+            <column name="approved_by" type="VARCHAR(255)"/>
+            <column name="approved_date" type="date"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expiry_date" type="date"/>
+            <column name="last_restock_by" type="VARCHAR(255)"/>
+            <column name="last_restock_quantity" type="INT"/>
+            <column name="possible_quantity_remaining" type="INT"/>
+            <column name="price_per_stock_purchased" type="DECIMAL(19, 2)"/>
+            <column name="profit" type="DECIMAL(19, 2)"/>
+            <column name="selling_price_per_stock" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_bar_code_id" type="VARCHAR(255)"/>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_purchased_total_price" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_quantity_purchased" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_quantity_remaining" type="INT"/>
+            <column name="stock_quantity_sold" type="INT"/>
+            <column name="stock_remaining_total_price" type="DECIMAL(19, 2)"/>
+            <column name="stock_sold_total_price" type="DECIMAL(19, 2)"/>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-60">
+        <createTable tableName="waybill_from">
+            <column name="seller_id" type="BIGINT"/>
+            <column name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-61">
+        <createTable tableName="waybill_invoices">
+            <column autoIncrement="true" name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="date_received" type="date"/>
+            <column name="date_shipped" type="date"/>
+            <column name="received_status" type="BIT(1)"/>
+            <column name="shipped_status" type="BIT(1)"/>
+            <column name="issued_by" type="VARCHAR(255)"/>
+            <column name="time_received" type="time"/>
+            <column name="time_shipped" type="time"/>
+            <column name="updated_date" type="date"/>
+            <column name="invoice_number" type="VARCHAR(255)">
+                <constraints unique="true"/>
+            </column>
+            <column name="invoice_total_amount" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-62">
+        <createTable tableName="waybill_issuer">
+            <column name="seller_id" type="BIGINT"/>
+            <column name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-63">
+        <createTable tableName="waybill_stock_in_waybill_invoice">
+            <column name="waybill_invoice_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="waybill_stock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-64">
+        <createTable tableName="waybill_stock_supplier">
+            <column name="supplier_id" type="BIGINT"/>
+            <column name="waybillstock_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-65">
+        <createTable tableName="waybilled_stocks">
+            <column autoIncrement="true" name="waybilled_stocks_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="created_time" type="time"/>
+            <column name="expiry_date" type="date"/>
+            <column name="purchase_price" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity_sold" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="selling_price" type="DECIMAL(19, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_bar_code_id" type="VARCHAR(255)"/>
+            <column name="stock_category" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_sold_invoice_id" type="VARCHAR(255)"/>
+            <column name="updated_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-66">
+        <createIndex indexName="FK1n4wey1m2latn7gy33s84b85v" tableName="waybill_from">
+            <column name="seller_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-67">
+        <createIndex indexName="FK22m6pxlkkyu3hg906bqa67t75" tableName="seller_invoices">
+            <column name="seller_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-68">
+        <createIndex indexName="FK4ktyn6d0kvagbykghfe8b7lan" tableName="shop_exchanges">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-69">
+        <createIndex indexName="FK5kw7rkw4o5m21w0lskw08hw82" tableName="shop_returns">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-70">
+        <createIndex indexName="FK8gyt5i9x6nn56taoj8mvoddlr" tableName="waybill_issuer">
+            <column name="seller_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-71">
+        <createIndex indexName="FK9prhiql0m0pxingt1omst0puw" tableName="shop_income">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-72">
+        <createIndex indexName="FK9qoaljj3u8pjwwv6euc7jryly" tableName="sellers_in_shop">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-73">
+        <createIndex indexName="FKa085865gcen1d4c6cdqcyggxy" tableName="customer_returns">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-74">
+        <createIndex indexName="FKamqxm26e020mx0rc31bt6b7k4" tableName="customers_invoices">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-75">
+        <createIndex indexName="FKaomia0ml1hliu0w7w4g8brbh6" tableName="from_shop">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-76">
+        <createIndex indexName="FKbsoq44nyh116ey658fb9r5ahd" tableName="warehouse_stock_supplier">
+            <column name="supplier_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-77">
+        <createIndex indexName="FKcmp36t3aaabufuwvp1t2mb5k9" tableName="shop_stock_stock_category">
+            <column name="stock_category_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-78">
+        <createIndex indexName="FKdh9q428t7fsuux7mhw0lbimv9" tableName="invoice_multiple_payments">
+            <column name="invoice_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-79">
+        <createIndex indexName="FKdxu68inslh2cimcu36anuprd1" tableName="shop_stock_supplier">
+            <column name="supplier_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-80">
+        <createIndex indexName="FKhdp4bh0mb5ocrj2bncca8wek4" tableName="stocks_in_warehouse">
+            <column name="warehouse_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-81">
+        <createIndex indexName="FKhrpqffdm83wgy8cbd8sctq38p" tableName="warehouse_stock_stock_category">
+            <column name="stock_category_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-82">
+        <createIndex indexName="FKhypcpc2gu09l1thcsahlpms8h" tableName="waybill_stock_supplier">
+            <column name="supplier_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-83">
+        <createIndex indexName="FKiql2ng1jqi2nc1faiibbcd1d8" tableName="business_owner_verification_tokens">
+            <column name="business_owner_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-84">
+        <createIndex indexName="FKj4600u4gmjk0idhgq021943jv" tableName="warehouse_restock_supplier">
+            <column name="supplier_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-85">
+        <createIndex indexName="FKjycng8e9c8fng4bujig1jlp4r" tableName="business_owner_warehouses">
+            <column name="business_owner_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-86">
+        <createIndex indexName="FKkahe91r4m2wjnis6ld5cjexv5" tableName="business_owner_shops">
+            <column name="business_owner_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-87">
+        <createIndex indexName="FKkj8ansn9kw1tmxeo0a070aqie" tableName="business_owner_reset_token">
+            <column name="business_owner_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-88">
+        <createIndex indexName="FKn2br5fgyrw1gcth996k5of794" tableName="messages">
+            <column name="from_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-89">
+        <createIndex indexName="FKn5delpevmysympb3t7ttsj4e0" tableName="stocks_in_shops">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-90">
+        <createIndex indexName="FKnccpwirb1x9ri59ysg8r5193u" tableName="sellers_in_warehouse">
+            <column name="warehouse_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-91">
+        <createIndex indexName="FKpw9jygypr7ss7s5dlnip4nkpt" tableName="customer_exchanges">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-92">
+        <createIndex indexName="FKqvequtmjyeby6oqlh9n8gp0b6" tableName="shop_expenses">
+            <column name="shop_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-93">
+        <createIndex indexName="FKr84ip0ukd58kgxlobuwhu2818" tableName="to_warehouse">
+            <column name="warehouse_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-94">
+        <createIndex indexName="FKrawbwbyctq1s09kt6vq7x2ykc" tableName="shop_restock_supplier">
+            <column name="supplier_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-95">
+        <createIndex indexName="FKs8wer5lgi124kwa1xjkidsgu3" tableName="messages">
+            <column name="to_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-96">
+        <addForeignKeyConstraint baseColumnNames="returned_stock_id" baseTableName="customer_returns" constraintName="FK1forpdnv2kn0pxj4g9ra5te64" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="returned_stock_id" referencedTableName="returned_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-97">
+        <addForeignKeyConstraint baseColumnNames="seller_id" baseTableName="waybill_from" constraintName="FK1n4wey1m2latn7gy33s84b85v" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="seller_id" referencedTableName="sellers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-98">
+        <addForeignKeyConstraint baseColumnNames="seller_id" baseTableName="seller_invoices" constraintName="FK22m6pxlkkyu3hg906bqa67t75" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="seller_id" referencedTableName="sellers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-99">
+        <addForeignKeyConstraint baseColumnNames="stock_id" baseTableName="stocks_in_procurement" constraintName="FK3494l8aal1a856rbpk5we61l8" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="procured_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-100">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="stock_sold_in_invoice" constraintName="FK3m8ncpeolodmvs2c9o501y0uj" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-101">
+        <addForeignKeyConstraint baseColumnNames="warehouse_stock_id" baseTableName="warehouse_stock_supplier" constraintName="FK4byrnuvrg04j0ns3kq4txev0w" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_stock_id" referencedTableName="warehouse_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-102">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_exchanges" constraintName="FK4ktyn6d0kvagbykghfe8b7lan" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-103">
+        <addForeignKeyConstraint baseColumnNames="token_id" baseTableName="business_owner_reset_token" constraintName="FK4o6033wxbhu4hy2prnheesvh4" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="password_reset_tokens" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-104">
+        <addForeignKeyConstraint baseColumnNames="waybill_invoice_id" baseTableName="from_shop" constraintName="FK5hcagfs6l0we73qd4i3xj9lcb" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybill_invoice_id" referencedTableName="waybill_invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-105">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_returns" constraintName="FK5kw7rkw4o5m21w0lskw08hw82" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-106">
+        <addForeignKeyConstraint baseColumnNames="waybillstock_id" baseTableName="waybill_stock_supplier" constraintName="FK7lg78r8iulrki05i5swhyf7d8" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybilled_stocks_id" referencedTableName="waybilled_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-107">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="customers_invoices" constraintName="FK807dv73y3ursuscde1i1ke593" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-108">
+        <addForeignKeyConstraint baseColumnNames="seller_id" baseTableName="waybill_issuer" constraintName="FK8gyt5i9x6nn56taoj8mvoddlr" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="seller_id" referencedTableName="sellers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-109">
+        <addForeignKeyConstraint baseColumnNames="waybill_invoice_id" baseTableName="to_warehouse" constraintName="FK8iaqecnl8mvvgtcvmpylgoq0v" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybill_invoice_id" referencedTableName="waybill_invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-110">
+        <addForeignKeyConstraint baseColumnNames="warehouse_stock_id" baseTableName="stocks_in_warehouse" constraintName="FK8t5kjnlg2lbqqq1bhuga3qopy" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_stock_id" referencedTableName="warehouse_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-111">
+        <addForeignKeyConstraint baseColumnNames="loyalty_id" baseTableName="loyal_customers" constraintName="FK91apcc0545aftraewskuchk4h" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="loyalty_id" referencedTableName="loyalties" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-112">
+        <addForeignKeyConstraint baseColumnNames="promo_id" baseTableName="promo_stock" constraintName="FK9gfcfeonpstpuohwl1vs9o3qa" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="promo_id" referencedTableName="promos" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-113">
+        <addForeignKeyConstraint baseColumnNames="waybill_invoice_id" baseTableName="waybill_issuer" constraintName="FK9mvi0bqqj6d5dpodk12n22nub" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybill_invoice_id" referencedTableName="waybill_invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-114">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_income" constraintName="FK9prhiql0m0pxingt1omst0puw" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-115">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="sellers_in_shop" constraintName="FK9qoaljj3u8pjwwv6euc7jryly" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-116">
+        <addForeignKeyConstraint baseColumnNames="customer_id" baseTableName="customer_returns" constraintName="FKa085865gcen1d4c6cdqcyggxy" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="customer_id" referencedTableName="customers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-117">
+        <addForeignKeyConstraint baseColumnNames="income_id" baseTableName="shop_income" constraintName="FKa896je6jt5s4jjk0kam4g9ihw" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="income_id" referencedTableName="income" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-118">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="seller_invoices" constraintName="FKabogabji2ojelkxyknbejw7sl" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-119">
+        <addForeignKeyConstraint baseColumnNames="customer_id" baseTableName="customers_invoices" constraintName="FKamqxm26e020mx0rc31bt6b7k4" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="customer_id" referencedTableName="customers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-120">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="from_shop" constraintName="FKaomia0ml1hliu0w7w4g8brbh6" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-121">
+        <addForeignKeyConstraint baseColumnNames="shop_stock_id" baseTableName="shop_restock_supplier" constraintName="FKaqobtuhdcpvp6iaexkpiw0s46" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_stock_id" referencedTableName="shop_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-122">
+        <addForeignKeyConstraint baseColumnNames="waybill_invoice_id" baseTableName="waybill_stock_in_waybill_invoice" constraintName="FKbjigva152q6s526k1h8ssr11a" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybill_invoice_id" referencedTableName="waybill_invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-123">
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="warehouse_stock_supplier" constraintName="FKbsoq44nyh116ey658fb9r5ahd" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-124">
+        <addForeignKeyConstraint baseColumnNames="expense_id" baseTableName="shop_expenses" constraintName="FKc4akiabdldvha45x5lulkl38a" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="expense_id" referencedTableName="expenses" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-125">
+        <addForeignKeyConstraint baseColumnNames="stock_category_id" baseTableName="shop_stock_stock_category" constraintName="FKcmp36t3aaabufuwvp1t2mb5k9" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="stock_category_id" referencedTableName="stock_category" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-126">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="invoice_multiple_payments" constraintName="FKdh9q428t7fsuux7mhw0lbimv9" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-127">
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="shop_stock_supplier" constraintName="FKdxu68inslh2cimcu36anuprd1" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-128">
+        <addForeignKeyConstraint baseColumnNames="token_id" baseTableName="business_owner_verification_tokens" constraintName="FKfmorv20t7he0m1u91amg33mwx" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="verification_tokens" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-129">
+        <addForeignKeyConstraint baseColumnNames="waybill_stock_id" baseTableName="waybill_stock_in_waybill_invoice" constraintName="FKg05s5t6176am92vo8ns4fnn9u" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybilled_stocks_id" referencedTableName="waybilled_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-130">
+        <addForeignKeyConstraint baseColumnNames="warehouse_id" baseTableName="stocks_in_warehouse" constraintName="FKhdp4bh0mb5ocrj2bncca8wek4" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_id" referencedTableName="warehouse" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-131">
+        <addForeignKeyConstraint baseColumnNames="stock_category_id" baseTableName="warehouse_stock_stock_category" constraintName="FKhrpqffdm83wgy8cbd8sctq38p" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="stock_category_id" referencedTableName="stock_category" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-132">
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="waybill_stock_supplier" constraintName="FKhypcpc2gu09l1thcsahlpms8h" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-133">
+        <addForeignKeyConstraint baseColumnNames="stock_id" baseTableName="promo_stock" constraintName="FKidmaii1dnqcq96fol075bditr" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_stock_id" referencedTableName="shop_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-134">
+        <addForeignKeyConstraint baseColumnNames="business_owner_id" baseTableName="business_owner_verification_tokens" constraintName="FKiql2ng1jqi2nc1faiibbcd1d8" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="business_owner_id" referencedTableName="business_owners" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-135">
+        <addForeignKeyConstraint baseColumnNames="shop_stock_id" baseTableName="shop_stock_stock_category" constraintName="FKj24h15c4klug8rpxqtosv9xgp" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_stock_id" referencedTableName="shop_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-136">
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="warehouse_restock_supplier" constraintName="FKj4600u4gmjk0idhgq021943jv" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-137">
+        <addForeignKeyConstraint baseColumnNames="customer_id" baseTableName="loyal_customers" constraintName="FKj9aykx9my9rhf0wy62p2qewr9" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="customer_id" referencedTableName="customers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-138">
+        <addForeignKeyConstraint baseColumnNames="seller_id" baseTableName="sellers_in_warehouse" constraintName="FKjlpn10yfgpiennqqdmeni6k54" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="seller_id" referencedTableName="sellers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-139">
+        <addForeignKeyConstraint baseColumnNames="business_owner_id" baseTableName="business_owner_warehouses" constraintName="FKjycng8e9c8fng4bujig1jlp4r" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="business_owner_id" referencedTableName="business_owners" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-140">
+        <addForeignKeyConstraint baseColumnNames="business_owner_id" baseTableName="business_owner_shops" constraintName="FKkahe91r4m2wjnis6ld5cjexv5" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="business_owner_id" referencedTableName="business_owners" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-141">
+        <addForeignKeyConstraint baseColumnNames="business_owner_id" baseTableName="business_owner_reset_token" constraintName="FKkj8ansn9kw1tmxeo0a070aqie" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="business_owner_id" referencedTableName="business_owners" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-142">
+        <addForeignKeyConstraint baseColumnNames="returned_stock_id" baseTableName="shop_returns" constraintName="FKl5wavnbpsmpq5o2voihgs3m9r" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="returned_stock_id" referencedTableName="returned_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-143">
+        <addForeignKeyConstraint baseColumnNames="warehouse_stock_id" baseTableName="warehouse_restock_supplier" constraintName="FKl89xy38mo4vbhf3ldh4oceb7a" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_stock_id" referencedTableName="warehouse_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-144">
+        <addForeignKeyConstraint baseColumnNames="waybill_invoice_id" baseTableName="waybill_from" constraintName="FKlng2cag359hoae5i5hb2w0jwe" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="waybill_invoice_id" referencedTableName="waybill_invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-145">
+        <addForeignKeyConstraint baseColumnNames="multiple_payment_id" baseTableName="invoice_multiple_payments" constraintName="FKlybbx01ks658c7jbsgxf9worn" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="multiple_payment_mode_id" referencedTableName="multiple_payment_modes" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-146">
+        <addForeignKeyConstraint baseColumnNames="shop_stock_id" baseTableName="stocks_in_shops" constraintName="FKme4g0hlsunjyxoms7dgdod4j7" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_stock_id" referencedTableName="shop_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-147">
+        <addForeignKeyConstraint baseColumnNames="stock_sold_id" baseTableName="stock_sold_in_invoice" constraintName="FKmyqq7bomqsfbvy18r121b7li2" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="stock_sold_id" referencedTableName="stock_sold" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-148">
+        <addForeignKeyConstraint baseColumnNames="from_id" baseTableName="messages" constraintName="FKn2br5fgyrw1gcth996k5of794" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="user_mini_profiles" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-149">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="stocks_in_shops" constraintName="FKn5delpevmysympb3t7ttsj4e0" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-150">
+        <addForeignKeyConstraint baseColumnNames="warehouse_id" baseTableName="sellers_in_warehouse" constraintName="FKnccpwirb1x9ri59ysg8r5193u" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_id" referencedTableName="warehouse" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-151">
+        <addForeignKeyConstraint baseColumnNames="warehouse_id" baseTableName="business_owner_warehouses" constraintName="FKnq4jw8klw01qrqcb08ahyb3or" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_id" referencedTableName="warehouse" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-152">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="business_owner_shops" constraintName="FKo4n3orp8kypp8sl6vay5kjvre" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-153">
+        <addForeignKeyConstraint baseColumnNames="warehouse_stock_id" baseTableName="warehouse_stock_stock_category" constraintName="FKokhbr1c69om7kr47nh5v4st40" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_stock_id" referencedTableName="warehouse_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-154">
+        <addForeignKeyConstraint baseColumnNames="exchanged_stock_id" baseTableName="shop_exchanges" constraintName="FKovmqfcrqjopc1h7tf9ggid5km" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="exchanged_stock_id" referencedTableName="exchanged_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-155">
+        <addForeignKeyConstraint baseColumnNames="customer_id" baseTableName="customer_exchanges" constraintName="FKpw9jygypr7ss7s5dlnip4nkpt" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="customer_id" referencedTableName="customers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-156">
+        <addForeignKeyConstraint baseColumnNames="exchanged_stock_id" baseTableName="customer_exchanges" constraintName="FKqkuepvcxnlpat9e1tesrhtmuy" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="exchanged_stock_id" referencedTableName="exchanged_stocks" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-157">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_expenses" constraintName="FKqvequtmjyeby6oqlh9n8gp0b6" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-158">
+        <addForeignKeyConstraint baseColumnNames="warehouse_id" baseTableName="to_warehouse" constraintName="FKr84ip0ukd58kgxlobuwhu2818" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="warehouse_id" referencedTableName="warehouse" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-159">
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="shop_restock_supplier" constraintName="FKrawbwbyctq1s09kt6vq7x2ykc" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-160">
+        <addForeignKeyConstraint baseColumnNames="procurement_id" baseTableName="stocks_in_procurement" constraintName="FKrvnjt3q7t34gjyxqi39cascqj" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="procurement_id" referencedTableName="procurements" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-161">
+        <addForeignKeyConstraint baseColumnNames="seller_id" baseTableName="sellers_in_shop" constraintName="FKrxxk410xb28nc4a9w6gf8469v" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="seller_id" referencedTableName="sellers" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-162">
+        <addForeignKeyConstraint baseColumnNames="to_id" baseTableName="messages" constraintName="FKs8wer5lgi124kwa1xjkidsgu3" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="user_mini_profiles" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka (generated)" id="1591228174965-163">
+        <addForeignKeyConstraint baseColumnNames="shop_stock_id" baseTableName="shop_stock_supplier" constraintName="FKse4xf3bdumsvq0c807rvh5l0w" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_stock_id" referencedTableName="shop_stocks" validate="true"/>
+    </changeSet>
+</databaseChangeLog>

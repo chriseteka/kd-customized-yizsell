@@ -35,3 +35,7 @@ front-end/**
 "sendgrid.env"  source ./sendgrid.env
 *.xlsx
 *.env
+
+### DATA TO INIT DB ###
+/src/main/resources/db/data/**
+src/main/resources/db/data/**
