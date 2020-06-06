@@ -19,9 +19,12 @@ public class ListWrapper {
 
     private List<?> content;
 
+    private int currPage;
+
     public static ListWrapper prepareResponse(List<?> data, int page, int size){
 
         ListWrapper response = new ListWrapper();
+        response.setCurrPage(page);
 
         int dataSize = data.size();
 
