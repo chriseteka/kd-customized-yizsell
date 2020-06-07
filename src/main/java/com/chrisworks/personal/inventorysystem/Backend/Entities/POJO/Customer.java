@@ -1,15 +1,12 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.listeners.CustomerListener;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -23,6 +20,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customers")
+@EntityListeners(CustomerListener.class)
 public class Customer {
 
     @Id
