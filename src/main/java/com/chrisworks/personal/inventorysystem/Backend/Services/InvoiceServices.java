@@ -39,6 +39,8 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 
     List<LedgerReport> fetchInvoicesGroupByCustomers();
 
+    List<LedgerReport> fetchInvoicesWithDebtGroupByCustomers();
+
     List<Invoice> clearDebtByCustomerId(Long customerId, BigDecimal amount);
 }
 

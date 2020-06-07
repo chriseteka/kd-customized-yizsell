@@ -68,6 +68,12 @@ public class InvoiceController {
         return ResponseEntity.ok(invoiceServices.fetchInvoicesGroupByCustomers());
     }
 
+    @GetMapping(path = "/all/withDebt/groupByCustomer")
+    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(){
+
+        return ResponseEntity.ok(invoiceServices.fetchInvoicesWithDebtGroupByCustomers());
+    }
+
     @DeleteMapping(path = "/byId")
     public ResponseEntity<?> deleteIncomeById(@RequestParam Long invoiceId){
 

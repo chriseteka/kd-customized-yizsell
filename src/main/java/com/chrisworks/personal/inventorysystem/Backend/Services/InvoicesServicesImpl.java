@@ -346,34 +346,16 @@ public class InvoicesServicesImpl implements InvoiceServices {
     @Override
     public List<LedgerReport> fetchInvoicesGroupByCustomers() {
 
-        return getEntityList()
-            .stream()
-            .collect(Collectors.groupingBy(Invoice::getCustomerId))
-            .entrySet()
-                .stream()
-                .peek(d -> {
-                    Customer key = d.getKey();
-                    List<Invoice> value = d.getValue();
+        return generateLedgerReport(getEntityList());
+    }
 
-                    key.setDebt(value.stream().map(Invoice::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add));
-                    key.setThreshold(value.stream().map(Invoice::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add));
-                    key.setRecentPurchasesAmount(value.stream().map(Invoice::getInvoiceTotalAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add));
+    @Override
+    public List<LedgerReport> fetchInvoicesWithDebtGroupByCustomers() {
 
-                    value.forEach(i -> {
-                        i.setCustomerId(null);
-                        if (i.getSeller() != null) i.getSeller().setShop(null);
-                    });
-                })
-                .map(d -> {
-                    List<Invoice> values = d.getValue();
-                    List<Income> incomeList = values.stream()
-                            .map(v -> incomeRepository.findAllByIncomeReferenceContains(v.getInvoiceNumber()))
-                            .flatMap(List::parallelStream)
-                            .collect(Collectors.toList());
-                    return new LedgerReport(d.getKey(), values, incomeList);
-                })
-                .collect(Collectors.toList());
+        return generateLedgerReport
+            (getEntityList().stream()
+                .filter(invoice -> is(invoice.getDebt()).isPositive())
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -426,5 +408,37 @@ public class InvoicesServicesImpl implements InvoiceServices {
         incomeRepository.save(incomeOnDebtClearance);
 
         return invoiceRepository.save(invoiceFound);
+    }
+
+    private List<LedgerReport> generateLedgerReport(List<Invoice> invoices){
+
+        return invoices
+            .stream()
+            .collect(Collectors.groupingBy(Invoice::getCustomerId))
+            .entrySet()
+            .stream()
+            .peek(d -> {
+                Customer key = d.getKey();
+                List<Invoice> value = d.getValue();
+
+                key.setDebt(value.stream().map(Invoice::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add));
+                key.setThreshold(value.stream().map(Invoice::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add));
+                key.setRecentPurchasesAmount(value.stream().map(Invoice::getInvoiceTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+                value.forEach(i -> {
+                    i.setCustomerId(null);
+                    if (i.getSeller() != null) i.getSeller().setShop(null);
+                });
+            })
+            .map(d -> {
+                List<Invoice> values = d.getValue();
+                List<Income> incomeList = values.stream()
+                        .map(v -> incomeRepository.findAllByIncomeReferenceContains(v.getInvoiceNumber()))
+                        .flatMap(List::parallelStream)
+                        .collect(Collectors.toList());
+                return new LedgerReport(d.getKey(), values, incomeList);
+            })
+            .collect(Collectors.toList());
     }
 }
