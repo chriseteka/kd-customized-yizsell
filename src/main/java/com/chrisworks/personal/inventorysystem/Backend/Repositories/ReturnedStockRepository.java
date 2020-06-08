@@ -4,6 +4,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ReturnedStock;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
  * @since 11/25/2019
  * @email chriseteka@gmail.com
  */
+@Repository
 public interface ReturnedStockRepository extends JpaRepository<ReturnedStock, Long> {
 
     ReturnedStock findAllByInvoiceIdAndStockName(String invoiceId, String stockName);

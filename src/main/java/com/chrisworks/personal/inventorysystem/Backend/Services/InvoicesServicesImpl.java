@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -346,7 +347,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
     @Override
     public List<LedgerReport> fetchInvoicesGroupByCustomers() {
 
-        return generateLedgerReport(getEntityList());
+        return generateLedgerReport(getEntityList(), true);
     }
 
     @Override
@@ -355,7 +356,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
         return generateLedgerReport
             (getEntityList().stream()
                 .filter(invoice -> is(invoice.getDebt()).isPositive())
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), false);
     }
 
     @Override
@@ -410,10 +411,13 @@ public class InvoicesServicesImpl implements InvoiceServices {
         return invoiceRepository.save(invoiceFound);
     }
 
-    private List<LedgerReport> generateLedgerReport(List<Invoice> invoices){
+    private List<LedgerReport> generateLedgerReport(List<Invoice> invoices, boolean fullReport){
 
         return invoices
             .stream()
+            .filter(invoice -> invoice.getCustomerId() != null
+                && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
             .collect(Collectors.groupingBy(Invoice::getCustomerId))
             .entrySet()
             .stream()
@@ -433,11 +437,13 @@ public class InvoicesServicesImpl implements InvoiceServices {
             })
             .map(d -> {
                 List<Invoice> values = d.getValue();
-                List<Income> incomeList = values.stream()
-                        .map(v -> incomeRepository.findAllByIncomeReferenceContains(v.getInvoiceNumber()))
-                        .flatMap(List::parallelStream)
-                        .collect(Collectors.toList());
-                return new LedgerReport(d.getKey(), values, incomeList);
+                if (fullReport) {
+                    List<Income> incomeList = values.stream()
+                            .map(v -> incomeRepository.findAllByIncomeReferenceContains(v.getInvoiceNumber()))
+                            .flatMap(List::parallelStream)
+                            .collect(Collectors.toList());
+                    return new LedgerReport(d.getKey(), values, incomeList);
+                }else return new LedgerReport(d.getKey(), values, Collections.emptyList());
             })
             .collect(Collectors.toList());
     }

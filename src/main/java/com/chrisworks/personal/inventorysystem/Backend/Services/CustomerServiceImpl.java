@@ -4,6 +4,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYP
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
+import com.chrisworks.personal.inventorysystem.Backend.Services.PreEmptiveServices.CustomerPreEmptives;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,15 +35,18 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final GenericService genericService;
 
+    private final CustomerPreEmptives customerPreEmptives;
+
     @Autowired
     public CustomerServiceImpl(CustomerRepository customerRepository, ReturnedStockRepository returnedStockRepository,
                                InvoiceRepository invoiceRepository, SellerRepository sellerRepository,
-                               GenericService genericService) {
+                               GenericService genericService, UtilServices customerPreEmptives) {
         this.customerRepository = customerRepository;
         this.returnedStockRepository = returnedStockRepository;
         this.invoiceRepository = invoiceRepository;
         this.sellerRepository = sellerRepository;
         this.genericService = genericService;
+        this.customerPreEmptives = customerPreEmptives;
     }
 
     @Override
@@ -114,7 +118,8 @@ public class CustomerServiceImpl implements CustomerService {
                     .findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
         }
 
-        return new ArrayList<>(customerSet);
+        return customerSet.stream().filter(customer -> !customer.getCustomerFullName().isEmpty()
+                        && !customer.getCustomerPhoneNumber().isEmpty()).collect(Collectors.toList());
     }
 
     @Override
@@ -255,6 +260,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .map(invoiceRepository::findAllBySeller)
                 .flatMap(List::parallelStream)
                 .map(Invoice::getCustomerId)
+                .filter(customer -> !customer.getCustomerFullName().isEmpty()
+                        && !customer.getCustomerPhoneNumber().isEmpty())
                 .collect(Collectors.toList());
     }
 
@@ -270,6 +277,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             if (customer.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
 
+                customerPreEmptives.detachCustomersFromObjects(customer);
                 customerRepository.delete(customer);
                 return customer;
             }
@@ -283,6 +291,7 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new InventoryAPIOperationException("Operation not allowed",
                         "You cannot delete a customer not created by you or any of your sellers.", null);
 
+            customerPreEmptives.detachCustomersFromObjects(customer);
             customerRepository.delete(customer);
             return customer;
         }).orElse(null);

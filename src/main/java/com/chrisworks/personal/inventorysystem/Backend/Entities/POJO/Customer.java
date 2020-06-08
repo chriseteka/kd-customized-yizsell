@@ -1,6 +1,5 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.listeners.CustomerListener;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,7 +19,6 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customers")
-@EntityListeners(CustomerListener.class)
 public class Customer {
 
     @Id

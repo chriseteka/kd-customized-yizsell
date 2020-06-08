@@ -44,10 +44,3 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
     List<Invoice> clearDebtByCustomerId(Long customerId, BigDecimal amount);
 }
 
-@Data
-@AllArgsConstructor
-class LedgerReport {
-    private Customer customer;
-    private List<Invoice> invoices;
-    private List<Income> incomeList;
-}
