@@ -63,15 +63,15 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/all/groupByCustomer")
-    public ResponseEntity<?> getAllInvoicesGroupedByCustomers(){
+    public ResponseEntity<?> getAllInvoicesGroupedByCustomers(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(invoiceServices.fetchInvoicesGroupByCustomers());
+        return ResponseEntity.ok(prepareResponse(invoiceServices.fetchInvoicesGroupByCustomers(), page, size));
     }
 
     @GetMapping(path = "/all/withDebt/groupByCustomer")
-    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(){
+    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(@RequestParam int page, @RequestParam int size){
 
-        return ResponseEntity.ok(invoiceServices.fetchInvoicesWithDebtGroupByCustomers());
+        return ResponseEntity.ok(prepareResponse(invoiceServices.fetchInvoicesWithDebtGroupByCustomers(), page, size));
     }
 
     @DeleteMapping(path = "/byId")
