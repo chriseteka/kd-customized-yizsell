@@ -136,12 +136,17 @@ public class CustomerServiceImpl implements CustomerService {
                     .filter(seller -> seller.getShop() != null)
                     .map(seller -> invoiceRepository.findAllBySellerAndDebtGreaterThan(seller, BigDecimal.ZERO))
                     .flatMap(List::parallelStream)
+                    .filter(invoice -> invoice.getCustomerId() != null
+                        && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                        && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
 
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO))
+                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO) && invoice.getCustomerId() != null
+                            && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                            && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }
@@ -159,11 +164,16 @@ public class CustomerServiceImpl implements CustomerService {
                     .stream()
                     .map(s -> invoiceRepository.findAllBySellerAndDebtGreaterThan(s, BigDecimal.ZERO))
                     .flatMap(List::parallelStream)
+                    .filter(invoice -> invoice.getCustomerId() != null
+                            && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                            && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
             customersWithDebt.addAll(invoiceRepository.findAllByCreatedBy(seller.getCreatedBy())
                     .stream()
-                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO))
+                    .filter(invoice -> is(invoice.getDebt()).gt(BigDecimal.ZERO) && invoice.getCustomerId() != null
+                            && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                            && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
                     .map(Invoice::getCustomerId)
                     .collect(Collectors.toList()));
         }

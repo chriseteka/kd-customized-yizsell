@@ -281,6 +281,9 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
         return getEntityList()
                 .stream()
+                .filter(invoice -> invoice.getCustomerId() != null
+                        && !invoice.getCustomerId().getCustomerFullName().isEmpty()
+                        && !invoice.getCustomerId().getCustomerPhoneNumber().isEmpty())
                 .filter(invoice -> is(invoice.getDebt()).isPositive())
                 .peek(invoice -> invoice.getCustomerId().setDebt(invoice.getDebt()))
                 .collect(Collectors.toList());

@@ -1,10 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;

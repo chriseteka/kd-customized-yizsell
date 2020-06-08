@@ -54,12 +54,12 @@ public class UtilServices implements CustomerPreEmptives {
 
         //Remove this customer from every loyalty it has attached itself with
         Loyalty loyalty = loyaltyRepository.findDistinctByCustomers(customer);
-        boolean removed = loyalty.getCustomers().removeIf(c -> c.equals(customer));
+        if (loyalty != null && loyalty.getCustomers().removeIf(c -> c.equals(customer)))
+            loyaltyRepository.save(loyalty);
 
         if (!invoices.isEmpty()) invoiceRepository.saveAll(invoices);
         if (!returnedStockList.isEmpty())returnedStockRepository.saveAll(returnedStockList);
         if (!exchangedStockList.isEmpty()) exchangedStockRepository.saveAll(exchangedStockList);
-        if (removed) loyaltyRepository.save(loyalty);
     }
 
 }
