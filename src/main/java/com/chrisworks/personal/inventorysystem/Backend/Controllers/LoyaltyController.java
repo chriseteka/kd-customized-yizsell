@@ -76,7 +76,8 @@ public class LoyaltyController {
 
         List<Loyalty> loyaltyList = loyaltyServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Loyalty::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Loyalty::getCreatedDate)
+                    .thenComparing(Loyalty::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(loyaltyList, page, size));

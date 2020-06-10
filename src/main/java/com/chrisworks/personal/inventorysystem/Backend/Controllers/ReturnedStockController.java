@@ -80,7 +80,8 @@ public class ReturnedStockController {
 
         List<ReturnedStock> returnedStockList = returnedStockServices.fetchAllReturnedStocks()
                 .stream()
-                .sorted(Comparator.comparing(ReturnedStock::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(ReturnedStock::getCreatedDate)
+                    .thenComparing(ReturnedStock::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(returnedStockList, page, size));

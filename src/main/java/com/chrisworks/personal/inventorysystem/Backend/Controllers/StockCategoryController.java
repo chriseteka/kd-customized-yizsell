@@ -71,7 +71,8 @@ public class StockCategoryController {
 
         List<StockCategory> stockCategoryList = stockCategoryServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(StockCategory::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(StockCategory::getCreatedDate)
+                    .thenComparing(StockCategory::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(stockCategoryList, page, size));

@@ -56,7 +56,8 @@ public class InvoiceController {
 
         List<Invoice> invoiceList = invoiceServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Invoice::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Invoice::getCreatedDate)
+                    .thenComparing(Invoice::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(invoiceList, page, size));

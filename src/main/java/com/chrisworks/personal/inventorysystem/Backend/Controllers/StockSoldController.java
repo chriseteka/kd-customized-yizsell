@@ -35,7 +35,8 @@ public class StockSoldController {
 
         List<StockSold> stockSoldList = stockSoldServices.fetchAllStockSoldByAuthenticatedUser()
                 .stream()
-                .sorted(Comparator.comparing(StockSold::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(StockSold::getCreatedDate)
+                    .thenComparing(StockSold::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(stockSoldList, page, size));

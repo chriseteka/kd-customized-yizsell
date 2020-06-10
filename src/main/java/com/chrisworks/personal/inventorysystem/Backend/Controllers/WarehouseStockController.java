@@ -99,7 +99,8 @@ public class WarehouseStockController {
         List<WarehouseStocks> warehouseStocksList = warehouseStockServices
                 .allStockByWarehouseId(warehouseId)
                 .stream()
-                .sorted(Comparator.comparing(WarehouseStocks::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(WarehouseStocks::getCreatedDate)
+                    .thenComparing(WarehouseStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(warehouseStocksList, page, size));

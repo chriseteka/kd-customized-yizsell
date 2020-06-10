@@ -115,7 +115,8 @@ public class ExpenseController {
 
         List<Expense> expenseList = expenseServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Expense::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Expense::getCreatedDate)
+                    .thenComparing(Expense::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(expenseList, page, size));

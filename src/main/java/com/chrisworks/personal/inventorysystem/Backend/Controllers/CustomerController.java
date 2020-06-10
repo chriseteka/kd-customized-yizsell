@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,7 +64,8 @@ public class CustomerController {
 
         List<Customer> customerList = customerService.fetchAllCustomers()
                 .stream()
-                .sorted(Comparator.comparing(Customer::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Customer::getCreatedDate)
+                        .thenComparing(Customer::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(customerList,page, size));
@@ -76,7 +76,8 @@ public class CustomerController {
 
         List<Customer> customerList = customerService.fetchAllCustomersWithDebt()
                 .stream()
-                .sorted(Comparator.comparing(Customer::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Customer::getCreatedDate)
+                        .thenComparing(Customer::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(customerList,page, size));

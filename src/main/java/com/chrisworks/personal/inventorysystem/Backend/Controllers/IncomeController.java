@@ -113,7 +113,8 @@ public class IncomeController {
 
         List<Income> incomeList = incomeServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Income::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Income::getCreatedDate)
+                    .thenComparing(Income::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(incomeList, page, size));

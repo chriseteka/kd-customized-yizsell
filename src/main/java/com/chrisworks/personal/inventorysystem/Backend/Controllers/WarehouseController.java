@@ -74,7 +74,8 @@ public class WarehouseController {
 
         List<Warehouse> warehouseList = warehouseServices.fetchAllWarehouse()
                 .stream()
-                .sorted(Comparator.comparing(Warehouse::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Warehouse::getCreatedDate)
+                    .thenComparing(Warehouse::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(warehouseList, page, size));

@@ -71,7 +71,8 @@ public class SupplierController {
 
         List<Supplier> supplierList = supplierServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Supplier::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Supplier::getCreatedDate)
+                    .thenComparing(Supplier::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(supplierList, page, size));

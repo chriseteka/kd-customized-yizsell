@@ -106,7 +106,8 @@ public class SellerController {
 
         List<Seller> sellerList = sellerServices.fetchShopSellersByLoggedInUser()
                 .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Seller::getCreatedDate)
+                    .thenComparing(Seller::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(sellerList, page, size));
@@ -117,7 +118,8 @@ public class SellerController {
 
         List<Seller> sellerList = sellerServices.fetchWarehouseAttendantsByLoggedInUser()
                 .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Seller::getCreatedDate)
+                    .thenComparing(Seller::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(sellerList, page, size));
@@ -128,7 +130,8 @@ public class SellerController {
 
         List<Seller> sellerList = sellerServices.fetchSellers()
                 .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Seller::getCreatedDate)
+                    .thenComparing(Seller::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(sellerList, page, size));

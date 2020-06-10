@@ -30,7 +30,8 @@ public class SalesDiscountController {
 
         List<SalesDiscount> salesDiscounts = salesDiscountServices.fetchAllSalesDiscount()
                 .stream()
-                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate)
+                    .thenComparing(SalesDiscount::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(salesDiscounts, page, size));
@@ -42,7 +43,8 @@ public class SalesDiscountController {
 
         List<SalesDiscount> salesDiscounts = salesDiscountServices.fetchAllSalesDiscountByType(type)
                 .stream()
-                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate)
+                    .thenComparing(SalesDiscount::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(salesDiscounts, page, size));
@@ -54,7 +56,8 @@ public class SalesDiscountController {
 
         List<SalesDiscount> salesDiscounts = salesDiscountServices.fetchAllSalesDiscountByDate(date)
                 .stream()
-                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate)
+                    .thenComparing(SalesDiscount::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(salesDiscounts, page, size));
@@ -66,7 +69,8 @@ public class SalesDiscountController {
 
         List<SalesDiscount> salesDiscounts = salesDiscountServices.fetchAllSalesDiscountByInvoice(invoiceNumber)
                 .stream()
-                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate)
+                    .thenComparing(SalesDiscount::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(salesDiscounts, page, size));
@@ -78,7 +82,8 @@ public class SalesDiscountController {
 
         List<SalesDiscount> salesDiscounts = salesDiscountServices.fetchAllBySellerEmail(sellerEmail)
                 .stream()
-                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(SalesDiscount::getCreatedDate)
+                    .thenComparing(SalesDiscount::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(salesDiscounts, page, size));

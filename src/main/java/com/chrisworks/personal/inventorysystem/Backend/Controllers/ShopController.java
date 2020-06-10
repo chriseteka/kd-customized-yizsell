@@ -76,7 +76,8 @@ public class ShopController {
 
         List<Shop> shopList = shopServices.fetchAllShops()
                 .stream()
-                .sorted(Comparator.comparing(Shop::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Shop::getCreatedDate)
+                    .thenComparing(Shop::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(shopList, page, size));

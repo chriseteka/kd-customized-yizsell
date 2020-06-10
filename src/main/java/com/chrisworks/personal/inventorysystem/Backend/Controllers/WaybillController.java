@@ -152,7 +152,8 @@ public class WaybillController {
 
         List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInShop(shopId)
                 .stream()
-                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate)
+                    .thenComparing(WaybillInvoice::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(waybillInvoiceList, page, size));
@@ -164,7 +165,8 @@ public class WaybillController {
 
         List<WaybillInvoice> waybillInvoiceList = waybillServices.findAllInWarehouse(warehouseId)
                 .stream()
-                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate)
+                    .thenComparing(WaybillInvoice::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(waybillInvoiceList, page, size));
@@ -206,7 +208,8 @@ public class WaybillController {
 
         List<WaybillInvoice> allPendingRequests = waybillServices.findAllPendingRequests()
                 .stream()
-                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(WaybillInvoice::getCreatedDate)
+                    .thenComparing(WaybillInvoice::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(allPendingRequests, page, size));

@@ -98,7 +98,8 @@ public class ShopStockController {
 
         List<ShopStocks> shopStocksList = shopStockServices.allStockByShopId(shopId)
                 .stream()
-                .sorted(Comparator.comparing(ShopStocks::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(ShopStocks::getCreatedDate)
+                    .thenComparing(ShopStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(shopStocksList, page, size));

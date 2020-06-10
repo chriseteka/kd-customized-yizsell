@@ -45,7 +45,8 @@ public class ProcurementController {
 
         List<Procurement> procurements = procurementServices.getEntityList()
                 .stream()
-                .sorted(Comparator.comparing(Procurement::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(Procurement::getCreatedDate)
+                    .thenComparing(Procurement::getCreatedTime).reversed())
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(procurements, page, size));
