@@ -4,20 +4,15 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYP
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
-import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -216,26 +211,24 @@ public class IncomeServicesImpl implements IncomeServices {
     }
 
     @Override
-    public Income approveIncome(Long incomeId) {
+    public List<Income> approveIncome(Long... incomeId) {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user is not allowed to perform this operation", null);
 
-        Income incomeFound = fetchAllUnApprovedIncome()
+        List<Income> editedIncomeList = fetchAllUnApprovedIncome()
                 .stream()
-                .filter(income -> income.getIncomeId().equals(incomeId))
-                .collect(toSingleton());
+                .filter(income -> Arrays.asList(incomeId).contains(income.getIncomeId()))
+                .peek(incomeFound -> {
 
-        if (incomeFound == null) throw new InventoryAPIResourceNotFoundException
-                ("Income not found", "Income with id: " + incomeId + " was not found in your list of unapproved income", null);
+                    incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
+                    incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
+                    incomeFound.setApproved(true);
+                    incomeFound.setApprovedDate(new Date());
+                }).collect(Collectors.toList());
 
-        incomeFound.setIncomeTypeVal(String.valueOf(incomeFound.getIncomeTypeValue()));
-        incomeFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
-        incomeFound.setApproved(true);
-        incomeFound.setApprovedDate(new Date());
-
-        return incomeRepository.save(incomeFound);
+        return incomeRepository.saveAll(editedIncomeList);
     }
 
     @Override

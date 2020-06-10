@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
@@ -73,7 +72,6 @@ public class WaybillInvoice {
     @Temporal(TemporalType.TIME)
     private Date timeReceived;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Invoice amount must be greater than zero")
     @Column(name = "invoiceTotalAmount", nullable = false)
     private BigDecimal waybillInvoiceTotalAmount;
 

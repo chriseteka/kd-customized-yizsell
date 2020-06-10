@@ -255,7 +255,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         //Add any other type of income that is not of stock_sale.
         balanceAccount.setOtherIncome(sortedIncomeList
             .stream()
-            .filter(income -> !income.getIncomeType().equals(INCOME_TYPE.STOCK_SALE))
+            .filter(income -> income.getIncomeType().equals(INCOME_TYPE.OTHERS))
             .map(Income::getIncomeAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
         );
@@ -286,7 +286,7 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
             .add(balanceAccount.getTotalDebtsIncurred());
 
         balanceAccount.setTotalCashAtHand(balanceAccount.getStockSoldTotalWorth()
-            .add(balanceAccount.otherIncome)
+            .add(balanceAccount.getOtherIncome())
             .subtract(debits));
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)

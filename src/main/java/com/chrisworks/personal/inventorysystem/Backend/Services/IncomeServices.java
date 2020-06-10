@@ -21,7 +21,7 @@ public interface IncomeServices extends CRUDServices<Income> {
 
     List<Income> fetchAllIncomeInShop(Long shopId);
 
-    Income approveIncome(Long incomeId);
+    List<Income> approveIncome(Long... incomeId);
 
     List<Income> fetchAllUnApprovedIncome();
 }

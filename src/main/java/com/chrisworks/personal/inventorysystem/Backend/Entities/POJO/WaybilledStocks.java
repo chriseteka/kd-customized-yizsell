@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -53,11 +52,9 @@ public class WaybilledStocks {
     @Column(name = "quantitySold", nullable = false)
     private int quantityWaybilled;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price per stock sold must be greater than zero")
     @Column(name = "sellingPrice", nullable = false)
     private BigDecimal sellingPricePerStock;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price per stock purchased must be greater than zero")
     @Column(name = "purchasePrice", nullable = false)
     private BigDecimal purchasePricePerStock;
 
