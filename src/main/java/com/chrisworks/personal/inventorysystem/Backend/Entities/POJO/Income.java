@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -21,7 +22,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "Income")
-public class Income {
+public class Income implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -101,5 +102,16 @@ public class Income {
         this.incomeAmount = incomeAmount;
         this.incomeTypeValue = incomeTypeValue;
         this.incomeReference = incomeDescription;
+    }
+
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income toDTO(){
+        //Formalities
+        fillTransient();
+        fillPersistent();
+
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income(this.getIncomeId(),
+            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getIncomeAmount(),
+            this.getIncomeReference(), this.getCreatedBy(), this.getApproved(), this.getApprovedDate(),
+            this.getApprovedBy(), this.getIncomeTypeValue(), this.getIncomeTypeVal(), this.getIncomeType());
     }
 }

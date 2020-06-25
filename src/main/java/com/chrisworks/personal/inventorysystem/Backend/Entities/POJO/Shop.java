@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -19,7 +20,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "Shops")
-public class Shop {
+public class Shop implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -53,4 +54,10 @@ public class Shop {
             inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
     @JsonIgnore
     private BusinessOwner businessOwner;
+
+    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Shop toDTO() {
+            return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Shop(this.getShopId(),
+                this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getShopName(),
+                this.getShopAddress(), this.getCreatedBy());
+    }
 }

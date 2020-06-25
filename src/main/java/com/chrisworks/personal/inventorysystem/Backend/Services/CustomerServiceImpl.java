@@ -264,7 +264,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         return genericService.shopByAuthUserId()
                 .stream()
-                .filter(shop -> shop.getShopId().equals(shopId))
+                .filter(shop -> shop.getShopId() == shopId)
                 .map(sellerRepository::findAllByShop)
                 .flatMap(List::parallelStream)
                 .map(invoiceRepository::findAllBySeller)

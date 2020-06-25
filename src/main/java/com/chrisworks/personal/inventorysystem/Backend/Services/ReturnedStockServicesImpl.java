@@ -65,7 +65,7 @@ public class ReturnedStockServicesImpl implements ReturnedStockServices {
 
         return genericService.shopByAuthUserId()
                 .stream()
-                .filter(shop -> shop.getShopId().equals(shopId))
+                .filter(shop -> shop.getShopId() == shopId)
                 .map(returnedStockRepository::findAllByShop)
                 .flatMap(List::parallelStream)
                 .collect(Collectors.toList());

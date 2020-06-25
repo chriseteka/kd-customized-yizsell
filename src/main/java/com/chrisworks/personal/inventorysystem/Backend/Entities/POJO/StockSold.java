@@ -9,6 +9,7 @@ import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -22,7 +23,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "StockSold")
-public class StockSold {
+public class StockSold implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -77,4 +78,13 @@ public class StockSold {
 
     @PostLoad
     private void setTransients(){ this.promoApplied = this.soldOnPromo; }
+
+    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockSold toDTO(){
+
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockSold(this.getStockSoldId(),
+            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getStockName(),
+            this.getStockCategory(), this.getQuantitySold(), this.getPricePerStockSold(), this.getCostPricePerStock(),
+            this.getStockSoldInvoiceId(), this.getCreatedBy(), this.isSoldOnPromo(), this.getQuantitySoldOnPromo(),
+            this.isPromoApplied());
+    }
 }

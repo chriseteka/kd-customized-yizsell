@@ -121,7 +121,7 @@ public class SellerServicesImpl implements SellerServices {
         return genericService.sellersByAuthUserId()
                 .stream()
                 .filter(seller -> seller.getShop() != null
-                        && seller.getShop().getShopId().equals(shopId))
+                        && seller.getShop().getShopId() == shopId)
                 .collect(Collectors.toList());
     }
 

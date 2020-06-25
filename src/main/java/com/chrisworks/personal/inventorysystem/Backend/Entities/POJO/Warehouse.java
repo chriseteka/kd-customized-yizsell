@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -19,7 +20,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "warehouse")
-public class Warehouse {
+public class Warehouse implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

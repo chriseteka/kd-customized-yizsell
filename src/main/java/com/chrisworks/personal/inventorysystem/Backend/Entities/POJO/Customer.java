@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -19,7 +20,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customers")
-public class Customer {
+public class Customer implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -71,5 +72,13 @@ public class Customer {
 
     public void setDebt(BigDecimal debt){
         this.debt = debt;
+    }
+
+    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Customer toDTO(){
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Customer(
+            this.getCustomerId(), this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(),
+            this.getCustomerFullName(), this.getCustomerPhoneNumber(), this.getCustomerEmail(), this.getIsLoyal(),
+            this.getNumberOfPurchasesAfterLastReward(), this.getRecentPurchasesAmount(), this.getCreatedBy(),
+            this.getNumberOfPurchaseTimesBeforeReward(), this.getThreshold(), this.getDebt());
     }
 }

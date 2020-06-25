@@ -5,13 +5,16 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 
 /**
@@ -26,10 +29,15 @@ public class IncomeServicesImpl implements IncomeServices {
 
     private final GenericService genericService;
 
+    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income> incomeCacheManager;
+    private final String REDIS_TABLE_KEY = "INCOME";
+
     @Autowired
-    public IncomeServicesImpl(IncomeRepository incomeRepository, GenericService genericService) {
+    public IncomeServicesImpl(IncomeRepository incomeRepository, GenericService genericService,
+                              CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income> incomeCacheManager) {
         this.incomeRepository = incomeRepository;
         this.genericService = genericService;
+        this.incomeCacheManager = incomeCacheManager;
     }
 
     @Override
@@ -38,7 +46,11 @@ public class IncomeServicesImpl implements IncomeServices {
         if (null == income) throw new InventoryAPIOperationException("Income to save doesnt exist",
                 "Income entity to save was not found, review your inputs and try again", null);
 
-        return genericService.addIncome(income);
+        Income savedIncome = genericService.addIncome(income);
+
+        cacheIncome(income);
+
+        return savedIncome;
     }
 
     @Override
@@ -55,7 +67,11 @@ public class IncomeServicesImpl implements IncomeServices {
             incomeFound.setIncomeReference(income.getIncomeReference());
             incomeFound.setIncomeTypeVal(income.getIncomeTypeVal());
 
-            return incomeRepository.save(incomeFound);
+            Income updatedIncome = incomeRepository.save(incomeFound);
+
+            incomeCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedIncome.toDTO(), id);
+
+            return updatedIncome;
         }).orElse(null);
     }
 
@@ -95,19 +111,26 @@ public class IncomeServicesImpl implements IncomeServices {
     @Override
     public List<Income> getEntityList() {
 
+        if (incomeCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchIncomeFromCache();
+
+        List<Income> incomeList;
+
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
                 || AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
-            return incomeRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            incomeList =  incomeRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        else {
+            incomeList = genericService.sellersByAuthUserId()
+                    .stream()
+                    .map(Seller::getSellerEmail)
+                    .map(incomeRepository::findAllByCreatedBy)
+                    .flatMap(List::parallelStream)
+                    .collect(Collectors.toList());
+            incomeList.addAll(incomeRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+        }
 
-        Set<Income> incomeSet = genericService.sellersByAuthUserId()
-                .stream()
-                .map(Seller::getSellerEmail)
-                .map(incomeRepository::findAllByCreatedBy)
-                .flatMap(List::parallelStream)
-                .collect(Collectors.toSet());
-        incomeSet.addAll(incomeRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+        if (!incomeList.isEmpty()) incomeList.forEach(this::cacheIncome);
 
-        return new ArrayList<>(incomeSet);
+        return incomeList;
     }
 
     @Override
@@ -122,6 +145,7 @@ public class IncomeServicesImpl implements IncomeServices {
 
             if (income.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
                 incomeRepository.delete(income);
+                incomeCacheManager.removeDetail(REDIS_TABLE_KEY, incomeId);
                 return income;
             }
 
@@ -132,6 +156,7 @@ public class IncomeServicesImpl implements IncomeServices {
 
             if (match) {
                 incomeRepository.delete(income);
+                incomeCacheManager.removeDetail(REDIS_TABLE_KEY, incomeId);
                 return income;
             }
             else throw new InventoryAPIOperationException("Operation not allowed",
@@ -238,5 +263,30 @@ public class IncomeServicesImpl implements IncomeServices {
                 .stream()
                 .filter(income -> !income.getApproved())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Income> fetchAllByDescriptionContains(String description) {
+
+        return getEntityList()
+                .stream()
+                .filter(income -> income.getIncomeReference().contains(description))
+                .collect(Collectors.toList());
+    }
+
+    private void cacheIncome(Income income){
+        incomeCacheManager.cacheDetail(REDIS_TABLE_KEY, income.toDTO(), income.getIncomeId());
+    }
+
+    private List<Income> fetchIncomeFromCache(){
+
+        return incomeCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
+                new ArrayList<>(getGSon().fromJson(data.stream()
+                        .map(entry -> getGSon().toJson(entry.getValue()))
+                        .collect(Collectors.toList()).toString(),
+                    new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income>>(){}.getType())))
+            .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income::fromDTO)
+            .collect(Collectors.toList());
+
     }
 }

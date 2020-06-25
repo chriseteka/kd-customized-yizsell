@@ -9,11 +9,16 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -25,7 +30,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "Invoices")
-public class Invoice {
+public class Invoice implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -125,5 +130,24 @@ public class Invoice {
         if (paymentModeValue > 0) {
             this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
         }
+    }
+
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice toDTO(){
+        //Formalities
+        fillTransient();
+        fillPersistent();
+
+        com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice invoice =
+            new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice(this.getInvoiceId(),
+                this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getInvoiceNumber(),
+                this.getInvoiceTotalAmount(), this.getAmountPaid(), this.getDebt(), this.getBalance(),
+                this.getDiscount(), this.getCreatedBy(), this.getPaymentModeValue(), this.getPaymentModeVal(),
+                this.getPaymentMode(), this.getLoyaltyDiscount());
+
+        invoice.setStockSoldSet(this.getStockSold().stream().map(StockSold::toDTO).collect(Collectors.toSet()));
+        invoice.setCustomer(Stream.of(this.getCustomerId()).map(Customer::toDTO).collect(toSingleton()));
+        if (this.getSeller() != null) invoice.setSeller(Stream.of(this.getSeller()).map(Seller::toDTO).collect(toSingleton()));
+
+        return invoice;
     }
 }

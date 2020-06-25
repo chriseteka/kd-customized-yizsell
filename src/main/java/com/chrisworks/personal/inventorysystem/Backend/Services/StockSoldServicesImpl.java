@@ -204,7 +204,7 @@ public class StockSoldServicesImpl implements StockSoldServices {
         return sellerList
                 .stream()
                 .filter(seller -> seller.getShop() != null &&
-                        seller.getShop().getShopId().equals(shopId))
+                        seller.getShop().getShopId() == shopId)
                 .map(invoiceRepository::findAllBySeller)
                 .flatMap(List::parallelStream)
                 .map(Invoice::getStockSold)

@@ -14,6 +14,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.Web
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -109,10 +110,17 @@ public class IncomeController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> getAllIncomes(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllIncomes(@RequestParam int page, @RequestParam int size,
+                                           @RequestParam(required = false, defaultValue = "") String search){
 
+        //TODO: Remove this from here, for now though let it stay so amu can use tomorrow
         List<Income> incomeList = incomeServices.getEntityList()
-                .stream()
+                .stream().filter(income -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    return income.getCreatedBy().contains(search.toLowerCase())
+                        || String.valueOf(income.getIncomeAmount()).contains(search)
+                        || String.valueOf(income.getIncomeType()).contains(search.toUpperCase());
+                })
                 .sorted(Comparator.comparing(Income::getCreatedDate)
                     .thenComparing(Income::getCreatedTime).reversed())
                 .collect(Collectors.toList());

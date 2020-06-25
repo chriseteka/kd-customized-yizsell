@@ -1,17 +1,18 @@
 package com.chrisworks.personal.inventorysystem.Backend.Utility;
 
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.google.gson.*;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -108,5 +109,29 @@ public class Utility {
     public static String formatMoney(Object money){
         DecimalFormat df = new DecimalFormat("#, ###.00");
         return NAIRA_SIGN + df.format(money);
+    }
+
+    public static Gson getGSon(){
+
+        return new GsonBuilder()
+            .registerTypeAdapterFactory(HibernateProxyTypeAdapter.FACTORY)
+            .registerTypeAdapter(Date.class, new DateDeserializer()).create();
+    }
+
+    private static class DateDeserializer implements JsonDeserializer<Date> {
+
+        private final String[] DATE_FORMATS = new String[] {"KK:mm:ss a", "MMM dd, yyyy"};
+
+        @Override
+        public Date deserialize(JsonElement jsonElement, Type typeOF,
+                                JsonDeserializationContext context) throws JsonParseException {
+            for (String format : DATE_FORMATS) {
+                try {
+                    return new SimpleDateFormat(format, Locale.US).parse(jsonElement.getAsString());
+                } catch (ParseException ignored) {}
+            }
+            throw new JsonParseException("Unparseable date: \"" + jsonElement.getAsString()
+                    + "\". Supported formats: " + Arrays.toString(DATE_FORMATS));
+        }
     }
 }

@@ -12,6 +12,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.Web
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -52,10 +53,17 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> getAllInvoices(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllInvoices(@RequestParam int page, @RequestParam int size,
+                                            @RequestParam(required = false, defaultValue = "") String search){
 
+        //TODO: Remove this from here, for now though let it stay so amu can use tomorrow
         List<Invoice> invoiceList = invoiceServices.getEntityList()
-                .stream()
+                .stream().filter(invoice -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    return invoice.getCreatedBy().contains(search.toLowerCase())
+                            || String.valueOf(invoice.getInvoiceNumber()).contains(search)
+                            || String.valueOf(invoice.getAmountPaid()).contains(search);
+                })
                 .sorted(Comparator.comparing(Invoice::getCreatedDate)
                     .thenComparing(Invoice::getCreatedTime).reversed())
                 .collect(Collectors.toList());
