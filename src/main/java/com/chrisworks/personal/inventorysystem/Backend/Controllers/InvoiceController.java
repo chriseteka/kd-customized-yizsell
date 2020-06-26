@@ -83,7 +83,7 @@ public class InvoiceController {
                     return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
                             || String.valueOf(report.getCustomer().getDebt()).contains(search)
                             || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
-                            || report.getInvoices().stream().allMatch(invoice -> invoice.getInvoiceNumber().contains(search));
+                            || report.getInvoices().stream().anyMatch(invoice -> invoice.getInvoiceNumber().contains(search));
                 }).collect(Collectors.toList());
 
         return ResponseEntity.ok(prepareResponse(ledgerReports, page, size));
