@@ -12,7 +12,9 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
+import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,16 +49,21 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
 
     private final SupplierRepository supplierRepository;
 
+    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks> warehouseStocksCacheManager;
+    private final String REDIS_TABLE_KEY = "WAREHOUSE_STOCK";
+
     @Autowired
     public WarehouseStockServicesImpl(SellerRepository sellerRepository, WarehouseRepository warehouseRepository,
                                       WarehouseStockRepository warehouseStockRepository, GenericService genericService,
-                                      StockCategoryRepository stockCategoryRepository, SupplierRepository supplierRepository) {
+                                      StockCategoryRepository stockCategoryRepository, SupplierRepository supplierRepository,
+                                      CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks> warehouseStocksCacheManager) {
         this.sellerRepository = sellerRepository;
         this.warehouseRepository = warehouseRepository;
         this.warehouseStockRepository = warehouseStockRepository;
         this.genericService = genericService;
         this.stockCategoryRepository = stockCategoryRepository;
         this.supplierRepository = supplierRepository;
+        this.warehouseStocksCacheManager = warehouseStocksCacheManager;
     }
 
     @Transactional
@@ -152,7 +159,14 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         throw new InventoryAPIOperationException("Not your warehouse", "You cannot retrieve stock from" +
                                 " this warehouse because it was not created by you", null);
 
-                    return warehouseStockRepository.findAllByWarehouse(warehouse);
+                    if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY))
+                        return fetchWarehouseStocksFromCache().stream()
+                                .filter(s -> s.getWarehouse().getWarehouseId().equals(warehouseId)).collect(Collectors.toList());
+
+                    List<WarehouseStocks> warehouseStocksListByWarehouse = warehouseStockRepository.findAllByWarehouse(warehouse);
+                    cacheWarehouseStocksList(warehouseStocksListByWarehouse);
+
+                    return warehouseStocksListByWarehouse;
                 }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse not found",
                         "Warehouse with id: " + warehouseId + " was not found", null));
 
@@ -224,7 +238,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     stockFound.setApprovedDate(new Date());
                     stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
-                    return warehouseStockRepository.save(stockFound);
+                    WarehouseStocks updatedStock = warehouseStockRepository.save(stockFound);
+                    updateWarehouseStockCache(updatedStock);
+
+                    return updatedStock;
                 }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Stock not found",
                         "Stock with id: " + stockId + " was not found", null));
     }
@@ -251,6 +268,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         throw new InventoryAPIOperationException("Not allowed", "Stock not found in yor warehouse", null);
 
                     warehouseStockRepository.delete(stockFound);
+                    warehouseStocksCacheManager.removeDetail(REDIS_TABLE_KEY, stockId);
                     return stockFound;
                 }).orElse(null);
     }
@@ -323,7 +341,11 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                     stock.setApprovedDate(new Date());
                     stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                 }
-                return warehouseStockRepository.save(stock);
+
+                WarehouseStocks updatedStock = warehouseStockRepository.save(stock);
+                updateWarehouseStockCache(updatedStock);
+
+                return updatedStock;
             }).orElse(null);
         }).orElse(null);
     }
@@ -358,7 +380,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             updatedStock.set(warehouseStockRepository.save(changeStockSellingPrice(stock, newSellingPrice)));
         });
 
-        return updatedStock.get();
+        WarehouseStocks updatedWarehouseStock = updatedStock.get();
+        updateWarehouseStockCache(updatedWarehouseStock);
+
+        return updatedWarehouseStock;
     }
 
     @Override
@@ -390,7 +415,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         if(stockRetrieved == null) throw new InventoryAPIResourceNotFoundException("Not found",
                 "Stock with name: " + stockName + " was not found in your warehouse", null);
 
-        return warehouseStockRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+        WarehouseStocks updatedStock = warehouseStockRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+        updateWarehouseStockCache(updatedStock);
+
+        return updatedStock;
     }
 
     @Override
@@ -455,7 +483,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             warehouseStock.setStockSoldTotalPrice(BigDecimal.ZERO);
             warehouseStock.setUpdateDate(new Date());
 
-            return warehouseStockRepository.save(warehouseStock);
+            WarehouseStocks updatedStock = warehouseStockRepository.save(warehouseStock);
+            updateWarehouseStockCache(updatedStock);
+
+            return updatedStock;
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse stock not found",
                 "warehouse stock with id: " + stockId + " was not found", null));
     }
@@ -517,7 +548,10 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
 
-        return warehouseStockRepository.save(stockToAdd);
+        WarehouseStocks savedStock = warehouseStockRepository.save(stockToAdd);
+        cacheWarehouseStocks(savedStock);
+
+        return savedStock;
     }
 
     private WarehouseStocks changeStockSellingPrice(WarehouseStocks stock, BigDecimal newSellingPrice) {
@@ -736,7 +770,30 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             .collect(Collectors.toList());
 
         List<WarehouseStocks> successfulUploads = warehouseStockRepository.saveAll(stockToSaveList);
+        cacheWarehouseStocksList(successfulUploads);
 
         return bulkUploadResponse(successfulUploads, rejectedStockList);
+    }
+
+    private void updateWarehouseStockCache(WarehouseStocks warehouseStocks){
+        warehouseStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, warehouseStocks.toDTO(), warehouseStocks.getWarehouseStockId());
+    }
+
+    private void cacheWarehouseStocks(WarehouseStocks warehouseStocks){
+        warehouseStocksCacheManager.cacheDetail(REDIS_TABLE_KEY, warehouseStocks.toDTO(), warehouseStocks.getWarehouseStockId());
+    }
+
+    private void cacheWarehouseStocksList(List<WarehouseStocks> shopStocksList) {
+        shopStocksList.forEach(this::cacheWarehouseStocks);
+    }
+
+    private List<WarehouseStocks> fetchWarehouseStocksFromCache(){
+        return warehouseStocksCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
+                new ArrayList<>(getGSon().fromJson(data.stream()
+                                .map(entry -> getGSon().toJson(entry.getValue()))
+                                .collect(Collectors.toList()).toString(),
+                        new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks>>(){}.getType())))
+                .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks::fromDTO)
+                .collect(Collectors.toList());
     }
 }

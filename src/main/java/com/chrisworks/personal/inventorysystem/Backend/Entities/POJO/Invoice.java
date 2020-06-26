@@ -9,16 +9,12 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -30,7 +26,7 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.to
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "Invoices")
-public class Invoice implements Serializable {
+public class Invoice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

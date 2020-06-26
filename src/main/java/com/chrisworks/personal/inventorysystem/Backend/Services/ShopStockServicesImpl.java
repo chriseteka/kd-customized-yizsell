@@ -286,7 +286,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
                     ShopStocks approvedShopStock = shopStocksRepository.save(stockFound);
-                    shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, approvedShopStock.toDTO(), stockId);
+                    updateShopStockCache(approvedShopStock);
 
                     return approvedShopStock;
                 }).orElse(null);
@@ -387,7 +387,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 }
 
                 ShopStocks shopStocks = shopStocksRepository.save(stock);
-                shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
+                updateShopStockCache(shopStocks);
 
                 return shopStocks;
             }).orElse(null);
@@ -480,7 +480,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     "You cannot change selling price of a stock not found in your shop", null);
 
             ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
-            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), stockId);
+            updateShopStockCache(updatedStock);
 
             return updatedStock;
         }).orElse(null);
@@ -517,7 +517,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         "Stock with name: " + stockName + " was not found in your shop", null);
 
                 ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
-                shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), updatedStock.getShopStockId());
+                updateShopStockCache(updatedStock);
 
                 return updatedStock;
 
@@ -617,7 +617,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))
             ));
             ShopStocks updatedStock = shopStocksRepository.save(stockFound);
-            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), updatedStock.getShopStockId());
+            updateShopStockCache(updatedStock);
 
             if (atomicStock.get() == null) throw new InventoryAPIResourceNotFoundException
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
@@ -988,8 +988,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
         ShopStocks savedReturnedShopStock = shopStocksRepository.save(returnedStockRecordInShop);
         ShopStocks savedExchangedShopStock = shopStocksRepository.save(exchangedStockRecordInShop);
 
-        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, savedReturnedShopStock.toDTO(), savedReturnedShopStock.getShopStockId());
-        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, savedExchangedShopStock.toDTO(), savedExchangedShopStock.getShopStockId());
+        updateShopStockCache(savedReturnedShopStock);
+        updateShopStockCache(savedExchangedShopStock);
 
         StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
                 (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
@@ -1171,7 +1171,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             shopStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
 
             ShopStocks updatedStock = shopStocksRepository.save(shopStock);
-            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), stockId);
+            updateShopStockCache(updatedStock);
 
             return updatedStock;
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop stock not found",
@@ -1417,6 +1417,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
             salesDiscountList.forEach(salesDiscountServices::deleteSalesDiscount);
 
         return true;
+    }
+
+    private void updateShopStockCache(ShopStocks shopStocks){
+        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
     }
 
     private void cacheShopStocks(ShopStocks shopStocks){

@@ -9,7 +9,6 @@ import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -23,7 +22,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "StockSold")
-public class StockSold implements Serializable {
+public class StockSold {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
