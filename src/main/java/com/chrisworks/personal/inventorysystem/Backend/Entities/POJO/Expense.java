@@ -104,7 +104,7 @@ public class Expense {
         this.expenseDescription = expenseDescription;
     }
 
-    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense toDTO(){
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense toDTO(){
         //Formalities
         fillTransient();
         fillPersistent();

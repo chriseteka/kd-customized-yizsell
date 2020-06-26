@@ -46,7 +46,7 @@ public class Expense {
         this.expenseType = expenseType;
     }
 
-    com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense fromDTO(){
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense fromDTO(){
         com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense expenseFromDTO =
             new com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense();
         expenseFromDTO.setExpenseId(this.getExpenseId());

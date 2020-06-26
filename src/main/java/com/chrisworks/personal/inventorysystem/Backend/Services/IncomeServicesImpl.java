@@ -253,7 +253,11 @@ public class IncomeServicesImpl implements IncomeServices {
                     incomeFound.setApprovedDate(new Date());
                 }).collect(Collectors.toList());
 
-        return incomeRepository.saveAll(editedIncomeList);
+        List<Income> approvedIncomeList = incomeRepository.saveAll(editedIncomeList);
+        approvedIncomeList.forEach(income -> incomeCacheManager
+                .updateCacheDetail(REDIS_TABLE_KEY, income.toDTO(), income.getIncomeId()));
+
+        return approvedIncomeList;
     }
 
     @Override

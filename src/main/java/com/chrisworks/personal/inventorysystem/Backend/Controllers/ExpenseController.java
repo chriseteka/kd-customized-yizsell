@@ -177,14 +177,9 @@ public class ExpenseController {
     }
 
     @PutMapping(path = "/approve/expense")
-    public ResponseEntity<?> approveExpense(@RequestParam Long expenseId){
+    public ResponseEntity<?> approveExpense(@RequestParam Long[] expenseId){
 
-        Expense approvedExpense = expenseServices.approveExpense(expenseId);
-
-        if (null == approvedExpense) throw new InventoryAPIOperationException
-                ("Expense not approved", "Expense not approved, please try again.", null);
-
-        return ResponseEntity.ok(approvedExpense);
+        return ResponseEntity.ok(expenseServices.approveExpense(expenseId));
     }
 
     @GetMapping(path = "/all/unapproved")

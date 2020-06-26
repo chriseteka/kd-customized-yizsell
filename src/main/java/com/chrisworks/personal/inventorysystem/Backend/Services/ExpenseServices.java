@@ -23,7 +23,7 @@ public interface ExpenseServices extends CRUDServices<Expense> {
 
     List<Expense> fetchAllExpensesInShop(Long shopId);
 
-    Expense approveExpense(Long expenseId);
+    List<Expense> approveExpense(Long... expenseId);
 
     List<Expense> fetchAllUnApprovedExpense();
 }
