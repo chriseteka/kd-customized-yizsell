@@ -6,6 +6,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.InvoiceServices;
+import com.chrisworks.personal.inventorysystem.Backend.Services.LedgerReport;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.Events.SellerTriggeredEvent;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.WebsocketController;
@@ -73,9 +74,19 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/all/groupByCustomer")
-    public ResponseEntity<?> getAllInvoicesGroupedByCustomers(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllInvoicesGroupedByCustomers(@RequestParam int page, @RequestParam int size,
+                                                              @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(prepareResponse(invoiceServices.fetchInvoicesGroupByCustomers(), page, size));
+        List<LedgerReport> ledgerReports = invoiceServices.fetchInvoicesGroupByCustomers()
+                .stream().filter(report -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
+                            || String.valueOf(report.getCustomer().getDebt()).contains(search)
+                            || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
+                            || report.getInvoices().stream().allMatch(invoice -> invoice.getInvoiceNumber().contains(search));
+                }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(prepareResponse(ledgerReports, page, size));
     }
 
     @GetMapping(path = "/all/withDebt/groupByCustomer")

@@ -34,6 +34,8 @@ public class WaybillServicesImpl implements WaybillServices {
 
     private final WarehouseStockRepository warehouseStockRepository;
 
+    private final WarehouseStockServices warehouseStockServices;
+
     private final ShopStockServices shopStockServices;
 
     private final ExpenseRepository expenseRepository;
@@ -44,13 +46,14 @@ public class WaybillServicesImpl implements WaybillServices {
 
     @Autowired
     public WaybillServicesImpl(SellerRepository sellerRepository, WaybillInvoiceRepository waybillInvoiceRepository,
-                               WarehouseRepository warehouseRepository,
-                               WarehouseStockRepository warehouseStockRepository, ShopStockServices shopStockServices,
+                               WarehouseRepository warehouseRepository, WarehouseStockRepository warehouseStockRepository,
+                               WarehouseStockServices warehouseStockServices, ShopStockServices shopStockServices,
                                ExpenseRepository expenseRepository, ShopRepository shopRepository,
                                GenericService genericService) {
         this.sellerRepository = sellerRepository;
         this.waybillInvoiceRepository = waybillInvoiceRepository;
         this.warehouseRepository = warehouseRepository;
+        this.warehouseStockServices = warehouseStockServices;
         this.warehouseStockRepository = warehouseStockRepository;
         this.shopStockServices = shopStockServices;
         this.expenseRepository = expenseRepository;
@@ -98,7 +101,8 @@ public class WaybillServicesImpl implements WaybillServices {
 
                                 stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
                                         - order.getQuantity());
-                                warehouseStockRepository.save(stockFound);
+                                WarehouseStocks updatedStock = warehouseStockRepository.save(stockFound);
+
                                 waybillInvoiceAmount.set(waybillInvoiceAmount.get()
                                         .add((BigDecimal.valueOf(order.getQuantity())
                                                 .multiply(stockFound.getPricePerStockPurchased()))));

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-class LedgerReport {
+public class LedgerReport {
     private Customer customer;
     private List<Invoice> invoices;
     private List<Income> incomeList;
