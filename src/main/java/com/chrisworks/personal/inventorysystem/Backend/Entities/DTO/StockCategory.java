@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Entities.DTO;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Date;
  * @email chriseteka@gmail.com
  */
 @Data
-public class StockCategory {
+public class StockCategory implements Serializable {
 
     private Long StockCategoryId;
     private Date createdDate;

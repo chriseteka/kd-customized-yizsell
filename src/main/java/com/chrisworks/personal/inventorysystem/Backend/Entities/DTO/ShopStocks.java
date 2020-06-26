@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Entities.DTO;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -11,7 +12,7 @@ import java.util.Date;
  * @email chriseteka@gmail.com
  */
 @Data
-public class ShopStocks {
+public class ShopStocks implements Serializable {
 
     private Long shopStockId;
     private Date createdDate;
