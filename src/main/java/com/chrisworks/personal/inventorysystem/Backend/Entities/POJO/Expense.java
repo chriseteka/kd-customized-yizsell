@@ -103,4 +103,15 @@ public class Expense {
         this.expenseAmount = expenseAmount;
         this.expenseDescription = expenseDescription;
     }
+
+    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense toDTO(){
+        //Formalities
+        fillTransient();
+        fillPersistent();
+
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense(this.getExpenseId(),
+            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getExpenseAmount(),
+            this.getExpenseDescription(), this.getCreatedBy(), this.getApproved(), this.getApprovedDate(),
+            this.getApprovedBy(), this.getExpenseTypeValue(), this.getExpenseTypeVal(), this.getExpenseType());
+    }
 }

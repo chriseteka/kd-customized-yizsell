@@ -6,6 +6,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ExpenseRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,10 +32,15 @@ public class ExpenseServicesImpl implements ExpenseServices {
 
     private final GenericService genericService;
 
+    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense> expenseCacheManager;
+    private final String REDIS_TABLE_KEY = "INCOME";
+
     @Autowired
-    public ExpenseServicesImpl(ExpenseRepository expenseRepository, GenericService genericService) {
+    public ExpenseServicesImpl(ExpenseRepository expenseRepository, GenericService genericService,
+                               CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense> expenseCacheManager) {
         this.expenseRepository = expenseRepository;
         this.genericService = genericService;
+        this.expenseCacheManager = expenseCacheManager;
     }
 
     @Override
