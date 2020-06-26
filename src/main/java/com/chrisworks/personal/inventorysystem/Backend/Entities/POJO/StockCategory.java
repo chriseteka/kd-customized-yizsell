@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.util.Date;
 
@@ -43,4 +42,10 @@ public class StockCategory {
 
     @Column(name = "createdBy")
     private String createdBy;
+
+    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockCategory toDTO(){
+
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockCategory(this.getStockCategoryId(),
+            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getCategoryName(), this.getCreatedBy());
+    }
 }

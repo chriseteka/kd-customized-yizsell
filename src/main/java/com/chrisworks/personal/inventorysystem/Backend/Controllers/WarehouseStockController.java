@@ -12,6 +12,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.Web
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -93,12 +94,19 @@ public class WarehouseStockController {
     }
 
     @GetMapping(path = "/all/byWarehouse")
-    public ResponseEntity<?> fetchAllByWarehouseId(@RequestParam Long warehouseId, @RequestParam int page,
-                                                   @RequestParam int size){
+    public ResponseEntity<?> fetchAllByWarehouseId(@RequestParam Long warehouseId, @RequestParam int page, @RequestParam int size,
+                                                   @RequestParam(required = false, defaultValue = "") String search){
 
         List<WarehouseStocks> warehouseStocksList = warehouseStockServices
                 .allStockByWarehouseId(warehouseId)
-                .stream()
+                .stream().filter(stock -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    final String searchQuery = search.toLowerCase();
+                    return stock.getCreatedBy().contains(searchQuery)
+                            || String.valueOf(stock.getStockName()).contains(searchQuery)
+                            || String.valueOf(stock.getStockQuantityRemaining()).contains(searchQuery)
+                            || String.valueOf(stock.getStockCategory().getCategoryName()).contains(searchQuery);
+                })
                 .sorted(Comparator.comparing(WarehouseStocks::getCreatedDate)
                     .thenComparing(WarehouseStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());

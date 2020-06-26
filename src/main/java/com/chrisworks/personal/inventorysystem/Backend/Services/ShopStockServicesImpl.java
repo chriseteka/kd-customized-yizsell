@@ -9,8 +9,10 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
+import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
+import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +43,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final GenericService genericService;
 
-    private final InvoiceRepository invoiceRepository;
+    private final InvoiceServices invoiceServices;
 
     private final StockSoldRepository stockSoldRepository;
 
@@ -59,19 +61,28 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final ExchangedStockRepository exchangedStockRepository;
 
+    private final IncomeServices incomeServices;
+
+    private final ExpenseServices expenseServices;
+
+    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager;
+    private final String REDIS_TABLE_KEY = "SHOP_STOCK";
+
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
                                  ShopRepository shopRepository, GenericService genericService,
-                                 InvoiceRepository invoiceRepository, StockSoldRepository stockSoldRepository,
+                                 InvoiceServices invoiceServices, StockSoldRepository stockSoldRepository,
                                  ReturnedStockRepository returnedStockRepository, SupplierRepository supplierRepository,
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
                                  CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices,
-                                 ExchangedStockRepository exchangedStockRepository) {
+                                 ExchangedStockRepository exchangedStockRepository, IncomeServices incomeServices,
+                                 ExpenseServices expenseServices,
+                                 CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
         this.genericService = genericService;
-        this.invoiceRepository = invoiceRepository;
+        this.invoiceServices = invoiceServices;
         this.stockSoldRepository = stockSoldRepository;
         this.returnedStockRepository = returnedStockRepository;
         this.stockCategoryRepository = stockCategoryRepository;
@@ -80,6 +91,9 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.customerRepository = customerRepository;
         this.salesDiscountServices = salesDiscountServices;
         this.exchangedStockRepository = exchangedStockRepository;
+        this.incomeServices = incomeServices;
+        this.expenseServices = expenseServices;
+        this.shopStocksCacheManager = shopStocksCacheManager;
     }
 
     @Transactional
@@ -190,7 +204,14 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         throw new InventoryAPIOperationException("Not your shop", "You cannot retrieve stock from" +
                                 " this shop because it was not created by you", null);
 
-                    return shopStocksRepository.findAllByShop(shop);
+                    if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY))
+                        return fetchShopStocksFromCache().stream()
+                            .filter(s -> s.getShop().getShopId().equals(shopId)).collect(Collectors.toList());
+
+                    List<ShopStocks> shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
+                    cacheShopStocksList(shopStocksListByShop);
+
+                    return shopStocksListByShop;
                 }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
                         "Shop with id: " + shopId + " was not found", null));
     }
@@ -264,7 +285,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     stockFound.setApprovedDate(new Date());
                     stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
-                    return shopStocksRepository.save(stockFound);
+                    ShopStocks approvedShopStock = shopStocksRepository.save(stockFound);
+                    shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, approvedShopStock.toDTO(), stockId);
+
+                    return approvedShopStock;
                 }).orElse(null);
     }
 
@@ -290,6 +314,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         throw new InventoryAPIOperationException("Not allowed", "Stock not found in yor shop", null);
 
                     shopStocksRepository.delete(stockFound);
+                    shopStocksCacheManager.removeDetail(REDIS_TABLE_KEY, stockId);
                     return stockFound;
                 }).orElse(null);
     }
@@ -360,7 +385,11 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     stock.setApprovedDate(new Date());
                     stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                 }
-                return shopStocksRepository.save(stock);
+
+                ShopStocks shopStocks = shopStocksRepository.save(stock);
+                shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
+
+                return shopStocks;
             }).orElse(null);
         }).orElse(null);
     }
@@ -419,7 +448,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
 
-        return shopStocksRepository.save(stockToAdd);
+        ShopStocks savedShopStock = shopStocksRepository.save(stockToAdd);
+        cacheShopStocks(savedShopStock);
+
+        return savedShopStock;
     }
 
     @Override
@@ -447,7 +479,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     .equals(stock.getShop())) throw new InventoryAPIOperationException("Not allowed",
                     "You cannot change selling price of a stock not found in your shop", null);
 
-            return shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
+            ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
+            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), stockId);
+
+            return updatedStock;
         }).orElse(null);
     }
 
@@ -481,7 +516,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 if(stockRetrieved == null) throw new InventoryAPIResourceNotFoundException("Not found",
                         "Stock with name: " + stockName + " was not found in your shop", null);
 
-                return shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+                ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
+                shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), updatedStock.getShopStockId());
+
+                return updatedStock;
 
             }).orElse(null);
         }
@@ -578,7 +616,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     (stockSold.getPricePerStockSold().subtract(stockSold.getCostPricePerStock()))
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))
             ));
-            shopStocksRepository.save(stockFound);
+            ShopStocks updatedStock = shopStocksRepository.save(stockFound);
+            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), updatedStock.getShopStockId());
 
             if (atomicStock.get() == null) throw new InventoryAPIResourceNotFoundException
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
@@ -589,11 +628,11 @@ public class ShopStockServicesImpl implements ShopStockServices {
             String incomeDescription = "Income generated from sale of stock with invoice number: " + preProcessedInvoice.getInvoiceNumber();
 
             if (preProcessedInvoice.getMultiplePayment().isEmpty())
-                genericService.addIncome(new Income(preProcessedInvoice.getAmountPaid(), 100, incomeDescription));
+                incomeServices.createEntity(new Income(preProcessedInvoice.getAmountPaid(), 100, incomeDescription));
             else {
                 preProcessedInvoice.setPaymentModeValue(400);
                 for (MultiplePaymentMode multiplePaymentMode : preProcessedInvoice.getMultiplePayment())
-                    genericService.addIncome(new Income(multiplePaymentMode.getAmountPaid(), 100, incomeDescription));
+                    incomeServices.createEntity(new Income(multiplePaymentMode.getAmountPaid(), 100, incomeDescription));
             }
         }
 
@@ -635,7 +674,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (ACCOUNT_TYPE.SHOP_SELLER.equals(AuthenticatedUserDetails.getAccount_type()))
             preProcessedInvoice.setSeller(sellerRepository.findDistinctBySellerFullNameOrSellerEmail(invoiceGeneratedBy, invoiceGeneratedBy));
 
-        return invoiceRepository.save(preProcessedInvoice);
+        return invoiceServices.createEntity(preProcessedInvoice);
     }
 
     @Transactional
@@ -661,7 +700,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             throw new InventoryAPIOperationException("Not allowed",
                     "You cannot sell from a shop you were not assigned", null);
 
-        Invoice invoice = invoiceRepository.findDistinctByInvoiceNumber(invoiceNumber);
+        Invoice invoice = invoiceServices.fetchInvoiceByInvoiceNumber(invoiceNumber);
 
         if (null == invoice) throw new InventoryAPIResourceNotFoundException("Invoice not found",
                 "Invoice with number " + invoiceNumber + " was not found, review your inputs and try again", null);
@@ -677,7 +716,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             successfulReturns.add(this.processReturn(shopId, returnedStock));
         });
 
-        if (successfulReturns.size() == invoice.getStockSold().size() && genericService.revertCashFlowFromInvoice(invoiceNumber))
+        if (successfulReturns.size() == invoice.getStockSold().size() && revertCashFlowOnSaleReversal(invoiceNumber))
             return new ResponseObject(true, "Sales reversal completed successfully");
         else return new ResponseObject(false, "Sales reversal was not successful, try again later.");
     }
@@ -692,7 +731,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (returnedStock == null) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find returned stock entity to save", null);
 
-        Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
+        Invoice invoiceRetrieved = invoiceServices.fetchInvoiceByInvoiceNumber(returnedStock.getInvoiceId());
         if (null == invoiceRetrieved) throw new InventoryAPIResourceNotFoundException
                 ("No invoice was found by id", "No invoice with id " + returnedStock.getInvoiceId() + " was found", null);
 
@@ -765,7 +804,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 returnedStock.getQuantityReturned());
         stockRecordFromShop.setUpdateDate(new Date());
 
-        shopStocksRepository.save(stockRecordFromShop);
+        ShopStocks updatedStock = shopStocksRepository.save(stockRecordFromShop);
+        cacheShopStocks(updatedStock);
 
         StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
                 (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
@@ -780,13 +820,13 @@ public class ShopStockServicesImpl implements ShopStockServices {
             stockSoldSet.add(initStockSold);
             invoiceRetrieved.setStockSold(stockSoldSet);
             invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
-            invoiceRepository.save(invoiceRetrieved);
+            invoiceServices.updateEntity(invoiceRetrieved.getInvoiceId(), invoiceRetrieved);
         }
         else{
 
             if (sizeOfStockSold == 1){
 
-                invoiceRepository.delete(invoiceRetrieved);
+                invoiceServices.deleteEntity(invoiceRetrieved.getInvoiceId());
             }else {
 
                 stockSoldSet.remove(stockAboutToBeReturned);
@@ -794,7 +834,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 stockSoldRepository.delete(initStockSold);
                 invoiceRetrieved.setStockSold(stockSoldSet);
                 invoiceRetrieved.setPaymentModeVal(String.valueOf(invoiceRetrieved.getPaymentModeValue()));
-                invoiceRepository.save(invoiceRetrieved);
+                invoiceServices.updateEntity(invoiceRetrieved.getInvoiceId(), invoiceRetrieved);
             }
         }
 
@@ -806,7 +846,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             Shop stockReturnedShop = genericService.shopBySellerName(AuthenticatedUserDetails.getUserFullName());
             returnedStock.setShop(stockReturnedShop);
 
-            genericService.addExpense(expenseOnReturn);
+            expenseServices.createEntity(expenseOnReturn);
             returnStock = returnedStockRepository.save(returnedStock);
         }else{
 
@@ -814,7 +854,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             returnedStock.setApprovedDate(new Date());
             returnedStock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
-            genericService.addExpense(expenseOnReturn);
+            expenseServices.createEntity(expenseOnReturn);
             returnStock = returnedStockRepository.save(returnedStock);
         }
 
@@ -842,7 +882,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (returnedStock == null || receivedStock == null) throw new InventoryAPIOperationException
                 ("could not find an entity to save", "Could not find returned or/and received stock complete exchange", null);
 
-        Invoice invoiceRetrieved = invoiceRepository.findDistinctByInvoiceNumber(returnedStock.getInvoiceId());
+        Invoice invoiceRetrieved = invoiceServices.fetchInvoiceByInvoiceNumber(returnedStock.getInvoiceId());
         if (null == invoiceRetrieved) throw new InventoryAPIResourceNotFoundException
                 ("No invoice was found by id", "No invoice with id " + returnedStock.getInvoiceId() + " was found", null);
 
@@ -945,8 +985,11 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 receivedStock.getQuantityReceived());
         exchangedStockRecordInShop.setUpdateDate(new Date());
 
-        shopStocksRepository.save(returnedStockRecordInShop);
-        shopStocksRepository.save(exchangedStockRecordInShop);
+        ShopStocks savedReturnedShopStock = shopStocksRepository.save(returnedStockRecordInShop);
+        ShopStocks savedExchangedShopStock = shopStocksRepository.save(exchangedStockRecordInShop);
+
+        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, savedReturnedShopStock.toDTO(), savedReturnedShopStock.getShopStockId());
+        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, savedExchangedShopStock.toDTO(), savedExchangedShopStock.getShopStockId());
 
         StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
                 (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
@@ -981,7 +1024,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
             if (sizeOfStockSold == 1){
 
-                invoiceRepository.delete(invoiceRetrieved);
+                invoiceServices.deleteEntity(invoiceRetrieved.getInvoiceId());
             }else {
 
                 stockSoldSet.remove(stockAboutToBeReturned);
@@ -1011,7 +1054,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             String expenseDescription = returnedStock.getStockName() + " exchanged with: " + receivedStock.getStockName()
             + " with reason: " + returnedStock.getReasonForReturn();
             Expense expenseOnReturn = new Expense(300, returnedStock.getStockReturnedCost(), expenseDescription);
-            genericService.addExpense(expenseOnReturn);
+            expenseServices.createEntity(expenseOnReturn);
         }
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
@@ -1033,7 +1076,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         ReturnedStock savedReturnedStock = returnedStockRepository.save(returnedStock);
         ExchangedStock savedExchangedStock = exchangedStockRepository.save(receivedStock);
 
-        Invoice updatedInvoice = invoiceRepository.save(invoiceRetrieved);
+        Invoice updatedInvoice = invoiceServices.updateEntity(invoiceRetrieved.getInvoiceId(), invoiceRetrieved);
 
         if (savedReturnedStock == null || savedExchangedStock == null || updatedInvoice == null)
             throw new InventoryAPIOperationException("Exchange incomplete",
@@ -1127,7 +1170,10 @@ public class ShopStockServicesImpl implements ShopStockServices {
             shopStock.setUpdateDate(new Date());
             shopStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
 
-            return shopStocksRepository.save(shopStock);
+            ShopStocks updatedStock = shopStocksRepository.save(shopStock);
+            shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedStock.toDTO(), stockId);
+
+            return updatedStock;
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop stock not found",
                 "shop stock with id: " + stockId + " was not found", null));
     }
@@ -1346,7 +1392,48 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .collect(Collectors.toList());
 
         List<ShopStocks> successfulUploads = shopStocksRepository.saveAll(stockToSaveList);
+        cacheShopStocksList(successfulUploads);
 
         return bulkUploadResponse(successfulUploads, rejectedStockList);
+    }
+
+    /*
+    This function reverts all income, expenses, debts, discounts and loyalties
+    given to an invoice during a sale. This function is only called when a sale is reversed.
+    * @return Boolean (True if successful and false otherwise).
+    */
+    private boolean revertCashFlowOnSaleReversal(String invoiceNumber){
+
+        //Fetch the income, expense, and discounts generated by that invoice number
+        List<Income> incomeList = incomeServices.fetchAllByDescriptionContains(invoiceNumber);
+        List<Expense> expenseList = expenseServices.fetchExpensesByDescription(invoiceNumber);
+        List<SalesDiscount> salesDiscountList = salesDiscountServices.fetchAllSalesDiscountByInvoice(invoiceNumber);
+
+        if (!incomeList.isEmpty())
+            incomeList.forEach(income -> incomeServices.deleteEntity(income.getIncomeId()));
+        if (!expenseList.isEmpty())
+            expenseList.forEach(expense -> expenseServices.deleteEntity(expense.getExpenseId()));
+        if (!salesDiscountList.isEmpty())
+            salesDiscountList.forEach(salesDiscountServices::deleteSalesDiscount);
+
+        return true;
+    }
+
+    private void cacheShopStocks(ShopStocks shopStocks){
+        shopStocksCacheManager.cacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
+    }
+
+    private void cacheShopStocksList(List<ShopStocks> shopStocksList) {
+        shopStocksList.forEach(this::cacheShopStocks);
+    }
+
+    private List<ShopStocks> fetchShopStocksFromCache(){
+        return shopStocksCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
+                new ArrayList<>(getGSon().fromJson(data.stream()
+                                .map(entry -> getGSon().toJson(entry.getValue()))
+                                .collect(Collectors.toList()).toString(),
+                        new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks>>(){}.getType())))
+                .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks::fromDTO)
+                .collect(Collectors.toList());
     }
 }

@@ -14,6 +14,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.Web
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -111,10 +112,16 @@ public class ExpenseController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<?> getAllExpenses(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllExpenses(@RequestParam int page, @RequestParam int size,
+                                            @RequestParam(required = false, defaultValue = "") String search){
 
         List<Expense> expenseList = expenseServices.getEntityList()
-                .stream()
+                .stream().filter(expense -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    return expense.getCreatedBy().contains(search.toLowerCase())
+                            || String.valueOf(expense.getExpenseAmount()).contains(search)
+                            || String.valueOf(expense.getExpenseType()).contains(search.toUpperCase());
+                })
                 .sorted(Comparator.comparing(Expense::getCreatedDate)
                     .thenComparing(Expense::getCreatedTime).reversed())
                 .collect(Collectors.toList());

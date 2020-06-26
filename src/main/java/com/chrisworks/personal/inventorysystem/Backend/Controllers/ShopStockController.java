@@ -16,6 +16,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.controllers.Web
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -93,11 +94,18 @@ public class ShopStockController {
     }
 
     @GetMapping(path = "/all/byShop")
-    public ResponseEntity<?> fetchAllByShopId(@RequestParam Long shopId, @RequestParam int page,
-                                              @RequestParam int size){
+    public ResponseEntity<?> fetchAllByShopId(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                              @RequestParam(required = false, defaultValue = "") String search){
 
         List<ShopStocks> shopStocksList = shopStockServices.allStockByShopId(shopId)
-                .stream()
+                .stream().filter(stock -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    final String searchQuery = search.toLowerCase();
+                    return stock.getCreatedBy().contains(searchQuery)
+                            || String.valueOf(stock.getStockName()).contains(searchQuery)
+                            || String.valueOf(stock.getStockQuantityRemaining()).contains(searchQuery)
+                            || String.valueOf(stock.getStockCategory().getCategoryName()).contains(searchQuery);
+                })
                 .sorted(Comparator.comparing(ShopStocks::getCreatedDate)
                     .thenComparing(ShopStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());

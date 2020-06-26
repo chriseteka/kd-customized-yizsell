@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface SalesDiscountServices {
 
+    void deleteSalesDiscount(SalesDiscount salesDiscount);
+
     void generateDiscountOnStockSold(StockSold stockSold, BigDecimal basePrice, String invoiceNumber, String customer);
 
     void generateDiscountOnInvoice(Invoice invoice);

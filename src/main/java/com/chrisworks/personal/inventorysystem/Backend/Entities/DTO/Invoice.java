@@ -8,9 +8,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 
 /**
  * @author Chris_Eteka
@@ -80,8 +77,8 @@ public class Invoice implements Serializable {
         invoiceFromDTO.setPaymentMode(this.paymentMode);
         invoiceFromDTO.setLoyaltyDiscount(this.getLoyaltyDiscount());
         invoiceFromDTO.setStockSold(this.getStockSoldSet().stream().map(StockSold::fromDTO).collect(Collectors.toSet()));
-        invoiceFromDTO.setCustomerId(Stream.of(this.getCustomer()).map(Customer::fromDTO).collect(toSingleton()));
-        if (this.seller != null) invoiceFromDTO.setSeller(Stream.of(this.getSeller()).map(Seller::fromDTO).collect(toSingleton()));
+        invoiceFromDTO.setCustomerId(this.getCustomer().fromDTO());
+        if (this.seller != null) invoiceFromDTO.setSeller(this.getSeller().fromDTO());
 
         return invoiceFromDTO;
     }

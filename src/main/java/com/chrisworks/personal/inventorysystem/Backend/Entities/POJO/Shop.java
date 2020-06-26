@@ -55,7 +55,7 @@ public class Shop implements Serializable {
     @JsonIgnore
     private BusinessOwner businessOwner;
 
-    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Shop toDTO() {
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Shop toDTO() {
             return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Shop(this.getShopId(),
                 this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getShopName(),
                 this.getShopAddress(), this.getCreatedBy());

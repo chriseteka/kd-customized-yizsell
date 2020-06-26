@@ -130,4 +130,16 @@ public class ShopStocks {
     private Shop shop;
 
     private boolean hasPromo = false;
+
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks toDTO(){
+
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks(this.getShopStockId(),
+            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getStockCategory().toDTO(),
+            this.getStockName(), this.getStockQuantityPurchased(), this.getStockQuantitySold(),
+            this.getStockQuantityRemaining(), this.getStockPurchasedTotalPrice(), this.getPricePerStockPurchased(),
+            this.getStockSoldTotalPrice(), this.getStockRemainingTotalPrice(), this.getSellingPricePerStock(),
+            this.getLastRestockQuantity(), this.getProfit(), this.getCreatedBy(), this.getLastRestockBy(),
+            this.getApproved(), this.getApprovedDate(), this.getApprovedBy(), this.getExpiryDate(),
+            this.getStockBarCodeId(), this.isHasPromo(), this.getShop().toDTO());
+    }
 }

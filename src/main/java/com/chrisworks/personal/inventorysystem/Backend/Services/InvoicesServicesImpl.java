@@ -62,12 +62,20 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
     @Override
     public Invoice createEntity(Invoice invoice) {
-        return null;
+
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        cacheInvoice(savedInvoice);
+
+        return savedInvoice;
     }
 
     @Override
     public Invoice updateEntity(Long entityId, Invoice invoice) {
-        return null;
+
+        Invoice updatedInvoice = invoiceRepository.save(invoice);
+        invoiceCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedInvoice.toDTO(), entityId);
+
+        return updatedInvoice;
     }
 
     @Override
@@ -476,12 +484,12 @@ public class InvoicesServicesImpl implements InvoiceServices {
             .collect(Collectors.toList());
     }
 
-    private void cacheInvoice(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice invoiceDTO){
-        invoiceCacheManager.cacheDetail(REDIS_TABLE_KEY, invoiceDTO, invoiceDTO.getInvoiceId());
+    private void cacheInvoice(Invoice invoice){
+        invoiceCacheManager.cacheDetail(REDIS_TABLE_KEY, invoice.toDTO(), invoice.getInvoiceId());
     }
 
     private void cacheInvoiceList(List<Invoice> invoiceList) {
-        invoiceList.stream().map(Invoice::toDTO).forEach(this::cacheInvoice);
+        invoiceList.forEach(this::cacheInvoice);
     }
 
     private List<Invoice> fetchInvoiceFromCache(){

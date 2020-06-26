@@ -33,6 +33,11 @@ public class SalesDiscountServiceImpl implements SalesDiscountServices {
     }
 
     @Override
+    public void deleteSalesDiscount(SalesDiscount salesDiscount) {
+        salesDiscountRepository.delete(salesDiscount);
+    }
+
+    @Override
     public void generateDiscountOnStockSold(StockSold stockSold, BigDecimal basePrice, String invoiceNumber, String customer) {
 
         SalesDiscount salesDiscount = new SalesDiscount();

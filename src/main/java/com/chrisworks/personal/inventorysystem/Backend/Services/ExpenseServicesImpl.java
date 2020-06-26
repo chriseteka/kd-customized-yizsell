@@ -289,7 +289,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
                 new ArrayList<>(getGSon().fromJson(data.stream()
                                 .map(entry -> getGSon().toJson(entry.getValue()))
                                 .collect(Collectors.toList()).toString(),
-                        new TypeToken<ArrayList<Expense>>(){}.getType())))
+                        new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense>>(){}.getType())))
                 .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense::fromDTO)
                 .collect(Collectors.toList());
     }
