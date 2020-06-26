@@ -22,6 +22,8 @@ public class AuthenticatedUserDetails {
 
     private static Boolean hasWarehouse = false;
 
+    private static String businessId;
+
     public static String getUserFullName() {
         return userFullName;
     }
@@ -34,11 +36,17 @@ public class AuthenticatedUserDetails {
 
     public static Boolean getHasWarehouse(){ return hasWarehouse; }
 
-    public AuthenticatedUserDetails(Long userId, String fullName, ACCOUNT_TYPE account_type, Boolean hasWarehouse) {
+    public static String getBusinessId(){
+        return businessId;
+    }
+
+    public AuthenticatedUserDetails(Long userId, String fullName, ACCOUNT_TYPE account_type, Boolean hasWarehouse,
+                                    String businessId) {
 
         AuthenticatedUserDetails.userId = userId;
         AuthenticatedUserDetails.userFullName = fullName;
         AuthenticatedUserDetails.account_type = account_type;
         AuthenticatedUserDetails.hasWarehouse = hasWarehouse;
+        AuthenticatedUserDetails.businessId = businessId;
     }
 }

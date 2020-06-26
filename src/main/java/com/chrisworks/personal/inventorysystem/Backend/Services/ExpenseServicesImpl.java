@@ -50,7 +50,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
                 "Expense entity to save was not found, review your inputs and try again", null);
 
         Expense savedExpense = genericService.addExpense(expense);
-        cacheExpense(savedExpense);
+        if (expenseCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheExpense(savedExpense);
 
         return savedExpense;
     }

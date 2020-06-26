@@ -387,7 +387,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 }
 
                 ShopStocks shopStocks = shopStocksRepository.save(stock);
-                updateShopStockCache(shopStocks);
+                if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) updateShopStockCache(shopStocks);
 
                 return shopStocks;
             }).orElse(null);
@@ -449,7 +449,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
 
         ShopStocks savedShopStock = shopStocksRepository.save(stockToAdd);
-        cacheShopStocks(savedShopStock);
+        if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheShopStocks(savedShopStock);
 
         return savedShopStock;
     }
@@ -1392,7 +1392,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .collect(Collectors.toList());
 
         List<ShopStocks> successfulUploads = shopStocksRepository.saveAll(stockToSaveList);
-        cacheShopStocksList(successfulUploads);
+        if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheShopStocksList(successfulUploads);
 
         return bulkUploadResponse(successfulUploads, rejectedStockList);
     }

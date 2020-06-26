@@ -343,7 +343,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 }
 
                 WarehouseStocks updatedStock = warehouseStockRepository.save(stock);
-                updateWarehouseStockCache(updatedStock);
+                if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) updateWarehouseStockCache(updatedStock);
 
                 return updatedStock;
             }).orElse(null);
@@ -549,7 +549,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
 
         WarehouseStocks savedStock = warehouseStockRepository.save(stockToAdd);
-        cacheWarehouseStocks(savedStock);
+        if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheWarehouseStocks(savedStock);
 
         return savedStock;
     }
@@ -770,7 +770,7 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
             .collect(Collectors.toList());
 
         List<WarehouseStocks> successfulUploads = warehouseStockRepository.saveAll(stockToSaveList);
-        cacheWarehouseStocksList(successfulUploads);
+        if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheWarehouseStocksList(successfulUploads);
 
         return bulkUploadResponse(successfulUploads, rejectedStockList);
     }

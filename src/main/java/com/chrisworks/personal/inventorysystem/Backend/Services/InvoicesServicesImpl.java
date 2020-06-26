@@ -64,7 +64,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
     public Invoice createEntity(Invoice invoice) {
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
-        cacheInvoice(savedInvoice);
+        if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheInvoice(savedInvoice);
 
         return savedInvoice;
     }
@@ -109,25 +109,29 @@ public class InvoicesServicesImpl implements InvoiceServices {
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user cannot perform this operation", null);
 
-        if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchInvoiceFromCache();
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
 
-        List<Invoice> invoiceList;
+            if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchInvoiceFromCache().stream()
+                .filter(invoice -> invoice.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                .collect(Collectors.toList());
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
-            invoiceList = fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName());
+            return fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        }
 
         else {
+            if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchInvoiceFromCache();
+
+            List<Invoice> invoiceList;
             invoiceList = genericService.sellersByAuthUserId()
                     .stream()
                     .map(invoiceRepository::findAllBySeller)
                     .flatMap(List::parallelStream)
                     .collect(Collectors.toList());
             invoiceList.addAll(fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
+            if (!invoiceList.isEmpty()) cacheInvoiceList(invoiceList);
+
+            return invoiceList;
         }
-
-        if (!invoiceList.isEmpty()) cacheInvoiceList(invoiceList);
-
-        return invoiceList;
     }
 
     @Override
@@ -282,7 +286,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
     }
 
     @Override
-    public List<Invoice> fetchAllInvoiceInShop(Long shopId) {
+    public List<Invoice> fetchAllInvoiceInShop() {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Operation not allowed",

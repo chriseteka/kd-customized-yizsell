@@ -61,8 +61,9 @@ public class InvoiceController {
                 .stream().filter(invoice -> {
                     if (!StringUtils.hasText(search)) return true;
                     return invoice.getCreatedBy().contains(search.toLowerCase())
+                            || String.valueOf(invoice.getAmountPaid()).contains(search)
                             || String.valueOf(invoice.getInvoiceNumber()).contains(search)
-                            || String.valueOf(invoice.getAmountPaid()).contains(search);
+                            || String.valueOf(invoice.getPaymentMode()).contains(search.toUpperCase());
                 })
                 .sorted(Comparator.comparing(Invoice::getCreatedDate)
                     .thenComparing(Invoice::getCreatedTime).reversed())
@@ -148,9 +149,9 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/byShop")
-    public ResponseEntity<?> fetchInvoicesByShop(@RequestParam Long shopId){
+    public ResponseEntity<?> fetchInvoicesByShop(){
 
-        return ResponseEntity.ok(invoiceServices.fetchAllInvoiceInShop(shopId));
+        return ResponseEntity.ok(invoiceServices.fetchAllInvoiceInShop());
     }
 
     @GetMapping(path = "/withDebt")

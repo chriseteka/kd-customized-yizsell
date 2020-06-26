@@ -47,8 +47,7 @@ public class IncomeServicesImpl implements IncomeServices {
                 "Income entity to save was not found, review your inputs and try again", null);
 
         Income savedIncome = genericService.addIncome(income);
-
-        cacheIncome(income);
+        if (incomeCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheIncome(income);
 
         return savedIncome;
     }

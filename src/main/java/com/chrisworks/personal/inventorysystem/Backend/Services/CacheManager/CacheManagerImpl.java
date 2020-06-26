@@ -21,7 +21,7 @@ public class CacheManagerImpl<T> implements CacheInterface<T> {
     private final RedisUtil<T> redisUtil;
 
     private String REDIS_TABLE_KEY(String key) {
-        return String.format("TABLE_%s_%s", key, AuthenticatedUserDetails.getUserFullName());
+        return String.format("TABLE_%s_%s", key, AuthenticatedUserDetails.getBusinessId());
     }
 
     private String OBJECT_KEY(String key, Long id) {
@@ -37,8 +37,11 @@ public class CacheManagerImpl<T> implements CacheInterface<T> {
 
     @Override
     public void updateCacheDetail(String key, T t, Long id) {
-        removeDetail(key, id);
-        cacheDetail(key, t, id);
+
+        if (nonEmpty(key)) {
+            removeDetail(key, id);
+            cacheDetail(key, t, id);
+        }
     }
 
     @Override
@@ -48,7 +51,7 @@ public class CacheManagerImpl<T> implements CacheInterface<T> {
 
     @Override
     public void removeDetail(String key, Long id) {
-        redisUtil.removeIfExistsInMap(REDIS_TABLE_KEY(key), OBJECT_KEY(key, id));
+        if (nonEmpty(key)) redisUtil.removeIfExistsInMap(REDIS_TABLE_KEY(key), OBJECT_KEY(key, id));
     }
 
     @Override

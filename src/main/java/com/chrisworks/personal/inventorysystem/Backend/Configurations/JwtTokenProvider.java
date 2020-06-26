@@ -147,4 +147,11 @@ public class JwtTokenProvider {
 
         return  (Boolean) claims.get("hasWarehouse");
     }
+
+    String businessIdFromJwt(String token) {
+
+        Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
+
+        return (String) claims.get("businessEmail");
+    }
 }
