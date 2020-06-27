@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.OVER_SALE_DISCOUNT;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.UNDER_SALE_DISCOUNT;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getDateDifferenceInDays;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -264,17 +266,17 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
         BigDecimal negativeDiscount = sortedDiscountList
             .stream()
-            .filter(salesDiscount -> !salesDiscount.getDiscountType().equalsIgnoreCase("OVER SALE DISCOUNT"))
+            .filter(salesDiscount -> !salesDiscount.getDiscountType().equalsIgnoreCase(UNDER_SALE_DISCOUNT))
             .map(SalesDiscount::getDiscountAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal positiveDiscount = sortedDiscountList
             .stream()
-            .filter(salesDiscount -> salesDiscount.getDiscountType().equalsIgnoreCase("OVER SALE DISCOUNT"))
+            .filter(salesDiscount -> salesDiscount.getDiscountType().equalsIgnoreCase(OVER_SALE_DISCOUNT))
             .map(SalesDiscount::getDiscountAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        //Discount might be error pruned
-        balanceAccount.setTotalDiscountGiven(positiveDiscount.subtract(negativeDiscount).abs());
+        //Discount might +ve (when u have much under sales than under sale) and -ve (otherwise)
+        balanceAccount.setTotalDiscountGiven(negativeDiscount.subtract(positiveDiscount));
 
         balanceAccount.setTotalDebtsIncurred(sortedInvoiceList
             .stream()
