@@ -115,6 +115,7 @@ public class Invoice {
     void fillTransient() {
         if (paymentModeValue > 0) {
             this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
+            this.paymentModeVal = String.valueOf(paymentModeValue);
         }
     }
 
@@ -131,7 +132,6 @@ public class Invoice {
     public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice toDTO(){
         //Formalities
         fillTransient();
-        fillPersistent();
 
         com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice invoice =
             new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice(this.getInvoiceId(),
