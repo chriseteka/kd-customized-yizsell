@@ -10,6 +10,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -235,6 +236,7 @@ public class IncomeServicesImpl implements IncomeServices {
     }
 
     @Override
+    @Transactional
     public List<Income> approveIncome(Long... incomeId) {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))

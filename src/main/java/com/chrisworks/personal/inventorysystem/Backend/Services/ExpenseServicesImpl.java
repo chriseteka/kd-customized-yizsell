@@ -10,6 +10,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUser
 import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -246,6 +247,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
     }
 
     @Override
+    @Transactional
     public List<Expense> approveExpense(Long... expenseId) {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))

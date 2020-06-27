@@ -82,6 +82,7 @@ public class Income {
     void fillTransient() {
         if (incomeTypeValue > 0) {
             this.incomeType = INCOME_TYPE.of(incomeTypeValue);
+            this.incomeTypeVal = String.valueOf(incomeTypeValue);
         }
     }
 
@@ -106,7 +107,6 @@ public class Income {
     public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income toDTO(){
         //Formalities
         fillTransient();
-        fillPersistent();
 
         return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income(this.getIncomeId(),
             this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getIncomeAmount(),

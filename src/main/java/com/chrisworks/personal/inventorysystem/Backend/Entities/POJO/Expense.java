@@ -83,6 +83,7 @@ public class Expense {
     void fillTransient() {
         if (expenseTypeValue > 0) {
             this.expenseType = EXPENSE_TYPE.of(expenseTypeValue);
+            this.expenseTypeVal = String.valueOf(expenseTypeValue);
         }
     }
 
@@ -107,7 +108,6 @@ public class Expense {
     public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense toDTO(){
         //Formalities
         fillTransient();
-        fillPersistent();
 
         return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense(this.getExpenseId(),
             this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getExpenseAmount(),
