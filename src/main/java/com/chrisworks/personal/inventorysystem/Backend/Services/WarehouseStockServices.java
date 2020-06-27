@@ -46,4 +46,6 @@ public interface WarehouseStockServices {
     List<UniqueStock> fetchAllAuthUserUniqueStocks(Long warehouseId);
 
     WarehouseStocks forceChangeStockQuantity(Long stockId, int newQuantity);
+
+    void updateCache(WarehouseStocks stocks);
 }

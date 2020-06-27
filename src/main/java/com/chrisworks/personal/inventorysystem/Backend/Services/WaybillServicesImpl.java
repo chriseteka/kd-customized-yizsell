@@ -38,7 +38,7 @@ public class WaybillServicesImpl implements WaybillServices {
 
     private final ShopStockServices shopStockServices;
 
-    private final ExpenseRepository expenseRepository;
+    private final ExpenseServices expenseServices;
 
     private final ShopRepository shopRepository;
 
@@ -48,7 +48,7 @@ public class WaybillServicesImpl implements WaybillServices {
     public WaybillServicesImpl(SellerRepository sellerRepository, WaybillInvoiceRepository waybillInvoiceRepository,
                                WarehouseRepository warehouseRepository, WarehouseStockRepository warehouseStockRepository,
                                WarehouseStockServices warehouseStockServices, ShopStockServices shopStockServices,
-                               ExpenseRepository expenseRepository, ShopRepository shopRepository,
+                               ExpenseServices expenseServices, ShopRepository shopRepository,
                                GenericService genericService) {
         this.sellerRepository = sellerRepository;
         this.waybillInvoiceRepository = waybillInvoiceRepository;
@@ -56,7 +56,7 @@ public class WaybillServicesImpl implements WaybillServices {
         this.warehouseStockServices = warehouseStockServices;
         this.warehouseStockRepository = warehouseStockRepository;
         this.shopStockServices = shopStockServices;
-        this.expenseRepository = expenseRepository;
+        this.expenseServices = expenseServices;
         this.shopRepository = shopRepository;
         this.genericService = genericService;
     }
@@ -102,7 +102,7 @@ public class WaybillServicesImpl implements WaybillServices {
                                 stockFound.setPossibleQuantityRemaining(stockFound.getPossibleQuantityRemaining()
                                         - order.getQuantity());
                                 WarehouseStocks updatedStock = warehouseStockRepository.save(stockFound);
-
+                                warehouseStockServices.updateCache(updatedStock);
                                 waybillInvoiceAmount.set(waybillInvoiceAmount.get()
                                         .add((BigDecimal.valueOf(order.getQuantity())
                                                 .multiply(stockFound.getPricePerStockPurchased()))));
@@ -181,7 +181,8 @@ public class WaybillServicesImpl implements WaybillServices {
                                 (stockFound.getSellingPricePerStock().subtract(stockFound.getPricePerStockPurchased()))
                                         .multiply(BigDecimal.valueOf(stock.getQuantityWaybilled()))
                         ));
-                warehouseStockRepository.save(stockFound);
+                WarehouseStocks updatedStock = warehouseStockRepository.save(stockFound);
+                warehouseStockServices.updateCache(updatedStock);
             });
 
             //Create an expense for transporting stock from warehouse to shop requesting for waybill
@@ -189,7 +190,7 @@ public class WaybillServicesImpl implements WaybillServices {
             Expense expenseOnWaybill = new Expense(400, expense, expenseDesc);
             expenseOnWaybill.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
             expenseOnWaybill.setShop(waybillInvoice.getShop());
-            expenseRepository.save(expenseOnWaybill);
+            expenseServices.createEntity(expenseOnWaybill);
 
             waybillInvoice.setSellerIssuing(seller);
             waybillInvoice.setIsWaybillShipped(true);

@@ -491,6 +491,11 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                 "warehouse stock with id: " + stockId + " was not found", null));
     }
 
+    @Override
+    public void updateCache(WarehouseStocks stocks) {
+        updateWarehouseStockCache(stocks);
+    }
+
     private WarehouseStocks addStockToWarehouse(WarehouseStocks stockToAdd, Warehouse warehouse){
 
         if (null == stockToAdd) throw new InventoryAPIOperationException

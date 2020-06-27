@@ -90,9 +90,19 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/all/withDebt/groupByCustomer")
-    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(@RequestParam int page, @RequestParam int size,
+                                                                      @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(prepareResponse(invoiceServices.fetchInvoicesWithDebtGroupByCustomers(), page, size));
+        List<LedgerReport> ledgerReports = invoiceServices.fetchInvoicesWithDebtGroupByCustomers()
+                .stream().filter(report -> {
+                    if (!StringUtils.hasText(search)) return true;
+                    return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
+                            || String.valueOf(report.getCustomer().getDebt()).contains(search)
+                            || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
+                            || report.getInvoices().stream().anyMatch(invoice -> invoice.getInvoiceNumber().contains(search));
+                }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(prepareResponse(ledgerReports, page, size));
     }
 
     @DeleteMapping(path = "/byId")
