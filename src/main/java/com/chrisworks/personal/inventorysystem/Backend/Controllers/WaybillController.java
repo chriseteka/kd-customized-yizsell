@@ -234,24 +234,8 @@ public class WaybillController {
     }
 
     @DeleteMapping(path = "/delete/byWareBillId")
-    public ResponseEntity<?> deleteWaybillInvoiceByWaybillInvoiceId(@RequestParam Long wareBillId){
+    public ResponseEntity<?> deleteWaybillInvoiceByWaybillInvoiceId(@RequestParam Long[] wareBillId){
 
-        WaybillInvoice waybillInvoice = waybillServices.deleteWaybillInvoiceById(wareBillId);
-
-        if (null == waybillInvoice) throw new InventoryAPIOperationException("Waybill Invoice not deleted",
-                "Ware Bill invoice was not deleted successfully, review your inputs and try again", null);
-
-        return ResponseEntity.ok(waybillInvoice);
-    }
-
-    @DeleteMapping(path = "/delete/byWareBillNumber")
-    public ResponseEntity<?> deleteWaybillInvoiceByWaybillInvoiceNumber(@RequestParam String wareBillNumber){
-
-        WaybillInvoice waybillInvoice = waybillServices.deleteWaybillInvoiceByNumber(wareBillNumber);
-
-        if (null == waybillInvoice) throw new InventoryAPIOperationException("Waybill Invoice not deleted",
-                "Ware Bill invoice was not deleted successfully, review your inputs and try again", null);
-
-        return ResponseEntity.ok(waybillInvoice);
+        return ResponseEntity.ok(waybillServices.deleteWaybillInvoice(wareBillId));
     }
 }

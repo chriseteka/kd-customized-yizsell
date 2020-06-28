@@ -651,27 +651,19 @@ public class WaybillServicesImpl implements WaybillServices {
     }
 
     @Override
-    public WaybillInvoice deleteWaybillInvoiceByNumber(String waybillInvoiceNumber) {
+    public List<WaybillInvoice> deleteWaybillInvoice(Long... waybillInvoiceId) {
 
-        if (null == AuthenticatedUserDetails.getAccount_type()
-                || !AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Operation not allowed",
-                "Operation cannot be performed by the logged in user", null);
+        List<Long> waybillInvoiceIdsToDelete = Arrays.asList(waybillInvoiceId);
 
-        WaybillInvoice waybillInvoice = waybillInvoiceRepository.findDistinctByWaybillInvoiceNumber(waybillInvoiceNumber);
+        if (waybillInvoiceIdsToDelete.size() == 1)
+            return Collections.singletonList(deleteWaybillInvoiceById(waybillInvoiceIdsToDelete.get(0)));
 
-        if (null == waybillInvoice) throw new InventoryAPIResourceNotFoundException("Waybill invoice not found",
-                "Waybill invoice with number: " + waybillInvoiceNumber + " was not found", null);
+        List<WaybillInvoice> waybillInvoicesToDelete = waybillInvoiceRepository.findAll().stream()
+                .filter(waybillInvoice -> waybillInvoiceIdsToDelete.contains(waybillInvoice.getWaybillInvoiceId()))
+                .collect(Collectors.toList());
 
-        List<Seller> sellers = sellerRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName());
+        if (!waybillInvoicesToDelete.isEmpty()) waybillInvoiceRepository.deleteAll(waybillInvoicesToDelete);
 
-        boolean anyMatch = sellers.stream()
-                .anyMatch(seller -> seller.getSellerEmail().equalsIgnoreCase(waybillInvoice.getCreatedBy()));
-
-        if (anyMatch) waybillInvoiceRepository.delete(waybillInvoice);
-        else throw new InventoryAPIOperationException("Not allowed", "Operation not allowed, waybill was not created by " +
-                " any of your sellers", null);
-
-        return waybillInvoice;
+        return waybillInvoicesToDelete;
     }
 }

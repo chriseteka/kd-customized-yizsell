@@ -47,5 +47,5 @@ public interface WaybillServices {
 
     WaybillInvoice deleteWaybillInvoiceById(Long waybillInvoiceId);
 
-    WaybillInvoice deleteWaybillInvoiceByNumber(String waybillInvoiceNumber);
+    List<WaybillInvoice> deleteWaybillInvoice(Long... waybillInvoiceId);
 }

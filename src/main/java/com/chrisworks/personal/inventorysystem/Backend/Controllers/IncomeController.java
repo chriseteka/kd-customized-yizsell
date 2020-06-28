@@ -129,14 +129,9 @@ public class IncomeController {
     }
 
     @DeleteMapping(path = "/byId")
-    public ResponseEntity<?> deleteIncomeById(@RequestParam Long incomeId){
+    public ResponseEntity<?> deleteIncomeById(@RequestParam Long[] incomeId){
 
-        Income income = incomeServices.deleteEntity(incomeId);
-
-        if (null == income) throw new InventoryAPIResourceNotFoundException("Income not deleted",
-                "Income with id: " + incomeId + " was not deleted.", null);
-
-        return ResponseEntity.ok(income);
+        return ResponseEntity.ok(incomeServices.deleteIncome(incomeId));
     }
 
     @GetMapping(path = "/all/approved")

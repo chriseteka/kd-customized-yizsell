@@ -130,14 +130,9 @@ public class ExpenseController {
     }
 
     @DeleteMapping(path = "/byId")
-    public ResponseEntity<?> deleteExpenseById(@RequestParam Long expenseId){
+    public ResponseEntity<?> deleteExpenseById(@RequestParam Long[] expenseId){
 
-        Expense expense = expenseServices.deleteEntity(expenseId);
-
-        if (null == expense) throw new InventoryAPIResourceNotFoundException("Expense not deleted",
-                "Expense with id: " + expenseId + " was not deleted.", null);
-
-        return ResponseEntity.ok(expense);
+        return ResponseEntity.ok(expenseServices.deleteExpense(expenseId));
     }
 
     @GetMapping(path = "/all/approved")

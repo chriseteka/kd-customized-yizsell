@@ -26,4 +26,6 @@ public interface ExpenseServices extends CRUDServices<Expense> {
     List<Expense> approveExpense(Long... expenseId);
 
     List<Expense> fetchAllUnApprovedExpense();
+
+    List<Expense> deleteExpense(Long... expenseIds);
 }

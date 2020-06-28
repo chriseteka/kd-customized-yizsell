@@ -279,6 +279,26 @@ public class IncomeServicesImpl implements IncomeServices {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Income> deleteIncome(Long... incomeIds) {
+
+        List<Long> incomeIdsToDelete = Arrays.asList(incomeIds);
+
+        if (incomeIdsToDelete.size() == 1)
+            return Collections.singletonList(deleteEntity(incomeIdsToDelete.get(0)));
+
+        List<Income> incomesToDelete = getEntityList().stream()
+                .filter(income -> incomeIdsToDelete.contains(income.getIncomeId()))
+                .collect(Collectors.toList());
+
+        if (!incomesToDelete.isEmpty()) {
+            incomeRepository.deleteAll(incomesToDelete);
+            incomesToDelete.forEach(income -> incomeCacheManager.removeDetail(REDIS_TABLE_KEY, income.getIncomeId()));
+        }
+
+        return incomesToDelete;
+    }
+
     private void cacheIncome(Income income){
         incomeCacheManager.cacheDetail(REDIS_TABLE_KEY, income.toDTO(), income.getIncomeId());
     }

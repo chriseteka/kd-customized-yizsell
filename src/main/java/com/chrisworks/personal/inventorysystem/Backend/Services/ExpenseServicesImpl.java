@@ -12,10 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.*;
@@ -279,6 +276,26 @@ public class ExpenseServicesImpl implements ExpenseServices {
                 .stream()
                 .filter(expense -> !expense.getApproved())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Expense> deleteExpense(Long... expenseIds) {
+
+        List<Long> expenseIdsToDelete = Arrays.asList(expenseIds);
+
+        if (expenseIdsToDelete.size() == 1)
+            return Collections.singletonList(deleteEntity(expenseIdsToDelete.get(0)));
+
+        List<Expense> expensesToDelete = getEntityList().stream()
+                .filter(expense -> expenseIdsToDelete.contains(expense.getExpenseId()))
+                .collect(Collectors.toList());
+
+        if (!expensesToDelete.isEmpty()) {
+            expenseRepository.deleteAll(expensesToDelete);
+            expensesToDelete.forEach(expense -> expenseCacheManager.removeDetail(REDIS_TABLE_KEY, expense.getExpenseId()));
+        }
+
+        return expensesToDelete;
     }
 
     private void cacheExpense(Expense expense){
