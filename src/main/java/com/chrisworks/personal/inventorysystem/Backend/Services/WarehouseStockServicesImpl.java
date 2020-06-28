@@ -255,22 +255,22 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
     }
 
     @Override
-    public WarehouseStocks deleteStock(Long stockId) {
+    public List<WarehouseStocks> deleteStock(Long warehouseId, Long... stockId) {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) throw new
                 InventoryAPIOperationException("Not allowed", "Operation not allowed for logged in user.", null);
 
-        return warehouseStockRepository.findById(stockId)
-                .map(stockFound -> {
+        List<Long> stockIdsToBeDeleted = Arrays.asList(stockId);
+        List<WarehouseStocks> warehouseStocks = allStockByWarehouseId(warehouseId).stream()
+                .filter(s -> stockIdsToBeDeleted.contains(s.getWarehouseStockId()))
+                .collect(Collectors.toList());
 
-                    if (!stockFound.getWarehouse().getCreatedBy()
-                            .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
-                        throw new InventoryAPIOperationException("Not allowed", "Stock not found in yor warehouse", null);
+        if (!warehouseStocks.isEmpty()) {
+            warehouseStockRepository.deleteAll(warehouseStocks);
+            warehouseStocks.forEach(s -> warehouseStocksCacheManager.removeDetail(REDIS_TABLE_KEY, s.getWarehouseStockId()));
+        }
 
-                    warehouseStockRepository.delete(stockFound);
-                    warehouseStocksCacheManager.removeDetail(REDIS_TABLE_KEY, stockId);
-                    return stockFound;
-                }).orElse(null);
+        return warehouseStocks;
     }
 
     @Transactional

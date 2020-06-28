@@ -35,7 +35,7 @@ public interface WarehouseStockServices {
 
     List<WarehouseStocks> approveStockList(List<Long> stockIdList);
 
-    WarehouseStocks deleteStock(Long stockId);
+    List<WarehouseStocks> deleteStock(Long warehouseId, Long... stockId);
 
     WarehouseStocks reStockToWarehouse(Long warehouseId, Long stockId, WarehouseStocks newStock);
 

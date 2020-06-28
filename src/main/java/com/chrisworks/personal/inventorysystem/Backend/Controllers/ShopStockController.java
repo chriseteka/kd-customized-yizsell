@@ -101,10 +101,9 @@ public class ShopStockController {
                 .stream().filter(stock -> {
                     if (!StringUtils.hasText(search)) return true;
                     final String searchQuery = search.toLowerCase();
-                    return stock.getCreatedBy().contains(searchQuery)
-                            || String.valueOf(stock.getStockName()).contains(searchQuery)
+                    return stock.getStockName().toLowerCase().contains(searchQuery)
                             || String.valueOf(stock.getStockQuantityRemaining()).contains(searchQuery)
-                            || String.valueOf(stock.getStockCategory().getCategoryName()).contains(searchQuery);
+                            || String.valueOf(stock.getStockQuantitySold()).contains(searchQuery);
                 })
                 .sorted(Comparator.comparing(ShopStocks::getCreatedDate)
                     .thenComparing(ShopStocks::getCreatedTime).reversed())
@@ -168,14 +167,10 @@ public class ShopStockController {
     }
 
     @DeleteMapping(path = "/delete/byStockId")
-    public ResponseEntity<?> deleteShopStockByStockId(@RequestParam Long stockId){
+    public ResponseEntity<?> deleteShopStockByStockId(@RequestParam Long shopId,
+                                                      @RequestParam Long... stockId){
 
-        ShopStocks deletedStock = shopStockServices.deleteStock(stockId);
-
-        if (null == deletedStock) throw new InventoryAPIOperationException("Shop stock not deleted",
-                "Stock with id: " + stockId + " was not deleted successfully, review your inputs and try again", null);
-
-        return ResponseEntity.ok(deletedStock);
+        return ResponseEntity.ok(shopStockServices.deleteStock(shopId, stockId));
     }
 
     @PutMapping(path = "/restock", consumes = "application/json", produces = "application/json")

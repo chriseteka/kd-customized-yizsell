@@ -301,22 +301,22 @@ public class ShopStockServicesImpl implements ShopStockServices {
     }
 
     @Override
-    public ShopStocks deleteStock(Long stockId) {
+    public List<ShopStocks> deleteStock(Long shopId, Long... stockId) {
 
         if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) throw new
                 InventoryAPIOperationException("Not allowed", "Operation not allowed for logged in user.", null);
 
-        return shopStocksRepository.findById(stockId)
-                .map(stockFound -> {
+        List<Long> stockIdsToBeDeleted = Arrays.asList(stockId);
+        List<ShopStocks> shopStocks = allStockByShopId(shopId).stream()
+                .filter(s -> stockIdsToBeDeleted.contains(s.getShopStockId()))
+                .collect(Collectors.toList());
 
-                    if (!stockFound.getShop().getCreatedBy()
-                            .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
-                        throw new InventoryAPIOperationException("Not allowed", "Stock not found in yor shop", null);
+        if (!shopStocks.isEmpty()) {
+            shopStocksRepository.deleteAll(shopStocks);
+            shopStocks.forEach(s -> shopStocksCacheManager.removeDetail(REDIS_TABLE_KEY, s.getShopStockId()));
+        }
 
-                    shopStocksRepository.delete(stockFound);
-                    shopStocksCacheManager.removeDetail(REDIS_TABLE_KEY, stockId);
-                    return stockFound;
-                }).orElse(null);
+        return shopStocks;
     }
 
     @Transactional

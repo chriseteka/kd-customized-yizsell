@@ -36,7 +36,7 @@ public interface ShopStockServices {
 
     List<ShopStocks> approveStockList(List<Long> stockIdList);
 
-    ShopStocks deleteStock(Long stockId);
+    List<ShopStocks> deleteStock(Long shopId, Long... stockId);
 
     ShopStocks reStockToShop(Long shopId, Long stockId, ShopStocks newStock);
 
