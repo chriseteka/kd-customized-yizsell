@@ -124,7 +124,7 @@ public class WarehouseStocks {
     private int possibleQuantityRemaining;
 
     @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;

@@ -55,7 +55,7 @@ public class ExchangedStock {
     @Column(name = "approvedDate")
     private Date approvedDate;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "shopExchanges", joinColumns = @JoinColumn(name = "exchangedStockId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;

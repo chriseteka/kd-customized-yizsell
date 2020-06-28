@@ -65,7 +65,7 @@ public class Invoice {
     @Column(name = "discount")
     private BigDecimal discount = BigDecimal.ZERO;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "sellerInvoices", joinColumns = @JoinColumn(name = "invoiceId"),
             inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller seller;

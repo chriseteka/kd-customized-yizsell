@@ -76,13 +76,13 @@ public class WaybillInvoice {
     private BigDecimal waybillInvoiceTotalAmount;
 
     //Shop Seller requesting goods from a warehouse, we can get the shop this request was made from.
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "waybillFrom", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
             inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller sellerRequesting;
 
     //Warehouse Attendant issuing the waybill to the requested shop, we can get the warehouse this stock was taken from.
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "waybillIssuer", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
             inverseJoinColumns = @JoinColumn(name = "sellerId"))
     private Seller sellerIssuing;
@@ -93,13 +93,13 @@ public class WaybillInvoice {
     private Set<WaybilledStocks> waybilledStocks = new HashSet<>();
 
     @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "fromShop", joinColumns = @JoinColumn(name = "waybillInvoiceId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
 //    @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "toWarehouse", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
 }

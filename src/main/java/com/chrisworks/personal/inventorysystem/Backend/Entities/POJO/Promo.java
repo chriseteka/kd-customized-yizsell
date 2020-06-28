@@ -50,7 +50,7 @@ public class Promo {
 
     private boolean isActive = true;
 
-    @OneToMany(cascade = CascadeType.MERGE)
+    @OneToMany(cascade = CascadeType.PERSIST)
     @JoinTable(name = "promoStock", joinColumns = @JoinColumn(name = "promoId",
             nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "stockId"))
     private Set<ShopStocks> promoOnStock = new HashSet<>();

@@ -124,7 +124,7 @@ public class ShopStocks {
     private String stockBarCodeId;
 
     @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinTable(name = "stocksInShops", joinColumns = @JoinColumn(name = "shopStockId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;

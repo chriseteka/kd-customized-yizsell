@@ -74,13 +74,13 @@ public class Seller implements UserDetails {
     private Date lastLogoutTime;
 
     //Seller can be assigned to a shop
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "sellersInShop", joinColumns = @JoinColumn(name = "sellerId"),
             inverseJoinColumns = @JoinColumn(name = "shopId"))
     private Shop shop;
 
     //Seller can be assigned to a warehouse but not both
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "sellersInWarehouse", joinColumns = @JoinColumn(name = "sellerId"),
             inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
