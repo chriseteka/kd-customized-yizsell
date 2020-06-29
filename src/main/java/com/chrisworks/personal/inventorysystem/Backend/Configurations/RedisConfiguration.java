@@ -11,6 +11,8 @@ import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
+
 /**
 * @author Chris_Eteka
 * @since 6/23/2020
@@ -24,10 +26,15 @@ public class RedisConfiguration {
     @Value("${spring.redis.port}")
     private int REDIS_PORT;
 
+    private final Duration READ_TIMEOUT = Duration.ofMillis(40 * 1000);
+    private final Duration CONNECTION_TIMEOUT = Duration.ofMillis(10 * 1000);
+
     @Bean
     protected JedisConnectionFactory jedisConnectionFactory() {
+
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration(REDIS_HOSTNAME, REDIS_PORT);
-        JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder().usePooling().build();
+        JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
+                .readTimeout(READ_TIMEOUT).connectTimeout(CONNECTION_TIMEOUT).usePooling().build();
         JedisConnectionFactory factory = new JedisConnectionFactory(configuration,jedisClientConfiguration);
         factory.afterPropertiesSet();
         return factory;
