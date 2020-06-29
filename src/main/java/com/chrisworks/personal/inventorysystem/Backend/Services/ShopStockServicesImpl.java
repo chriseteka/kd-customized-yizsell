@@ -204,11 +204,19 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         throw new InventoryAPIOperationException("Not your shop", "You cannot retrieve stock from" +
                                 " this shop because it was not created by you", null);
 
-                    if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY))
-                        return fetchShopStocksFromCache().stream()
-                            .filter(s -> s.getShop().getShopId().equals(shopId)).collect(Collectors.toList());
+                    List<ShopStocks> shopStocksListByShop;
+                    if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) {
+                        shopStocksListByShop = fetchShopStocksFromCache().stream()
+                                .filter(s -> s.getShop().getShopId().equals(shopId)).collect(Collectors.toList());
 
-                    List<ShopStocks> shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
+                        if (shopStocksListByShop.isEmpty()){
+
+                            shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
+                            cacheShopStocksList(shopStocksListByShop);
+                        }
+                    }
+
+                    shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
                     cacheShopStocksList(shopStocksListByShop);
 
                     return shopStocksListByShop;

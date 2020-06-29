@@ -453,6 +453,8 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
     private List<LedgerReport> generateLedgerReport(List<Invoice> invoices, boolean fullReport){
 
+        List<Income> existingIncomeList = incomeServices.getEntityList();
+
         return invoices
             .stream()
             .filter(invoice -> invoice.getCustomerId() != null
@@ -479,7 +481,8 @@ public class InvoicesServicesImpl implements InvoiceServices {
                 List<Invoice> values = d.getValue();
                 if (fullReport) {
                     List<Income> incomeList = values.stream()
-                            .map(v -> incomeServices.fetchAllByDescriptionContains(v.getInvoiceNumber()))
+                            .map(v -> existingIncomeList.stream().filter(i -> i.getIncomeReference()
+                                    .contains(v.getInvoiceNumber())).collect(Collectors.toList()))
                             .flatMap(List::parallelStream)
                             .collect(Collectors.toList());
                     return new LedgerReport(d.getKey(), values, incomeList);

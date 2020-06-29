@@ -159,11 +159,19 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                         throw new InventoryAPIOperationException("Not your warehouse", "You cannot retrieve stock from" +
                                 " this warehouse because it was not created by you", null);
 
-                    if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY))
-                        return fetchWarehouseStocksFromCache().stream()
+                    List<WarehouseStocks> warehouseStocksListByWarehouse;
+                    if (warehouseStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) {
+                        warehouseStocksListByWarehouse = fetchWarehouseStocksFromCache().stream()
                                 .filter(s -> s.getWarehouse().getWarehouseId().equals(warehouseId)).collect(Collectors.toList());
 
-                    List<WarehouseStocks> warehouseStocksListByWarehouse = warehouseStockRepository.findAllByWarehouse(warehouse);
+                        if (warehouseStocksListByWarehouse.isEmpty()){
+
+                            warehouseStocksListByWarehouse = warehouseStockRepository.findAllByWarehouse(warehouse);
+                            cacheWarehouseStocksList(warehouseStocksListByWarehouse);
+                        }
+                    }
+
+                    warehouseStocksListByWarehouse = warehouseStockRepository.findAllByWarehouse(warehouse);
                     cacheWarehouseStocksList(warehouseStocksListByWarehouse);
 
                     return warehouseStocksListByWarehouse;
