@@ -77,7 +77,7 @@ public class Invoice implements Serializable {
         invoiceFromDTO.setPaymentMode(this.paymentMode);
         invoiceFromDTO.setLoyaltyDiscount(this.getLoyaltyDiscount());
         invoiceFromDTO.setStockSold(this.getStockSoldSet().stream().map(StockSold::fromDTO).collect(Collectors.toSet()));
-        invoiceFromDTO.setCustomerId(this.getCustomer().fromDTO());
+        if (this.customer != null) invoiceFromDTO.setCustomerId(this.getCustomer().fromDTO());
         if (this.seller != null) invoiceFromDTO.setSeller(this.getSeller().fromDTO());
 
         return invoiceFromDTO;

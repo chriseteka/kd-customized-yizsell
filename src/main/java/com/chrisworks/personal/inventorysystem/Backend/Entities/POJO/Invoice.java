@@ -141,8 +141,8 @@ public class Invoice {
                 this.getPaymentMode(), this.getLoyaltyDiscount());
 
         invoice.setStockSoldSet(this.getStockSold().stream().map(StockSold::toDTO).collect(Collectors.toSet()));
-        invoice.setCustomer(this.getCustomerId().toDTO());
-        if (this.getSeller() != null) invoice.setSeller(this.getSeller().toDTO());
+        if (this.customerId != null) invoice.setCustomer(this.getCustomerId().toDTO());
+        if (this.seller != null) invoice.setSeller(this.getSeller().toDTO());
 
         return invoice;
     }
