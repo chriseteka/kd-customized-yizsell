@@ -3,12 +3,14 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -102,10 +104,6 @@ public class ShopServicesImpl implements ShopServices {
     @Override
     public Shop deleteShop(Long shopId) {
 
-        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Operation not allowed",
-                    "Logged in user is not allowed to perform this operation", null);
-
         return shopRepository.findById(shopId).map(shop -> {
 
             if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -113,6 +111,27 @@ public class ShopServicesImpl implements ShopServices {
 
             shopRepository.delete(shop);
             return shop;
-        }).orElse(null);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
+                "Shop with id: " + shopId + " was not found", null));
+    }
+
+    @Override
+    public List<Shop> deleteShops(Long... shopIds) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        List<Long> shopIdsToDelete = Arrays.asList(shopIds);
+        if (shopIdsToDelete.size() == 1)
+            return Collections.singletonList(deleteShop(shopIdsToDelete.get(0)));
+
+        List<Shop> shopsToDelete = fetchAllShops().stream()
+                .filter(shop -> shopIdsToDelete.contains(shop.getShopId()))
+                .collect(Collectors.toList());
+
+        if (!shopsToDelete.isEmpty()) shopRepository.deleteAll(shopsToDelete);
+
+        return shopsToDelete;
     }
 }

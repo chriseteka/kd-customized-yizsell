@@ -21,4 +21,6 @@ public interface ShopServices {
     List<Shop> fetchAllShops();
 
     Shop deleteShop(Long shopId);
+
+    List<Shop> deleteShops(Long... shopIds);
 }

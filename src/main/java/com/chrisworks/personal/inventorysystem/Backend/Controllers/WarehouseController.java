@@ -93,13 +93,8 @@ public class WarehouseController {
     }
 
     @DeleteMapping(path = "/delete/byId")
-    public ResponseEntity<?> deleteWarehouseByWarehouseId(@RequestParam Long warehouseId){
+    public ResponseEntity<?> deleteWarehouseByWarehouseId(@RequestParam Long[] warehouseId){
 
-        Warehouse deletedWarehouse = warehouseServices.deleteWarehouse(warehouseId);
-
-        if (null == deletedWarehouse) throw new InventoryAPIOperationException("Warehouse not deleted",
-                "Warehouse was not deleted successfully, review your inputs and try again", null);
-
-        return ResponseEntity.ok(deletedWarehouse);
+        return ResponseEntity.ok(warehouseServices.deleteWarehouses(warehouseId));
     }
 }

@@ -3,13 +3,18 @@ package com.chrisworks.personal.inventorysystem.Backend.Services;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.BusinessOwnerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.WarehouseRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -78,10 +83,6 @@ public class WarehouseServicesImpl implements WarehouseServices {
     @Override
     public Warehouse deleteWarehouse(Long warehouseId) {
 
-        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
-            throw new InventoryAPIOperationException("Operation not allowed",
-                    "Logged in user is not allowed to perform this operation", null);
-
         return warehouseRepository.findById(warehouseId).map(warehouse -> {
 
             if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())) throw new
@@ -89,13 +90,34 @@ public class WarehouseServicesImpl implements WarehouseServices {
 
             warehouseRepository.delete(warehouse);
             return warehouse;
-        }).orElse(null);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Warehouse not found",
+                "Warehouse with id: " + warehouseId + " was not found", null));
     }
 
     @Override
     public Warehouse fetchWarehouseByWarehouseAttendant(String warehouseAttendantName) {
 
         return genericService.warehouseByWarehouseAttendantName(warehouseAttendantName);
+    }
+
+    @Override
+    public List<Warehouse> deleteWarehouses(Long... warehouseIds) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+        List<Long> warehouseIdsToDelete = Arrays.asList(warehouseIds);
+        if (warehouseIdsToDelete.size() == 1)
+            return Collections.singletonList(deleteWarehouse(warehouseIdsToDelete.get(0)));
+
+        List<Warehouse> warehouseListToDelete = fetchAllWarehouse().stream()
+                .filter(warehouse -> warehouseIdsToDelete.contains(warehouse.getWarehouseId()))
+                .collect(Collectors.toList());
+
+        if (!warehouseListToDelete.isEmpty()) warehouseRepository.deleteAll(warehouseListToDelete);
+
+        return warehouseListToDelete;
     }
 
     @Override

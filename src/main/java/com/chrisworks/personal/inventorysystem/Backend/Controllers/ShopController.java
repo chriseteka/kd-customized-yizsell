@@ -95,13 +95,8 @@ public class ShopController {
     }
 
     @DeleteMapping(path = "/delete/byId")
-    public ResponseEntity<?> deleteShopByShopId(@RequestParam Long shopId){
+    public ResponseEntity<?> deleteShopByShopId(@RequestParam Long[] shopId){
 
-        Shop deletedShop = shopServices.deleteShop(shopId);
-
-        if (null == deletedShop) throw new InventoryAPIOperationException("Shop not deleted",
-                "Shop was not deleted successfully, review your inputs and try again", null);
-
-        return ResponseEntity.ok(deletedShop);
+        return ResponseEntity.ok(shopServices.deleteShops(shopId));
     }
 }
