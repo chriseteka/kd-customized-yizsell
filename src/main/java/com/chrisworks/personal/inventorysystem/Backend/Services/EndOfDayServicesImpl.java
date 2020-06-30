@@ -4,6 +4,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYP
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EOD_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.Stat;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
@@ -42,11 +43,21 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
     private final WaybillInvoiceRepository waybillInvoiceRepository;
 
+    private final ShopRepository shopRepository;
+
+    private final ShopStocksRepository shopStocksRepository;
+
+    private final CustomerRepository customerRepository;
+
+    private final SupplierRepository supplierRepository;
+
     @Autowired
     public EndOfDayServicesImpl(InvoiceRepository invoiceRepository, IncomeRepository incomeRepository,
                                 ExpenseRepository expenseRepository, SalesDiscountRepository discountRepository,
                                 SellerRepository sellerRepository, WarehouseStockRepository warehouseStockRepository,
-                                WarehouseRepository warehouseRepository, WaybillInvoiceRepository waybillInvoiceRepository) {
+                                WarehouseRepository warehouseRepository, WaybillInvoiceRepository waybillInvoiceRepository,
+                                ShopRepository shopRepository, ShopStocksRepository shopStocksRepository,
+                                CustomerRepository customerRepository, SupplierRepository supplierRepository) {
         this.invoiceRepository = invoiceRepository;
         this.incomeRepository = incomeRepository;
         this.expenseRepository = expenseRepository;
@@ -55,6 +66,10 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
         this.warehouseStockRepository = warehouseStockRepository;
         this.warehouseRepository = warehouseRepository;
         this.waybillInvoiceRepository = waybillInvoiceRepository;
+        this.shopRepository = shopRepository;
+        this.shopStocksRepository = shopStocksRepository;
+        this.customerRepository = customerRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     @Override
@@ -117,6 +132,51 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
         return this.generateEndOfDayReport(eod_type, from, to);
 
+    }
+
+    @Override
+    public Stat fetchStatistics() {
+
+        int noOfShops = 0, noOfWarehouses = 0, noOfStaff = 0, noOfInvoices = 0, noOfWaybillInvoices = 0,
+                noOfCustomer = 0, noOfSuppliers = 0, noOfShopStock = 0, noOfWarehouseStock = 0;
+        BigDecimal totalIncome = BigDecimal.ZERO, totalExpenses = BigDecimal.ZERO,
+                totalDiscounts = BigDecimal.ZERO, totalDebts = BigDecimal.ZERO, profit = BigDecimal.ZERO;
+
+        String businessId = AuthenticatedUserDetails.getBusinessId();
+        List<Seller> sellerList = sellerRepository.findAllByCreatedBy(businessId);
+        List<String> sellers = sellerList.stream().map(Seller::getSellerEmail).collect(Collectors.toList());
+        sellers.add(businessId);
+
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)){
+            noOfShops = shopRepository.findAllByCreatedBy(businessId).size();
+            noOfWarehouses = warehouseRepository.findAllByCreatedBy(businessId).size();
+            noOfStaff = sellerList.size();
+            List<Invoice> invoiceList = invoiceRepository.findAll().stream()
+                    .filter(invoice -> sellers.contains(invoice.getCreatedBy())).collect(Collectors.toList());
+            noOfInvoices = invoiceList.size();
+            noOfWaybillInvoices = Math.toIntExact(waybillInvoiceRepository.findAll().stream()
+                .filter(waybillInvoice -> sellers.contains(waybillInvoice.getCreatedBy())).count());
+            noOfCustomer = Math.toIntExact(customerRepository.findAll().stream()
+                .filter(customer -> sellers.contains(customer.getCreatedBy())).count());
+            noOfSuppliers = Math.toIntExact(supplierRepository.findAll().stream()
+                .filter(supplier -> sellers.contains(supplier.getCreatedBy())).count());
+            noOfShopStock = Math.toIntExact(shopStocksRepository.findAll().stream()
+                .filter(stock -> sellers.contains(stock.getCreatedBy())).count());
+            noOfWarehouseStock = Math.toIntExact(warehouseStockRepository.findAll().stream()
+                .filter(stock -> sellers.contains(stock.getCreatedBy())).count());
+            totalIncome = incomeRepository.findAll().stream().filter(income -> sellers.contains(income.getCreatedBy()))
+                .map(Income::getIncomeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalExpenses = expenseRepository.findAll().stream().filter(expense -> sellers.contains(expense.getCreatedBy()))
+                .map(Expense::getExpenseAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalDiscounts = discountRepository.findAll().stream().filter(discount -> sellers.contains(discount.getCreatedBy()))
+                .map(SalesDiscount::getDiscountAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalDebts = invoiceList.stream().map(Invoice::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal changesGiven = invoiceList.stream().map(Invoice::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
+            profit = totalIncome.subtract(totalExpenses.add(totalDiscounts.add(totalDebts.add(changesGiven))));
+        }
+
+        return new Stat(noOfShops, noOfWarehouses, noOfStaff, noOfInvoices, noOfWaybillInvoices, noOfCustomer, noOfSuppliers,
+                noOfShopStock, noOfWarehouseStock, totalIncome, totalExpenses, totalDiscounts, totalDebts, profit);
     }
 
     private EndOfDayServicesImpl.EndOfDayReport computeEndOfDay(EOD_TYPE eod_type, Date from, Date to, List<String> staff){

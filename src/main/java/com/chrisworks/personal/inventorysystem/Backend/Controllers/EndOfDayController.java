@@ -43,6 +43,12 @@ public class EndOfDayController {
         return ResponseEntity.ok(endOfDayServices.generateEndOfDayReportBetween(getEODTypeFromRequest(eodFor), from, to));
     }
 
+    @GetMapping(path = "/stats", produces = "application/json")
+    public ResponseEntity<?> getStatistics(){
+
+        return ResponseEntity.ok(endOfDayServices.fetchStatistics());
+    }
+
     private EOD_TYPE getEODTypeFromRequest(String eodFor) {
 
         String eod = eodFor.toUpperCase();
