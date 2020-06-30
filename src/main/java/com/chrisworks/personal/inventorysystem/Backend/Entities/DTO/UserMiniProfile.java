@@ -4,6 +4,8 @@ import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.enums.ON
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @author Chris_Eteka
  * @since 6/30/2020
@@ -11,7 +13,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class UserMiniProfile {
+public class UserMiniProfile implements Serializable {
 
     private long id;
     private String email;
