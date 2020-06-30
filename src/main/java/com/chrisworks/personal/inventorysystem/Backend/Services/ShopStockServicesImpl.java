@@ -12,6 +12,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.UserMiniProfileRepository;
 import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final ExpenseServices expenseServices;
 
+    private final UserMiniProfileRepository userMiniProfileRepository;
+
     private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager;
     private final String REDIS_TABLE_KEY = "SHOP_STOCK";
 
@@ -76,7 +79,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
                                  CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices,
                                  ExchangedStockRepository exchangedStockRepository, IncomeServices incomeServices,
-                                 ExpenseServices expenseServices,
+                                 ExpenseServices expenseServices, UserMiniProfileRepository userMiniProfileRepository,
                                  CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
@@ -93,6 +96,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.exchangedStockRepository = exchangedStockRepository;
         this.incomeServices = incomeServices;
         this.expenseServices = expenseServices;
+        this.userMiniProfileRepository = userMiniProfileRepository;
         this.shopStocksCacheManager = shopStocksCacheManager;
     }
 
@@ -557,13 +561,15 @@ public class ShopStockServicesImpl implements ShopStockServices {
         if (!optionalShop.isPresent()) throw new InventoryAPIOperationException("Shop not found",
                 "Cannot find shop where sales is to be made from, review your inputs and try again", null);
 
+        Shop shop = optionalShop.get();
+
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)
-                && !optionalShop.get().getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                && !shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
             throw new InventoryAPIOperationException("Operation not allowed",
                     "You cannot sell from a shop not created by you", null);
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
-                && !optionalShop.get().equals(sellerRepository.findDistinctBySellerEmail
+                && !shop.equals(sellerRepository.findDistinctBySellerEmail
                 (AuthenticatedUserDetails.getUserFullName()).getShop()))
             throw new InventoryAPIOperationException("Not allowed",
                     "You cannot sell from a shop you were not assigned", null);
@@ -591,7 +597,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         preProcessedInvoice.getStockSold().forEach(stockSold -> {
 
             atomicStock.set(shopStocksRepository
-                    .findDistinctByStockNameAndShop(stockSold.getStockName(), optionalShop.get()));
+                    .findDistinctByStockNameAndShop(stockSold.getStockName(), shop));
 
             if (atomicStock.get() == null) return;
 
@@ -649,6 +655,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
         Customer cust = customer.get();
         preProcessedInvoice.getStockSold().clear();
         preProcessedInvoice.setStockSold(stockSoldSet);
+        preProcessedInvoice.setShop(shop);
+        preProcessedInvoice.setSoldBy(userMiniProfileRepository.findDistinctByEmail(invoiceGeneratedBy));
         if (cust != null && cust.getIsLoyal()){
 
             Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);

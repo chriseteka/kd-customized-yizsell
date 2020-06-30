@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.PAYMENT_MODE;
+import com.chrisworks.personal.inventorysystem.Backend.Websocket.models.UserMiniProfile;
 import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -111,6 +112,16 @@ public class Invoice {
             nullable = false, updatable = false), inverseJoinColumns = @JoinColumn(name = "multiplePaymentId"))
     private List<MultiplePaymentMode> multiplePayment;
 
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "userInvoices", joinColumns = @JoinColumn(name = "invoiceId"),
+            inverseJoinColumns = @JoinColumn(name = "userId"))
+    private UserMiniProfile soldBy;
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @JoinTable(name = "shopInvoices", joinColumns = @JoinColumn(name = "invoiceId"),
+            inverseJoinColumns = @JoinColumn(name = "shopId"))
+    private Shop shop;
+
     @PostLoad
     void fillTransient() {
         if (paymentModeValue > 0) {
@@ -143,6 +154,8 @@ public class Invoice {
         invoice.setStockSoldSet(this.getStockSold().stream().map(StockSold::toDTO).collect(Collectors.toSet()));
         if (this.customerId != null) invoice.setCustomer(this.getCustomerId().toDTO());
         if (this.seller != null) invoice.setSeller(this.getSeller().toDTO());
+        if (this.soldBy != null) invoice.setSoldBy(this.getSoldBy().toDTO());
+        if (this.shop != null) invoice.setShop(this.getShop().toDTO());
 
         return invoice;
     }

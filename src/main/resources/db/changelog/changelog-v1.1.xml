@@ -21,4 +21,75 @@
     <changeSet author="Chris_Eteka" id="3">
         <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="procurement_suppliers" constraintName="procurement_suppliers_supplier_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
     </changeSet>
+    <changeSet author="Chris_Eteka"  id="4">
+        <createTable tableName="shop_invoices">
+            <column name="shop_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka"  id="5">
+        <createTable tableName="user_invoices">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="6">
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_invoices" constraintName="shop_invoices_shop_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="7">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="shop_invoices" constraintName="shop_invoices_invoice_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="8">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_invoices" constraintName="user_invoices_user_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="user_mini_profiles" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="9">
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="user_invoices" constraintName="user_invoices_invoice_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="10">
+        <dropTable tableName="procurement_suppliers" />
+        <dropTable tableName="shop_invoices" />
+        <dropTable tableName="user_invoices" />
+        <createTable tableName="procurement_suppliers">
+            <column name="procurement_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+        <createTable tableName="shop_invoices">
+            <column name="shop_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="user_invoices">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="invoice_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="procurement_id" baseTableName="procurement_suppliers" constraintName="procurement_suppliers_procurement_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="procurement_id" referencedTableName="procurements" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="supplier_id" baseTableName="procurement_suppliers" constraintName="procurement_suppliers_supplier_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="supplier_id" referencedTableName="suppliers" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="shop_id" baseTableName="shop_invoices" constraintName="shop_invoices_shop_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="shop_id" referencedTableName="shops" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="shop_invoices" constraintName="shop_invoices_invoice_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_invoices" constraintName="user_invoices_user_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="user_mini_profiles" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="invoice_id" baseTableName="user_invoices" constraintName="user_invoices_invoice_FK" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="invoice_id" referencedTableName="invoices" validate="true"/>
+    </changeSet>
+    <changeSet author="Chris_Eteka" id="11">
+        <addUniqueConstraint tableName="shop_invoices" columnNames="invoice_id" constraintName="shop_invoices_invoice_FK"/>
+        <addUniqueConstraint tableName="user_invoices" columnNames="invoice_id" constraintName="user_invoices_invoice_FK"/>
+    </changeSet>
 </databaseChangeLog>

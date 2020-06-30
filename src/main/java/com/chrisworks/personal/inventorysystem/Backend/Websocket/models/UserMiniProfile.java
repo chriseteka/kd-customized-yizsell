@@ -28,4 +28,9 @@ public class UserMiniProfile {
     private String description;
     private ONLINE_STATUS status;
     private long businessId;
+
+    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.UserMiniProfile toDTO(){
+        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.UserMiniProfile(this.getId(),
+            this.getEmail(), this.getFullName(), this.getDescription(), this.getStatus(), this.getBusinessId());
+    }
 }

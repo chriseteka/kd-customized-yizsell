@@ -35,6 +35,8 @@ public class Invoice implements Serializable {
     private String paymentModeVal;
     private PAYMENT_MODE paymentMode;
     private BigDecimal loyaltyDiscount;
+    private UserMiniProfile soldBy;
+    private Shop shop;
 
 
     public Invoice(Long invoiceId, Date createdDate, Date createdTime, Date updateDate, String invoiceNumber,
@@ -79,6 +81,8 @@ public class Invoice implements Serializable {
         invoiceFromDTO.setStockSold(this.getStockSoldSet().stream().map(StockSold::fromDTO).collect(Collectors.toSet()));
         if (this.customer != null) invoiceFromDTO.setCustomerId(this.getCustomer().fromDTO());
         if (this.seller != null) invoiceFromDTO.setSeller(this.getSeller().fromDTO());
+        if (this.soldBy != null) invoiceFromDTO.setSoldBy(this.getSoldBy().fromDTO());
+        if (this.shop != null) invoiceFromDTO.setShop(this.getShop().fromDTO());
 
         return invoiceFromDTO;
     }
