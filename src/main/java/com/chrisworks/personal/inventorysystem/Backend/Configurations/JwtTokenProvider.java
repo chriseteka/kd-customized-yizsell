@@ -9,6 +9,7 @@ import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -35,7 +36,7 @@ public class JwtTokenProvider {
         claims.put("businessEmail", userDetails.getBusinessOwnerEmail());
         claims.put("fullName", userDetails.getBusinessOwnerFullName());
         claims.put("username", userDetails.getUsername());
-        claims.put("phoneNumber", userDetails.getBusinessOwnerPhoneNumber());
+        claims.put("phoneNumber", businessPhones(userDetails));
         claims.put("isTrialAccount", userDetails.getIsTrialAccount());
         claims.put("expirationDate", userDetails.getExpirationDate());
         claims.put("isVerified", userDetails.getVerified());
@@ -71,15 +72,13 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", (Long.toString(userDetails.getSellerId())));
-        if (userDetails.getShop() != null) {
-            claims.put("businessName", userDetails.getShop().getBusinessOwner().getBusinessName());
-            claims.put("businessPhone", userDetails.getShop().getBusinessOwner().getBusinessOwnerPhoneNumber());
-            claims.put("businessEmail", userDetails.getShop().getBusinessOwner().getBusinessOwnerEmail());
-        }
-        if (userDetails.getWarehouse() != null) {
-            claims.put("businessName", userDetails.getWarehouse().getBusinessOwner().getBusinessName());
-            claims.put("businessPhone", userDetails.getWarehouse().getBusinessOwner().getBusinessOwnerPhoneNumber());
-            claims.put("businessEmail", userDetails.getWarehouse().getBusinessOwner().getBusinessOwnerEmail());
+        BusinessOwner businessOwner = null;
+        if (userDetails.getShop() != null) businessOwner = userDetails.getShop().getBusinessOwner();
+        if (userDetails.getWarehouse() != null) businessOwner = userDetails.getWarehouse().getBusinessOwner();
+        if (businessOwner != null) {
+            claims.put("businessName", businessOwner.getBusinessName());
+            claims.put("businessPhone", businessPhones(businessOwner));
+            claims.put("businessEmail", businessOwner.getBusinessOwnerEmail());
         }
         claims.put("fullName", userDetails.getSellerFullName());
         claims.put("username", userDetails.getUsername());
@@ -153,5 +152,14 @@ public class JwtTokenProvider {
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
 
         return (String) claims.get("businessEmail");
+    }
+
+    private String businessPhones(BusinessOwner businessOwner){
+
+        String businessNumber = businessOwner.getBusinessOwnerPhoneNumber();
+        String otherNumbers = businessOwner.getOtherNumbers();
+        if (StringUtils.hasLength(otherNumbers))
+            return String.join(",", businessNumber, otherNumbers);
+        else return businessNumber;
     }
 }

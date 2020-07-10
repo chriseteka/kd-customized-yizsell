@@ -310,6 +310,8 @@ public class ExpenseServicesImpl implements ExpenseServices {
                                 .collect(Collectors.toList()).toString(),
                         new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense>>(){}.getType())))
                 .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense::fromDTO)
+                .sorted(Comparator.comparing(Expense::getCreatedDate)
+                        .thenComparing(Expense::getCreatedTime).reversed())
                 .collect(Collectors.toList());
     }
 }

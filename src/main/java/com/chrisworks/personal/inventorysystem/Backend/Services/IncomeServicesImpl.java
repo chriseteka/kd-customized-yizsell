@@ -311,6 +311,8 @@ public class IncomeServicesImpl implements IncomeServices {
                         .collect(Collectors.toList()).toString(),
                     new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income>>(){}.getType())))
             .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income::fromDTO)
+            .sorted(Comparator.comparing(Income::getCreatedDate)
+                    .thenComparing(Income::getCreatedTime).reversed())
             .collect(Collectors.toList());
 
     }

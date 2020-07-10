@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -472,10 +469,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
                 key.setRecentPurchasesAmount(value.stream().map(Invoice::getInvoiceTotalAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add));
 
-                value.forEach(i -> {
-                    i.setCustomerId(null);
-                    if (i.getSeller() != null) i.getSeller().setShop(null);
-                });
+                value.forEach(i -> i.setSeller(null));
             })
             .map(d -> {
                 List<Invoice> values = d.getValue();
@@ -506,6 +500,8 @@ public class InvoicesServicesImpl implements InvoiceServices {
                         .collect(Collectors.toList()).toString(),
                     new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice>>(){}.getType())))
             .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice::fromDTO)
+            .sorted(Comparator.comparing(Invoice::getCreatedDate)
+                .thenComparing(Invoice::getCreatedTime).reversed())
             .collect(Collectors.toList());
     }
 }

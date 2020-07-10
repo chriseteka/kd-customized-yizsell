@@ -105,6 +105,9 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "isChatRegistered")
     private Boolean isRegisteredForChat = false;
 
+    @Column(name = "otherNumbers")
+    private String otherNumbers;
+
     @Transient
     private String subscription;
 

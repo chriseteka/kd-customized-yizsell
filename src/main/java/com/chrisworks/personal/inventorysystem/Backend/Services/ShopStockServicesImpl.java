@@ -1454,6 +1454,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                 .collect(Collectors.toList()).toString(),
                         new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks>>(){}.getType())))
                 .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks::fromDTO)
+                .sorted(Comparator.comparing(ShopStocks::getCreatedDate)
+                        .thenComparing(ShopStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());
     }
 }

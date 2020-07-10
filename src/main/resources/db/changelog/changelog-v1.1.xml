@@ -92,4 +92,9 @@
         <addUniqueConstraint tableName="shop_invoices" columnNames="invoice_id" constraintName="shop_invoices_invoice_FK"/>
         <addUniqueConstraint tableName="user_invoices" columnNames="invoice_id" constraintName="user_invoices_invoice_FK"/>
     </changeSet>
+    <changeSet author="Chris_Eteka" id="12">
+        <addColumn tableName="business_owners">
+            <column name="other_numbers" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

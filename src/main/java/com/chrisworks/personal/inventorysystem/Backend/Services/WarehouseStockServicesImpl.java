@@ -807,6 +807,8 @@ public class WarehouseStockServicesImpl implements WarehouseStockServices {
                                 .collect(Collectors.toList()).toString(),
                         new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks>>(){}.getType())))
                 .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.WarehouseStocks::fromDTO)
+                .sorted(Comparator.comparing(WarehouseStocks::getCreatedDate)
+                        .thenComparing(WarehouseStocks::getCreatedTime).reversed())
                 .collect(Collectors.toList());
     }
 }
