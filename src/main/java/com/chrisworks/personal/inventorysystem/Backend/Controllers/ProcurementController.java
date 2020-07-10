@@ -71,9 +71,9 @@ public class ProcurementController {
     }
 
     @PutMapping(path = "/move/to", produces = "application/json")
-    public ResponseEntity<?> moveProcurementToWarehouse(@RequestParam Long warehousesId,
+    public ResponseEntity<?> moveProcurementToWarehouse(@RequestParam Long warehouseId,
                                                         @RequestParam Long procurementId){
 
-        return ResponseEntity.ok(procurementServices.moveProcurementToWarehouse(warehousesId, procurementId));
+        return ResponseEntity.ok(procurementServices.moveProcurementToWarehouse(warehouseId, procurementId));
     }
 }
