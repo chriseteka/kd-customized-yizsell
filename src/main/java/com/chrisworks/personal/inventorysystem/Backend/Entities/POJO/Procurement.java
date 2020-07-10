@@ -56,6 +56,10 @@ public class Procurement {
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier supplier;
 
+    private boolean movedToWarehouse = false;
+
+    private Long movedToWarehouseId;
+
     public boolean equals(Procurement p){
 
         return this.waybillId.equalsIgnoreCase(p.getWaybillId())
@@ -77,5 +81,11 @@ public class Procurement {
     public boolean procurementAmountInAccurate() {
         return is(this.stocks.stream().map(ProcuredStock::getStockTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)).notEq(this.amount);
+    }
+
+    public void verifyNotMovedYet() {
+        if (this.isMovedToWarehouse()) throw new InventoryAPIOperationException("Procurement already moved",
+                "Procurement with id: " + this.getProcurementId() + " has already been moved to warehouse: "
+                        + this.getMovedToWarehouseId(), null);
     }
 }

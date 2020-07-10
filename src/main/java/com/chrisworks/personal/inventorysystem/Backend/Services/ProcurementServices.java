@@ -10,4 +10,6 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Procurement
 public interface ProcurementServices extends CRUDServices<Procurement> {
 
     Procurement fetchProcurementByWaybillId(String waybillId);
+
+    Procurement moveProcurementToWarehouse(Long warehouseId, Long procurementId);
 }

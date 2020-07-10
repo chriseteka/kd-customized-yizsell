@@ -1,10 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.ProcuredStock;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Procurement;
-import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Supplier;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDuplicateEntryException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -18,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.toSingleton;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
@@ -35,6 +33,7 @@ public class ProcurementServicesImpl implements ProcurementServices {
     private final ProcuredStockRepository procuredStockRepository;
     private final ExpenseServices expenseServices;
     private final SupplierRepository supplierRepository;
+    private final WarehouseStockServices warehouseStockServices;
 
     @Override
     @Transactional
@@ -209,5 +208,43 @@ public class ProcurementServicesImpl implements ProcurementServices {
             .findDistinctByWaybillIdAndCreatedBy(waybillId, AuthenticatedUserDetails.getUserFullName())
             .orElseThrow(() -> new InventoryAPIResourceNotFoundException("Procurement not found",
                     "Procurement with waybillId: " + waybillId + " was not found.", null));
+    }
+
+    @Override
+    @Transactional
+    public Procurement moveProcurementToWarehouse(Long warehouseId, Long procurementId) {
+
+        Procurement procurement = getSingleEntity(procurementId);
+        procurement.verifyNotMovedYet();
+
+        Map<StockCategory, List<WarehouseStocks>> categoryListMap = warehouseStockServices.allStockByWarehouseId
+                (warehouseId).stream().collect(Collectors.groupingBy(WarehouseStocks::getStockCategory));
+        Supplier supplier = procurement.getSupplier();
+
+        List<WarehouseStocks> newWarehouseStockList = procurement.getStocks().stream().map(stock -> {
+
+            String stockName = stock.getStockName();
+            WarehouseStocks newWarehouseStock = new WarehouseStocks();
+            newWarehouseStock.setStockName(stockName);
+            newWarehouseStock.setStockCategory(categoryListMap.entrySet()
+                    .stream().filter(entry -> entry.getValue().stream()
+                            .filter(ws -> ws.getStockName().contains(stockName)).limit(1).collect(toSingleton()) != null)
+                    .limit(1).collect(toSingleton()).getKey());
+            newWarehouseStock.setPricePerStockPurchased(stock.getPricePerStockPurchased());
+            newWarehouseStock.setLastRestockQuantity(stock.getQuantity());
+            newWarehouseStock.setStockQuantityPurchased(stock.getQuantity());
+            newWarehouseStock.setStockPurchasedTotalPrice(stock.getStockTotalPrice());
+            newWarehouseStock.setLastRestockPurchasedFrom(supplier);
+
+            return newWarehouseStock;
+        }).collect(Collectors.toList());
+
+        if (!warehouseStockServices.createStockListInWarehouse(warehouseId, newWarehouseStockList)
+                .getFailedUploads().isEmpty()) throw new InventoryAPIOperationException("Cannot save procurements",
+                "Procurements could not be saved to the warehouse specified", null);
+
+        procurement.setMovedToWarehouse(true);
+        procurement.setMovedToWarehouseId(warehouseId);
+        return procurementRepository.save(procurement);
     }
 }

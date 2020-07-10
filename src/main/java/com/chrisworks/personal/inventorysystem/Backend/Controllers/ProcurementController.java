@@ -69,4 +69,11 @@ public class ProcurementController {
 
         return ResponseEntity.ok(procurementServices.deleteEntity(procurementId));
     }
+
+    @PutMapping(path = "/move/to", produces = "application/json")
+    public ResponseEntity<?> moveProcurementToWarehouse(@RequestParam Long warehousesId,
+                                                        @RequestParam Long procurementId){
+
+        return ResponseEntity.ok(procurementServices.moveProcurementToWarehouse(warehousesId, procurementId));
+    }
 }
