@@ -103,8 +103,8 @@ public class ProcurementServicesImpl implements ProcurementServices {
                     }
                     else if (existingProcurement.isRecordAsExpense()) {
 
-                        Expense existingExpense = expenseServices.fetchExpensesByDescription(waybillId)
-                                .stream().collect(toSingleton());
+                        Expense existingExpense = expenseServices.fetchExpensesByDescription
+                                (existingProcurement.getWaybillId()).stream().collect(toSingleton());
 
                         if (!procurement.isRecordAsExpense()){
 
