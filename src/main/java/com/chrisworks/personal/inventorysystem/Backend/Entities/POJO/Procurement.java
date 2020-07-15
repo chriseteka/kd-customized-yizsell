@@ -2,9 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -18,7 +16,9 @@ import static ir.cafebabe.math.utils.BigDecimalUtils.is;
  * @since 6/1/2020
  * @email chriseteka@gmail.com
  */
-@Data
+@Setter
+@Getter
+@ToString
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor

@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Chris_Eteka
@@ -138,25 +137,5 @@ public class Invoice {
         if (paymentModeValue > 0) {
             this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
         }
-    }
-
-    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice toDTO(){
-        //Formalities
-        fillTransient();
-
-        com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice invoice =
-            new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice(this.getInvoiceId(),
-                this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getInvoiceNumber(),
-                this.getInvoiceTotalAmount(), this.getAmountPaid(), this.getDebt(), this.getBalance(),
-                this.getDiscount(), this.getCreatedBy(), this.getPaymentModeValue(), this.getPaymentModeVal(),
-                this.getPaymentMode(), this.getLoyaltyDiscount());
-
-        invoice.setStockSoldSet(this.getStockSold().stream().map(StockSold::toDTO).collect(Collectors.toSet()));
-        if (this.customerId != null) invoice.setCustomer(this.getCustomerId().toDTO());
-        if (this.seller != null) invoice.setSeller(this.getSeller().toDTO());
-        if (this.soldBy != null) invoice.setSoldBy(this.getSoldBy().toDTO());
-        if (this.shop != null) invoice.setShop(this.getShop().toDTO());
-
-        return invoice;
     }
 }

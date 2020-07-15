@@ -9,11 +9,9 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.UniqueIdentifier;
 import com.chrisworks.personal.inventorysystem.Backend.Websocket.repoServices.UserMiniProfileRepository;
-import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,9 +66,6 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
     private final UserMiniProfileRepository userMiniProfileRepository;
 
-    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager;
-    private final String REDIS_TABLE_KEY = "SHOP_STOCK";
-
     @Autowired
     public ShopStockServicesImpl(SellerRepository sellerRepository, ShopStocksRepository shopStocksRepository,
                                  ShopRepository shopRepository, GenericService genericService,
@@ -79,8 +74,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
                                  CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices,
                                  ExchangedStockRepository exchangedStockRepository, IncomeServices incomeServices,
-                                 ExpenseServices expenseServices, UserMiniProfileRepository userMiniProfileRepository,
-                                 CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks> shopStocksCacheManager) {
+                                 ExpenseServices expenseServices, UserMiniProfileRepository userMiniProfileRepository) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
@@ -97,7 +91,6 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.incomeServices = incomeServices;
         this.expenseServices = expenseServices;
         this.userMiniProfileRepository = userMiniProfileRepository;
-        this.shopStocksCacheManager = shopStocksCacheManager;
     }
 
     @Transactional
@@ -208,22 +201,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                         throw new InventoryAPIOperationException("Not your shop", "You cannot retrieve stock from" +
                                 " this shop because it was not created by you", null);
 
-                    List<ShopStocks> shopStocksListByShop;
-                    if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) {
-                        shopStocksListByShop = fetchShopStocksFromCache().stream()
-                                .filter(s -> s.getShop().getShopId().equals(shopId)).collect(Collectors.toList());
-
-                        if (shopStocksListByShop.isEmpty()){
-
-                            shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
-                            cacheShopStocksList(shopStocksListByShop);
-                        }
-                    }
-
-                    shopStocksListByShop = shopStocksRepository.findAllByShop(shop);
-                    cacheShopStocksList(shopStocksListByShop);
-
-                    return shopStocksListByShop;
+                    return shopStocksRepository.findAllByShop(shop);
                 }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
                         "Shop with id: " + shopId + " was not found", null));
     }
@@ -297,10 +275,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     stockFound.setApprovedDate(new Date());
                     stockFound.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
 
-                    ShopStocks approvedShopStock = shopStocksRepository.save(stockFound);
-                    updateShopStockCache(approvedShopStock);
-
-                    return approvedShopStock;
+                    return shopStocksRepository.save(stockFound);
                 }).orElse(null);
     }
 
@@ -323,10 +298,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .filter(s -> stockIdsToBeDeleted.contains(s.getShopStockId()))
                 .collect(Collectors.toList());
 
-        if (!shopStocks.isEmpty()) {
-            shopStocksRepository.deleteAll(shopStocks);
-            shopStocks.forEach(s -> shopStocksCacheManager.removeDetail(REDIS_TABLE_KEY, s.getShopStockId()));
-        }
+        if (!shopStocks.isEmpty()) shopStocksRepository.deleteAll(shopStocks);
 
         return shopStocks;
     }
@@ -398,10 +370,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     stock.setApprovedBy(AuthenticatedUserDetails.getUserFullName());
                 }
 
-                ShopStocks shopStocks = shopStocksRepository.save(stock);
-                if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) updateShopStockCache(shopStocks);
-
-                return shopStocks;
+                return shopStocksRepository.save(stock);
             }).orElse(null);
         }).orElse(null);
     }
@@ -460,10 +429,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .multiply(BigDecimal.valueOf(stockToAdd.getStockQuantityPurchased())));
         stockToAdd.setStockRemainingTotalPrice(stockToAdd.getStockPurchasedTotalPrice());
 
-        ShopStocks savedShopStock = shopStocksRepository.save(stockToAdd);
-        if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheShopStocks(savedShopStock);
-
-        return savedShopStock;
+        return shopStocksRepository.save(stockToAdd);
     }
 
     @Override
@@ -491,10 +457,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     .equals(stock.getShop())) throw new InventoryAPIOperationException("Not allowed",
                     "You cannot change selling price of a stock not found in your shop", null);
 
-            ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
-            updateShopStockCache(updatedStock);
-
-            return updatedStock;
+            return shopStocksRepository.save(changeStockSellingPrice(stock, newSellingPrice));
         }).orElse(null);
     }
 
@@ -528,10 +491,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 if(stockRetrieved == null) throw new InventoryAPIResourceNotFoundException("Not found",
                         "Stock with name: " + stockName + " was not found in your shop", null);
 
-                ShopStocks updatedStock = shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
-                updateShopStockCache(updatedStock);
-
-                return updatedStock;
+                return shopStocksRepository.save(changeStockSellingPrice(stockRetrieved, newSellingPrice));
 
             }).orElse(null);
         }
@@ -630,8 +590,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     (stockSold.getPricePerStockSold().subtract(stockSold.getCostPricePerStock()))
                     .multiply(BigDecimal.valueOf(stockSold.getQuantitySold()))
             ));
-            ShopStocks updatedStock = shopStocksRepository.save(stockFound);
-            updateShopStockCache(updatedStock);
+            shopStocksRepository.save(stockFound);
 
             if (atomicStock.get() == null) throw new InventoryAPIResourceNotFoundException
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
@@ -820,8 +779,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 returnedStock.getQuantityReturned());
         stockRecordFromShop.setUpdateDate(new Date());
 
-        ShopStocks updatedStock = shopStocksRepository.save(stockRecordFromShop);
-        cacheShopStocks(updatedStock);
+        shopStocksRepository.save(stockRecordFromShop);
 
         StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
                 (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
@@ -1001,11 +959,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 receivedStock.getQuantityReceived());
         exchangedStockRecordInShop.setUpdateDate(new Date());
 
-        ShopStocks savedReturnedShopStock = shopStocksRepository.save(returnedStockRecordInShop);
-        ShopStocks savedExchangedShopStock = shopStocksRepository.save(exchangedStockRecordInShop);
-
-        updateShopStockCache(savedReturnedShopStock);
-        updateShopStockCache(savedExchangedShopStock);
+        shopStocksRepository.save(returnedStockRecordInShop);
+        shopStocksRepository.save(exchangedStockRecordInShop);
 
         StockSold initStockSold = stockSoldRepository.findDistinctByStockSoldInvoiceIdAndStockName
                 (returnedStock.getInvoiceId(), stockAboutToBeReturned.getStockName());
@@ -1186,10 +1141,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             shopStock.setUpdateDate(new Date());
             shopStock.setLastRestockBy(AuthenticatedUserDetails.getUserFullName());
 
-            ShopStocks updatedStock = shopStocksRepository.save(shopStock);
-            updateShopStockCache(updatedStock);
-
-            return updatedStock;
+            return shopStocksRepository.save(shopStock);
         }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop stock not found",
                 "shop stock with id: " + stockId + " was not found", null));
     }
@@ -1407,10 +1359,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        List<ShopStocks> successfulUploads = shopStocksRepository.saveAll(stockToSaveList);
-        if (shopStocksCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheShopStocksList(successfulUploads);
-
-        return bulkUploadResponse(successfulUploads, rejectedStockList);
+        return bulkUploadResponse(shopStocksRepository.saveAll(stockToSaveList), rejectedStockList);
     }
 
     /*
@@ -1433,29 +1382,5 @@ public class ShopStockServicesImpl implements ShopStockServices {
             salesDiscountList.forEach(salesDiscountServices::deleteSalesDiscount);
 
         return true;
-    }
-
-    private void updateShopStockCache(ShopStocks shopStocks){
-        shopStocksCacheManager.updateCacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
-    }
-
-    private void cacheShopStocks(ShopStocks shopStocks){
-        shopStocksCacheManager.cacheDetail(REDIS_TABLE_KEY, shopStocks.toDTO(), shopStocks.getShopStockId());
-    }
-
-    private void cacheShopStocksList(List<ShopStocks> shopStocksList) {
-        shopStocksList.forEach(this::cacheShopStocks);
-    }
-
-    private List<ShopStocks> fetchShopStocksFromCache(){
-        return shopStocksCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
-                new ArrayList<>(getGSon().fromJson(data.stream()
-                                .map(entry -> getGSon().toJson(entry.getValue()))
-                                .collect(Collectors.toList()).toString(),
-                        new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks>>(){}.getType())))
-                .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.ShopStocks::fromDTO)
-                .sorted(Comparator.comparing(ShopStocks::getCreatedDate)
-                        .thenComparing(ShopStocks::getCreatedTime).reversed())
-                .collect(Collectors.toList());
     }
 }

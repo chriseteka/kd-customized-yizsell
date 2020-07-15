@@ -42,10 +42,4 @@ public class StockCategory {
 
     @Column(name = "createdBy")
     private String createdBy;
-
-    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockCategory toDTO(){
-
-        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.StockCategory(this.getStockCategoryId(),
-            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getCategoryName(), this.getCreatedBy());
-    }
 }

@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Utility.Events;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.context.ApplicationEvent;
 
 import javax.persistence.EnumType;
@@ -12,6 +13,7 @@ import java.util.Date;
 import static javax.persistence.TemporalType.DATE;
 import static javax.persistence.TemporalType.TIME;
 
+@EqualsAndHashCode(callSuper = false)
 @Data
 public class SellerTriggeredEvent extends ApplicationEvent {
 

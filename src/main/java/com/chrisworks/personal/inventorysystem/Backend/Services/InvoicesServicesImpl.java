@@ -7,9 +7,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +17,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
@@ -41,38 +38,26 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
     private final IncomeServices incomeServices;
 
-    private final String REDIS_TABLE_KEY = "INVOICE";
-
-    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice> invoiceCacheManager;
-
     @Autowired
     public InvoicesServicesImpl(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
-                                SellerRepository sellerRepository, GenericService genericService, IncomeServices incomeServices,
-                                CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice> invoiceCacheManager) {
+                                SellerRepository sellerRepository, GenericService genericService, IncomeServices incomeServices) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.sellerRepository = sellerRepository;
         this.genericService = genericService;
         this.incomeServices = incomeServices;
-        this.invoiceCacheManager = invoiceCacheManager;
     }
 
     @Override
     public Invoice createEntity(Invoice invoice) {
 
-        Invoice savedInvoice = invoiceRepository.save(invoice);
-        if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheInvoice(savedInvoice);
-
-        return savedInvoice;
+        return invoiceRepository.save(invoice);
     }
 
     @Override
     public Invoice updateEntity(Long entityId, Invoice invoice) {
 
-        Invoice updatedInvoice = invoiceRepository.save(invoice);
-        invoiceCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedInvoice.toDTO(), entityId);
-
-        return updatedInvoice;
+        return invoiceRepository.save(invoice);
     }
 
     @Override
@@ -106,18 +91,10 @@ public class InvoicesServicesImpl implements InvoiceServices {
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user cannot perform this operation", null);
 
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
-
-            if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchInvoiceFromCache().stream()
-                .filter(invoice -> invoice.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
-                .collect(Collectors.toList());
-
+        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER))
             return fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName());
-        }
 
         else {
-            if (invoiceCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchInvoiceFromCache();
-
             List<Invoice> invoiceList;
             invoiceList = genericService.sellersByAuthUserId()
                     .stream()
@@ -125,7 +102,6 @@ public class InvoicesServicesImpl implements InvoiceServices {
                     .flatMap(List::parallelStream)
                     .collect(Collectors.toList());
             invoiceList.addAll(fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
-            if (!invoiceList.isEmpty()) cacheInvoiceList(invoiceList);
 
             return invoiceList;
         }
@@ -142,7 +118,6 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
             if (invoice.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
                 invoiceRepository.delete(invoice);
-                invoiceCacheManager.removeDetail(REDIS_TABLE_KEY, entityId);
                 return invoice;
             }
 
@@ -153,7 +128,6 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
             if (match){
                 invoiceRepository.delete(invoice);
-                invoiceCacheManager.removeDetail(REDIS_TABLE_KEY, entityId);
                 return invoice;
             }
             else throw new InventoryAPIOperationException("Not your invoice",
@@ -441,11 +415,7 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
         incomeServices.createEntity(incomeOnDebtClearance);
 
-        Invoice updatedInvoice = invoiceRepository.save(invoiceFound);
-
-        invoiceCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedInvoice.toDTO(), updatedInvoice.getInvoiceId());
-
-        return updatedInvoice;
+        return invoiceRepository.save(invoiceFound);
     }
 
     private List<LedgerReport> generateLedgerReport(List<Invoice> invoices, boolean fullReport){
@@ -482,26 +452,6 @@ public class InvoicesServicesImpl implements InvoiceServices {
                     return new LedgerReport(d.getKey(), values, incomeList);
                 }else return new LedgerReport(d.getKey(), values, Collections.emptyList());
             })
-            .collect(Collectors.toList());
-    }
-
-    private void cacheInvoice(Invoice invoice){
-        invoiceCacheManager.cacheDetail(REDIS_TABLE_KEY, invoice.toDTO(), invoice.getInvoiceId());
-    }
-
-    private void cacheInvoiceList(List<Invoice> invoiceList) {
-        invoiceList.forEach(this::cacheInvoice);
-    }
-
-    private List<Invoice> fetchInvoiceFromCache(){
-        return invoiceCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
-                new ArrayList<>(getGSon().fromJson(data.stream()
-                        .map(entry -> getGSon().toJson(entry.getValue()))
-                        .collect(Collectors.toList()).toString(),
-                    new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice>>(){}.getType())))
-            .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Invoice::fromDTO)
-            .sorted(Comparator.comparing(Invoice::getCreatedDate)
-                .thenComparing(Invoice::getCreatedTime).reversed())
             .collect(Collectors.toList());
     }
 }

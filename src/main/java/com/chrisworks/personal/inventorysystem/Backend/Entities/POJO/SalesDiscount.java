@@ -8,10 +8,7 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Constants.DEFAULT_DISCOUNTS;
 

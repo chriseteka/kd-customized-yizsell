@@ -103,14 +103,4 @@ public class Income {
         this.incomeTypeValue = incomeTypeValue;
         this.incomeReference = incomeDescription;
     }
-
-    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income toDTO(){
-        //Formalities
-        fillTransient();
-
-        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income(this.getIncomeId(),
-            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getIncomeAmount(),
-            this.getIncomeReference(), this.getCreatedBy(), this.getApproved(), this.getApprovedDate(),
-            this.getApprovedBy(), this.getIncomeTypeValue(), this.getIncomeTypeVal(), this.getIncomeType());
-    }
 }

@@ -5,9 +5,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.IncomeRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.isDateEqual;
 
 /**
@@ -30,15 +27,10 @@ public class IncomeServicesImpl implements IncomeServices {
 
     private final GenericService genericService;
 
-    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income> incomeCacheManager;
-    private final String REDIS_TABLE_KEY = "INCOME";
-
     @Autowired
-    public IncomeServicesImpl(IncomeRepository incomeRepository, GenericService genericService,
-                              CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income> incomeCacheManager) {
+    public IncomeServicesImpl(IncomeRepository incomeRepository, GenericService genericService) {
         this.incomeRepository = incomeRepository;
         this.genericService = genericService;
-        this.incomeCacheManager = incomeCacheManager;
     }
 
     @Override
@@ -47,10 +39,7 @@ public class IncomeServicesImpl implements IncomeServices {
         if (null == income) throw new InventoryAPIOperationException("Income to save doesnt exist",
                 "Income entity to save was not found, review your inputs and try again", null);
 
-        Income savedIncome = genericService.addIncome(income);
-        if (incomeCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheIncome(income);
-
-        return savedIncome;
+        return genericService.addIncome(income);
     }
 
     @Override
@@ -67,11 +56,7 @@ public class IncomeServicesImpl implements IncomeServices {
             incomeFound.setIncomeReference(income.getIncomeReference());
             incomeFound.setIncomeTypeVal(income.getIncomeTypeVal());
 
-            Income updatedIncome = incomeRepository.save(incomeFound);
-
-            incomeCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedIncome.toDTO(), id);
-
-            return updatedIncome;
+            return incomeRepository.save(incomeFound);
         }).orElse(null);
     }
 
@@ -111,8 +96,6 @@ public class IncomeServicesImpl implements IncomeServices {
     @Override
     public List<Income> getEntityList() {
 
-        if (incomeCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchIncomeFromCache();
-
         List<Income> incomeList;
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
@@ -127,8 +110,6 @@ public class IncomeServicesImpl implements IncomeServices {
                     .collect(Collectors.toList());
             incomeList.addAll(incomeRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
         }
-
-        if (!incomeList.isEmpty()) incomeList.forEach(this::cacheIncome);
 
         return incomeList;
     }
@@ -145,7 +126,6 @@ public class IncomeServicesImpl implements IncomeServices {
 
             if (income.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
                 incomeRepository.delete(income);
-                incomeCacheManager.removeDetail(REDIS_TABLE_KEY, incomeId);
                 return income;
             }
 
@@ -156,7 +136,6 @@ public class IncomeServicesImpl implements IncomeServices {
 
             if (match) {
                 incomeRepository.delete(income);
-                incomeCacheManager.removeDetail(REDIS_TABLE_KEY, incomeId);
                 return income;
             }
             else throw new InventoryAPIOperationException("Operation not allowed",
@@ -254,11 +233,7 @@ public class IncomeServicesImpl implements IncomeServices {
                     incomeFound.setApprovedDate(new Date());
                 }).collect(Collectors.toList());
 
-        List<Income> approvedIncomeList = incomeRepository.saveAll(editedIncomeList);
-        approvedIncomeList.forEach(income -> incomeCacheManager
-                .updateCacheDetail(REDIS_TABLE_KEY, income.toDTO(), income.getIncomeId()));
-
-        return approvedIncomeList;
+        return incomeRepository.saveAll(editedIncomeList);
     }
 
     @Override
@@ -291,29 +266,8 @@ public class IncomeServicesImpl implements IncomeServices {
                 .filter(income -> incomeIdsToDelete.contains(income.getIncomeId()))
                 .collect(Collectors.toList());
 
-        if (!incomesToDelete.isEmpty()) {
-            incomeRepository.deleteAll(incomesToDelete);
-            incomesToDelete.forEach(income -> incomeCacheManager.removeDetail(REDIS_TABLE_KEY, income.getIncomeId()));
-        }
+        if (!incomesToDelete.isEmpty()) incomeRepository.deleteAll(incomesToDelete);
 
         return incomesToDelete;
-    }
-
-    private void cacheIncome(Income income){
-        incomeCacheManager.cacheDetail(REDIS_TABLE_KEY, income.toDTO(), income.getIncomeId());
-    }
-
-    private List<Income> fetchIncomeFromCache(){
-
-        return incomeCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
-                new ArrayList<>(getGSon().fromJson(data.stream()
-                        .map(entry -> getGSon().toJson(entry.getValue()))
-                        .collect(Collectors.toList()).toString(),
-                    new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income>>(){}.getType())))
-            .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Income::fromDTO)
-            .sorted(Comparator.comparing(Income::getCreatedDate)
-                    .thenComparing(Income::getCreatedTime).reversed())
-            .collect(Collectors.toList());
-
     }
 }

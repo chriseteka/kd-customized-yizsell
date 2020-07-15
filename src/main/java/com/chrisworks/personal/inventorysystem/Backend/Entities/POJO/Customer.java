@@ -72,12 +72,4 @@ public class Customer {
     public void setDebt(BigDecimal debt){
         this.debt = debt;
     }
-
-    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Customer toDTO(){
-        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Customer(
-            this.getCustomerId(), this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(),
-            this.getCustomerFullName(), this.getCustomerPhoneNumber(), this.getCustomerEmail(), this.getIsLoyal(),
-            this.getNumberOfPurchasesAfterLastReward(), this.getRecentPurchasesAmount(), this.getCreatedBy(),
-            this.getNumberOfPurchaseTimesBeforeReward(), this.getThreshold(), this.getDebt());
-    }
 }

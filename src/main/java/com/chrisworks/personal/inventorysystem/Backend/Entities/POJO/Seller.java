@@ -157,10 +157,4 @@ public class Seller implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
-    com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Seller toDTO(){
-        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Seller(this.getSellerId(),
-            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getSellerFullName(),
-            this.getSellerEmail(), this.getSellerPhoneNumber(), this.getSellerAddress());
-    }
 }

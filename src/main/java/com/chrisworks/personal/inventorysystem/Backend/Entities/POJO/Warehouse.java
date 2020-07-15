@@ -53,11 +53,4 @@ public class Warehouse {
             inverseJoinColumns = @JoinColumn(name = "businessOwnerId"))
     @JsonIgnore
     private BusinessOwner businessOwner;
-
-    public com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Warehouse toDTO(){
-
-        return new com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Warehouse(this.getWarehouseId(),
-            this.getCreatedDate(), this.getCreatedTime(), this.getUpdateDate(), this.getWarehouseName(),
-            this.getWarehouseAddress(), this.getCreatedBy());
-    }
 }

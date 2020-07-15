@@ -5,9 +5,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.ExpenseRepository;
-import com.chrisworks.personal.inventorysystem.Backend.Services.CacheManager.Interfaces.CacheInterface;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +14,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.*;
-import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 
 /**
  * @author Chris_Eteka
@@ -30,15 +27,10 @@ public class ExpenseServicesImpl implements ExpenseServices {
 
     private final GenericService genericService;
 
-    private final CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense> expenseCacheManager;
-    private final String REDIS_TABLE_KEY = "EXPENSE";
-
     @Autowired
-    public ExpenseServicesImpl(ExpenseRepository expenseRepository, GenericService genericService,
-                               CacheInterface<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense> expenseCacheManager) {
+    public ExpenseServicesImpl(ExpenseRepository expenseRepository, GenericService genericService) {
         this.expenseRepository = expenseRepository;
         this.genericService = genericService;
-        this.expenseCacheManager = expenseCacheManager;
     }
 
     @Override
@@ -47,10 +39,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
         if (null == expense) throw new InventoryAPIOperationException("Expense to save doesnt exist",
                 "Expense entity to save was not found, review your inputs and try again", null);
 
-        Expense savedExpense = genericService.addExpense(expense);
-        if (expenseCacheManager.nonEmpty(REDIS_TABLE_KEY)) cacheExpense(savedExpense);
-
-        return savedExpense;
+        return genericService.addExpense(expense);
     }
 
     @Override
@@ -67,10 +56,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
             expense.setExpenseDescription(expenseUpdates.getExpenseDescription());
             expense.setExpenseTypeVal(expenseUpdates.getExpenseTypeVal());
 
-            Expense updatedExpense = expenseRepository.save(expense);
-            expenseCacheManager.updateCacheDetail(REDIS_TABLE_KEY, updatedExpense.toDTO(), expenseId);
-
-            return updatedExpense;
+            return expenseRepository.save(expense);
         }).orElse(null);
     }
 
@@ -110,8 +96,6 @@ public class ExpenseServicesImpl implements ExpenseServices {
     @Override
     public List<Expense> getEntityList() {
 
-        if (expenseCacheManager.nonEmpty(REDIS_TABLE_KEY)) return fetchExpenseFromCache();
-
         List<Expense> expenseList;
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)
                 || AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
@@ -126,8 +110,6 @@ public class ExpenseServicesImpl implements ExpenseServices {
                     .collect(Collectors.toList());
             expenseList.addAll(expenseRepository.findAllByCreatedBy(AuthenticatedUserDetails.getUserFullName()));
         }
-
-        if (!expenseList.isEmpty()) expenseList.forEach(this::cacheExpense);
 
         return expenseList;
     }
@@ -144,7 +126,6 @@ public class ExpenseServicesImpl implements ExpenseServices {
 
             if (expense.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())){
                 expenseRepository.delete(expense);
-                expenseCacheManager.removeDetail(REDIS_TABLE_KEY, entityId);
                 return expense;
             }
 
@@ -155,7 +136,6 @@ public class ExpenseServicesImpl implements ExpenseServices {
 
             if (match) {
                 expenseRepository.delete(expense);
-                expenseCacheManager.removeDetail(REDIS_TABLE_KEY, entityId);
                 return expense;
             }
             else throw new InventoryAPIOperationException("Operation not allowed",
@@ -262,11 +242,7 @@ public class ExpenseServicesImpl implements ExpenseServices {
                     expenseFound.setApprovedDate(new Date());
                 }).collect(Collectors.toList());
 
-        List<Expense> approvedExpenseList = expenseRepository.saveAll(editedExpenseList);
-        approvedExpenseList.forEach(expense -> expenseCacheManager
-                .updateCacheDetail(REDIS_TABLE_KEY, expense.toDTO(), expense.getExpenseId()));
-
-        return approvedExpenseList;
+        return expenseRepository.saveAll(editedExpenseList);
     }
 
     @Override
@@ -290,28 +266,8 @@ public class ExpenseServicesImpl implements ExpenseServices {
                 .filter(expense -> expenseIdsToDelete.contains(expense.getExpenseId()))
                 .collect(Collectors.toList());
 
-        if (!expensesToDelete.isEmpty()) {
-            expenseRepository.deleteAll(expensesToDelete);
-            expensesToDelete.forEach(expense -> expenseCacheManager.removeDetail(REDIS_TABLE_KEY, expense.getExpenseId()));
-        }
+        if (!expensesToDelete.isEmpty()) expenseRepository.deleteAll(expensesToDelete);
 
         return expensesToDelete;
-    }
-
-    private void cacheExpense(Expense expense){
-        expenseCacheManager.cacheDetail(REDIS_TABLE_KEY, expense.toDTO(), expense.getExpenseId());
-    }
-
-    private List<Expense> fetchExpenseFromCache(){
-
-        return expenseCacheManager.fetchDetailsByKey(REDIS_TABLE_KEY, data ->
-                new ArrayList<>(getGSon().fromJson(data.stream()
-                                .map(entry -> getGSon().toJson(entry.getValue()))
-                                .collect(Collectors.toList()).toString(),
-                        new TypeToken<ArrayList<com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense>>(){}.getType())))
-                .stream().map(com.chrisworks.personal.inventorysystem.Backend.Entities.DTO.Expense::fromDTO)
-                .sorted(Comparator.comparing(Expense::getCreatedDate)
-                        .thenComparing(Expense::getCreatedTime).reversed())
-                .collect(Collectors.toList());
     }
 }
