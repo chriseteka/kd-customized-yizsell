@@ -58,6 +58,8 @@ public class SellerServicesImpl implements SellerServices {
                 InventoryAPIDuplicateEntryException("Email already exist", "A business account already exist with the email address: " +
                 seller.getSellerEmail(), null);
 
+        verifyStaffCreationLimitViolation(businessOwnerRepository.findDistinctByBusinessOwnerEmail(AuthenticatedUserDetails.getUserFullName()));
+
         seller.setIsActive(true);
         seller.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
         seller.setSellerPassword
@@ -201,5 +203,13 @@ public class SellerServicesImpl implements SellerServices {
 
             return sellerRepository.save(seller);
         }).orElse(null);
+    }
+
+    private void verifyStaffCreationLimitViolation(BusinessOwner businessOwner) {
+
+        if (sellerRepository.findAllByCreatedBy(businessOwner.getBusinessOwnerEmail()).size()
+                >= businessOwner.getPlan().getNumberOfStaff())
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "You have reached the maximum number of staff you can create in your plan/subscription", null);
     }
 }

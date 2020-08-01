@@ -39,10 +39,13 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
     private WarehouseRepository warehouseRepository;
 
+    private final PlanRepository planRepository;
+
     @Autowired
     public BusinessOwnerServicesImpl(BusinessOwnerRepository businessOwnerRepository, ApplicationEventPublisher eventPublisher,
                                      BCryptPasswordEncoder passwordEncoder, SellerRepository sellerRepository,
-                                     ShopRepository shopRepository, WarehouseRepository warehouseRepository) {
+                                     ShopRepository shopRepository, WarehouseRepository warehouseRepository,
+                                     PlanRepository planRepository) {
 
         this.businessOwnerRepository = businessOwnerRepository;
         this.eventPublisher = eventPublisher;
@@ -50,6 +53,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
         this.sellerRepository = sellerRepository;
         this.shopRepository = shopRepository;
         this.warehouseRepository = warehouseRepository;
+        this.planRepository = planRepository;
     }
 
     @Transactional
@@ -66,6 +70,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
         businessOwner.setBusinessOwnerPassword
                 (passwordEncoder.encode(businessOwner.getBusinessOwnerPassword()));
+        if (businessOwner.getPlan() == null) businessOwner.setPlan(planRepository.getOne(1L));
 
         BusinessOwner businessOwnerCreated = businessOwnerRepository.save(businessOwner);
 

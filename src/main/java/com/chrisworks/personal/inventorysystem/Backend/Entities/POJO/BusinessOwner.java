@@ -108,6 +108,11 @@ public class BusinessOwner implements UserDetails {
     @Column(name = "otherNumbers")
     private String otherNumbers;
 
+    @JsonBackReference
+    @ManyToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name="planId")
+    private Plan plan;
+
     @Transient
     private String subscription;
 

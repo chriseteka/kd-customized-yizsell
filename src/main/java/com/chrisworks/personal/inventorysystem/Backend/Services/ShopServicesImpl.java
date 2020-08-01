@@ -44,6 +44,8 @@ public class ShopServicesImpl implements ShopServices {
         if (!businessOwner.isPresent()) throw new InventoryAPIOperationException
                 ("Unknown user", "Could not detect the user trying to create a new shop", null);
 
+        verifyShopCreationLimitViolation(businessOwner.get());
+
         if (shopRepository.findDistinctByShopNameAndCreatedBy(shop.getShopName(),
                 AuthenticatedUserDetails.getUserFullName()) != null) throw new InventoryAPIOperationException
                 ("Shop name already exist", "A shop already exist with the name: " + shop.getShopName(), null);
@@ -133,5 +135,13 @@ public class ShopServicesImpl implements ShopServices {
         if (!shopsToDelete.isEmpty()) shopRepository.deleteAll(shopsToDelete);
 
         return shopsToDelete;
+    }
+
+    private void verifyShopCreationLimitViolation(BusinessOwner businessOwner) {
+
+        if (shopRepository.findAllByCreatedBy(businessOwner.getBusinessOwnerEmail()).size()
+                >= businessOwner.getPlan().getNumberOfShops())
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "You have reached the maximum number of shops you can create in your plan/subscription", null);
     }
 }

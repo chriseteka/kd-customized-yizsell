@@ -103,4 +103,48 @@
             <column name="moved_to_warehouse_id" type="BIGINT"/>
         </addColumn>
     </changeSet>
+    <changeSet author="Chris_Eteka" id="14" >
+        <dropColumn tableName="business_owners" columnName="plan_id" />
+        <addColumn tableName="business_owners">
+            <column name="plan_id" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+        <createTable tableName="plans">
+            <column name="plan_id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" unique="true" primaryKey="true"/>
+            </column>
+            <column name="plan_name" type="VARCHAR(255)" />
+            <column name="number_of_staff" type="INTEGER" />
+            <column name="number_of_warehouses" type="INTEGER" />
+            <column name="number_of_shops" type="INTEGER" />
+            <column name="created_date" type="DATE" defaultOnNull="true"/>
+            <column name="created_time" type="TIME" defaultOnNull="true"/>
+            <column name="updated_date" type="DATE" defaultOnNull="true"/>
+        </createTable>
+        <insert tableName="plans">
+            <column name="plan_name" value="BASIC" />
+            <column name="number_of_staff" value="2" />
+            <column name="number_of_warehouses" value="1" />
+            <column name="number_of_shops" value="1" />
+        </insert>
+        <insert tableName="plans">
+            <column name="plan_name" value="MINI" />
+            <column name="number_of_staff" value="4" />
+            <column name="number_of_warehouses" value="2" />
+            <column name="number_of_shops" value="2" />
+        </insert>
+        <insert tableName="plans">
+            <column name="plan_name" value="MIDI" />
+            <column name="number_of_staff" value="6" />
+            <column name="number_of_warehouses" value="3" />
+            <column name="number_of_shops" value="3" />
+        </insert>
+        <insert tableName="plans">
+            <column name="plan_name" value="PRO" />
+            <column name="number_of_staff" value="10" />
+            <column name="number_of_warehouses" value="5" />
+            <column name="number_of_shops" value="5" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -55,15 +54,12 @@ public class Utility {
 
     public static Boolean isDateEqual(Date date1, Date date2){
 
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
-
-        return fmt.format(date1).equals(fmt.format(date2));
+        return !date2.before(date1) && !date2.after(date1);
     }
 
-    public static long getDateDifferenceInDays(Date date1, Date date2) {
+    public static int getDateDifferenceInDays(Date date1, Date date2) {
 
-        long diff = date2.getTime() - date1.getTime();
-        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+        return convertToLocalDateViaSqlDate(date2).getDayOfYear() - convertToLocalDateViaSqlDate(date1).getDayOfYear();
     }
 
     public static String formatDate(Date date){
@@ -133,5 +129,9 @@ public class Utility {
             throw new JsonParseException("Unparseable date: \"" + jsonElement.getAsString()
                     + "\". Supported formats: " + Arrays.toString(DATE_FORMATS));
         }
+    }
+
+    private static LocalDate convertToLocalDateViaSqlDate(Date dateToConvert) {
+        return new java.sql.Date(dateToConvert.getTime()).toLocalDate();
     }
 }

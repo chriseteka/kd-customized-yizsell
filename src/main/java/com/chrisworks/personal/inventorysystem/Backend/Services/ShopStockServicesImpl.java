@@ -751,11 +751,12 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         Customer cust = invoiceRetrieved.getCustomerId();
         int sizeOfStockSold = invoiceRetrieved.getStockSold().size();
+        BigDecimal stockReturnedCost = returnedStock.getStockReturnedCost();
         if (cust != null){
 
             if (is(cust.getRecentPurchasesAmount()).isPositive() && cust.getIsLoyal()){
                 cust.setRecentPurchasesAmount(cust.getRecentPurchasesAmount()
-                        .subtract(returnedStock.getStockReturnedCost()));
+                        .subtract(stockReturnedCost));
                 if (sizeOfStockSold == 1)
                     cust.setNumberOfPurchasesAfterLastReward(cust.getNumberOfPurchasesAfterLastReward() - 1);
                 cust = customerRepository.save(cust);
@@ -788,6 +789,20 @@ public class ShopStockServicesImpl implements ShopStockServices {
 
         Set<StockSold> stockSoldSet = new HashSet<>(invoiceRetrieved.getStockSold());
 
+        //Change invoice total amount, debt, balance and amount paid to suit the returned stock price
+        invoiceRetrieved.setInvoiceTotalAmount(invoiceRetrieved.getInvoiceTotalAmount().subtract(stockReturnedCost));
+        BigDecimal debt = invoiceRetrieved.getDebt();
+        if (is(debt).isPositive()){
+            if (is(debt).gte(stockReturnedCost))
+                invoiceRetrieved.setDebt(debt.subtract(stockReturnedCost));
+            else {
+                invoiceRetrieved.setDebt(BigDecimal.ZERO);
+                invoiceRetrieved.setBalance(stockReturnedCost.subtract(debt));
+            }
+        }
+        else invoiceRetrieved.setBalance(stockReturnedCost);
+
+
         if (initStockSold.getQuantitySold() > 0){
 
             stockSoldSet.remove(stockAboutToBeReturned);
@@ -813,7 +828,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         }
 
         String expenseDescription = returnedStock.getStockName() + " returned with reason: " + returnedStock.getReasonForReturn();
-        Expense expenseOnReturn = new Expense(300, returnedStock.getStockReturnedCost(), expenseDescription);
+        Expense expenseOnReturn = new Expense(300, stockReturnedCost, expenseDescription);
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.SHOP_SELLER)) {
 

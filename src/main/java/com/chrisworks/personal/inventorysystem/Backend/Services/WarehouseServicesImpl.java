@@ -1,6 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.BusinessOwner;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Warehouse;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -144,9 +145,18 @@ public class WarehouseServicesImpl implements WarehouseServices {
         return businessOwnerRepository.findById(businessOwnerId)
                 .map(businessOwner -> {
 
+                    verifyWarehouseCreationLimitViolation(businessOwner);
                     warehouse.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
                     warehouse.setBusinessOwner(businessOwner);
                     return warehouseRepository.save(warehouse);
                 }).orElse(null);
+    }
+
+    private void verifyWarehouseCreationLimitViolation(BusinessOwner businessOwner) {
+
+        if (warehouseRepository.findAllByCreatedBy(businessOwner.getBusinessOwnerEmail()).size()
+                >= businessOwner.getPlan().getNumberOfWarehouses())
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "You have reached the maximum number of warehouses you can create in your plan/subscription", null);
     }
 }
