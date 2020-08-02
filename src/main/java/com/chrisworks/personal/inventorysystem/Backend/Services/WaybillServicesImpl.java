@@ -338,9 +338,17 @@ public class WaybillServicesImpl implements WaybillServices {
         return warehouseRepository.findById(warehouseId)
                 .map(warehouse -> {
 
-                    if (!warehouse.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName()))
+                    String userFullName = AuthenticatedUserDetails.getUserFullName();
+                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER) &&
+                            !warehouse.getCreatedBy().equalsIgnoreCase(userFullName))
                         throw new InventoryAPIOperationException("Not your warehouse",
                                 "Cannot retrieve waybill invoice in a warehouse that is not created by you", null);
+
+                    if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT) &&
+                        !sellerRepository.findDistinctBySellerFullNameOrSellerEmail(userFullName, userFullName)
+                            .getCreatedBy().equalsIgnoreCase(warehouse.getCreatedBy()))
+                        throw new InventoryAPIOperationException("Not your warehouse",
+                                "Cannot retrieve waybill invoice in a warehouse that is not assigned to you", null);
 
                     return waybillInvoiceRepository.findAllByWarehouse(warehouse);
                 }).orElse(null);
