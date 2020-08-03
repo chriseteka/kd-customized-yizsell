@@ -51,7 +51,7 @@ public class Plan {
     private int numberOfShops;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "plan", targetEntity = BusinessOwner.class, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "plan", targetEntity = BusinessOwner.class, cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     private Set<BusinessOwner> businesses = new HashSet<>();
 
 }

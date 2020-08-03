@@ -104,7 +104,7 @@
         </addColumn>
     </changeSet>
     <changeSet author="Chris_Eteka" id="14" >
-        <!-- <dropColumn tableName="business_owners" columnName="plan_id" /> -->
+<!--         <dropColumn tableName="business_owners" columnName="plan_id" />-->
         <addColumn tableName="business_owners">
             <column name="plan_id" type="BIGINT">
                 <constraints nullable="false" />

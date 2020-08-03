@@ -109,7 +109,7 @@ public class BusinessOwner implements UserDetails {
     private String otherNumbers;
 
     @JsonBackReference
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinColumn(name="planId")
     private Plan plan;
 
