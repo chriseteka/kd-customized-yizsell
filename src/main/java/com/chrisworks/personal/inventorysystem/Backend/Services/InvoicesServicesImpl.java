@@ -7,6 +7,7 @@ import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.Inven
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.InvoiceRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.CustomerRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.SellerRepository;
+import com.chrisworks.personal.inventorysystem.Backend.Repositories.ShopRepository;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,14 +39,18 @@ public class InvoicesServicesImpl implements InvoiceServices {
 
     private final IncomeServices incomeServices;
 
+    private final ShopRepository shopRepository;
+
     @Autowired
     public InvoicesServicesImpl(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
-                                SellerRepository sellerRepository, GenericService genericService, IncomeServices incomeServices) {
+                                SellerRepository sellerRepository, GenericService genericService,
+                                IncomeServices incomeServices, ShopRepository shopRepository) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.sellerRepository = sellerRepository;
         this.genericService = genericService;
         this.incomeServices = incomeServices;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -257,27 +262,13 @@ public class InvoicesServicesImpl implements InvoiceServices {
     }
 
     @Override
-    public List<Invoice> fetchAllInvoiceInShop() {
+    public List<Invoice> fetchAllInvoiceInShop(Long shopId) {
 
         if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.WAREHOUSE_ATTENDANT))
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user is not allowed to perform this operation", null);
 
-        List<Invoice> invoiceList = genericService.shopByAuthUserId()
-                .stream()
-                .map(sellerRepository::findAllByShop)
-                .flatMap(List::parallelStream)
-                .map(invoiceRepository::findAllBySeller)
-                .flatMap(List::parallelStream)
-                .collect(Collectors.toList());
-
-        if (AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER)) {
-
-            invoiceList.addAll(fetchAllInvoicesCreatedBy(AuthenticatedUserDetails.getUserFullName()));
-            return invoiceList;
-        }
-
-        return invoiceList;
+        return invoiceRepository.findAllByShop_ShopId(shopId);
     }
 
     @Override

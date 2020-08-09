@@ -30,4 +30,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findAllByCustomerId(Customer customer);
 
     List<Invoice> findAllByCustomerIdAndDebtGreaterThan(Customer customer, BigDecimal debt);
+
+    List<Invoice> findAllByShop_ShopId(Long shopId);
 }

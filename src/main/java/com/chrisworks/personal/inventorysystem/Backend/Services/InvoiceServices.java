@@ -23,7 +23,7 @@ public interface InvoiceServices extends CRUDServices<Invoice> {
 
     List<Invoice> fetchAllInvoiceCreatedBetween(Date from, Date to);
 
-    List<Invoice> fetchAllInvoiceInShop();
+    List<Invoice> fetchAllInvoiceInShop(Long shopId);
 
     List<Invoice> fetchAllInvoiceWithDebt();
 

@@ -2,6 +2,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -57,20 +58,7 @@ public class InvoiceController {
     public ResponseEntity<?> getAllInvoices(@RequestParam int page, @RequestParam int size,
                                             @RequestParam(required = false, defaultValue = "") String search){
 
-        //TODO: Remove this from here, for now though let it stay so amu can use tomorrow
-        List<Invoice> invoiceList = invoiceServices.getEntityList()
-                .stream().filter(invoice -> {
-                    if (!StringUtils.hasText(search)) return true;
-                    return invoice.getCreatedBy().contains(search.toLowerCase())
-                            || String.valueOf(invoice.getAmountPaid()).contains(search)
-                            || String.valueOf(invoice.getInvoiceNumber()).contains(search)
-                            || String.valueOf(invoice.getPaymentMode()).contains(search.toUpperCase());
-                })
-                .sorted(Comparator.comparing(Invoice::getCreatedDate)
-                    .thenComparing(Invoice::getCreatedTime).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(invoiceList, page, size));
+        return ResponseEntity.ok(paginatedInvoiceList(invoiceServices.getEntityList(), search, page, size));
     }
 
     @GetMapping(path = "/all/groupByCustomer")
@@ -170,9 +158,10 @@ public class InvoiceController {
     }
 
     @GetMapping(path = "/byShop")
-    public ResponseEntity<?> fetchInvoicesByShop(){
+    public ResponseEntity<?> fetchInvoicesByShop(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                                 @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(invoiceServices.fetchAllInvoiceInShop());
+        return ResponseEntity.ok(paginatedInvoiceList(invoiceServices.fetchAllInvoiceInShop(shopId), search, page, size));
     }
 
     @GetMapping(path = "/withDebt")
@@ -203,5 +192,18 @@ public class InvoiceController {
     public ResponseEntity<?> clearDebtByCustomerId(@RequestParam Long custId,
                                                    @RequestParam BigDecimal amount){
         return ResponseEntity.ok(invoiceServices.clearDebtByCustomerId(custId, amount));
+    }
+
+    private ListWrapper paginatedInvoiceList(List<Invoice> invoiceList, String search, int page, int size){
+
+        return prepareResponse(invoiceList.stream()
+            .filter(invoice -> {
+                if (!StringUtils.hasText(search)) return true;
+                return invoice.getCreatedBy().contains(search.toLowerCase())
+                    || String.valueOf(invoice.getAmountPaid()).contains(search)
+                    || String.valueOf(invoice.getInvoiceNumber()).contains(search)
+                    || String.valueOf(invoice.getPaymentMode()).contains(search.toUpperCase());
+            }).sorted(Comparator.comparing(Invoice::getCreatedDate).thenComparing(Invoice::getCreatedTime).reversed())
+            .collect(Collectors.toList()), page, size);
     }
 }
