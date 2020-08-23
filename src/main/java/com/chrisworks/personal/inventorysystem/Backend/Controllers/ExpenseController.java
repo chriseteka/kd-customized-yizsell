@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.EXPENSE_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Expense;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -115,18 +116,7 @@ public class ExpenseController {
     public ResponseEntity<?> getAllExpenses(@RequestParam int page, @RequestParam int size,
                                             @RequestParam(required = false, defaultValue = "") String search){
 
-        List<Expense> expenseList = expenseServices.getEntityList()
-                .stream().filter(expense -> {
-                    if (!StringUtils.hasText(search)) return true;
-                    return expense.getCreatedBy().contains(search.toLowerCase())
-                            || String.valueOf(expense.getExpenseAmount()).contains(search)
-                            || String.valueOf(expense.getExpenseType()).contains(search.toUpperCase());
-                })
-                .sorted(Comparator.comparing(Expense::getCreatedDate)
-                    .thenComparing(Expense::getCreatedTime).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(expenseList, page, size));
+        return ResponseEntity.ok(paginatedExpenseList(expenseServices.getEntityList(), search, page, size));
     }
 
     @DeleteMapping(path = "/byId")
@@ -173,9 +163,10 @@ public class ExpenseController {
     }
 
     @GetMapping(path = "/all/byShop")
-    public ResponseEntity<?> getAllExpensesByShop(@RequestParam Long shopId){
+    public ResponseEntity<?> getAllExpensesByShop(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                                  @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(expenseServices.fetchAllExpensesInShop(shopId));
+        return ResponseEntity.ok(paginatedExpenseList(expenseServices.fetchAllExpensesInShop(shopId), search, page, size));
     }
 
     @PutMapping(path = "/approve/expense")
@@ -188,5 +179,19 @@ public class ExpenseController {
     public ResponseEntity<?> getAllUnApprovedExpenses(){
 
         return ResponseEntity.ok(expenseServices.fetchAllUnApprovedExpense());
+    }
+
+    private ListWrapper paginatedExpenseList(List<Expense> expenseList, String search, int page, int size){
+
+        return prepareResponse(expenseList.stream()
+            .filter(expense -> {
+                if (!StringUtils.hasText(search)) return true;
+                return expense.getCreatedBy().contains(search.toLowerCase())
+                        || String.valueOf(expense.getExpenseAmount()).contains(search)
+                        || String.valueOf(expense.getExpenseType()).contains(search.toUpperCase());
+            })
+            .sorted(Comparator.comparing(Expense::getCreatedDate)
+                .thenComparing(Expense::getCreatedTime).reversed())
+            .collect(Collectors.toList()), page, size);
     }
 }

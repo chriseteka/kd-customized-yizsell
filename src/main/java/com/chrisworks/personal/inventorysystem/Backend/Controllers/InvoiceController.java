@@ -65,32 +65,22 @@ public class InvoiceController {
     public ResponseEntity<?> getAllInvoicesGroupedByCustomers(@RequestParam int page, @RequestParam int size,
                                                               @RequestParam(required = false, defaultValue = "") String search){
 
-        List<LedgerReport> ledgerReports = invoiceServices.fetchInvoicesGroupByCustomers()
-                .stream().filter(report -> {
-                    if (!StringUtils.hasText(search)) return true;
-                    return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
-                            || String.valueOf(report.getCustomer().getDebt()).contains(search)
-                            || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
-                            || report.getInvoices().stream().anyMatch(invoice -> invoice.getInvoiceNumber().contains(search));
-                }).collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(ledgerReports, page, size));
+        return ResponseEntity.ok(paginatedLedgerList(invoiceServices.fetchInvoicesGroupByCustomers(), search, page, size));
     }
 
     @GetMapping(path = "/all/withDebt/groupByCustomer")
     public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(@RequestParam int page, @RequestParam int size,
                                                                       @RequestParam(required = false, defaultValue = "") String search){
 
-        List<LedgerReport> ledgerReports = invoiceServices.fetchInvoicesWithDebtGroupByCustomers()
-                .stream().filter(report -> {
-                    if (!StringUtils.hasText(search)) return true;
-                    return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
-                            || String.valueOf(report.getCustomer().getDebt()).contains(search)
-                            || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
-                            || report.getInvoices().stream().anyMatch(invoice -> invoice.getInvoiceNumber().contains(search));
-                }).collect(Collectors.toList());
+        return ResponseEntity.ok(paginatedLedgerList(invoiceServices.fetchInvoicesWithDebtGroupByCustomers(), search, page, size));
+    }
 
-        return ResponseEntity.ok(prepareResponse(ledgerReports, page, size));
+    @GetMapping(path = "/all/withDebt/groupByCustomer/byShop")
+    public ResponseEntity<?> getAllInvoicesWithDebtGroupedByCustomers(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                                                      @RequestParam(required = false, defaultValue = "") String search){
+
+        return ResponseEntity.ok(paginatedLedgerList(invoiceServices.fetchInvoicesWithDebtGroupByCustomersAndShop(shopId),
+                search, page, size));
     }
 
     @DeleteMapping(path = "/byId")
@@ -205,5 +195,17 @@ public class InvoiceController {
                     || String.valueOf(invoice.getPaymentMode()).contains(search.toUpperCase());
             }).sorted(Comparator.comparing(Invoice::getCreatedDate).thenComparing(Invoice::getCreatedTime).reversed())
             .collect(Collectors.toList()), page, size);
+    }
+
+    private ListWrapper paginatedLedgerList(List<LedgerReport> ledgerReportList, String search, int page, int size){
+
+        return prepareResponse(ledgerReportList.stream()
+            .filter(report -> {
+                if (!StringUtils.hasText(search)) return true;
+                return report.getCustomer().getCustomerFullName().toLowerCase().contains(search.toLowerCase())
+                        || String.valueOf(report.getCustomer().getDebt()).contains(search)
+                        || String.valueOf(report.getCustomer().getCustomerPhoneNumber()).contains(search)
+                        || report.getInvoices().stream().anyMatch(invoice -> invoice.getInvoiceNumber().contains(search));
+            }).collect(Collectors.toList()), page, size);
     }
 }

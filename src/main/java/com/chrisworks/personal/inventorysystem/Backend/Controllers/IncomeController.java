@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.APPLICATION_EVENTS;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Income;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIDataValidationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -113,19 +114,7 @@ public class IncomeController {
     public ResponseEntity<?> getAllIncomes(@RequestParam int page, @RequestParam int size,
                                            @RequestParam(required = false, defaultValue = "") String search){
 
-        //TODO: Remove this from here, for now though let it stay so amu can use tomorrow
-        List<Income> incomeList = incomeServices.getEntityList()
-                .stream().filter(income -> {
-                    if (!StringUtils.hasText(search)) return true;
-                    return income.getCreatedBy().contains(search.toLowerCase())
-                        || String.valueOf(income.getIncomeAmount()).contains(search)
-                        || String.valueOf(income.getIncomeType()).contains(search.toUpperCase());
-                })
-                .sorted(Comparator.comparing(Income::getCreatedDate)
-                    .thenComparing(Income::getCreatedTime).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(incomeList, page, size));
+        return ResponseEntity.ok(paginatedIncomeList(incomeServices.getEntityList(), search, page, size));
     }
 
     @DeleteMapping(path = "/byId")
@@ -172,9 +161,10 @@ public class IncomeController {
     }
 
     @GetMapping(path = "/all/byShop")
-    public ResponseEntity<?> getAllIncomesByShop(@RequestParam Long shopId){
+    public ResponseEntity<?> getAllIncomesByShop(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                                 @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(incomeServices.fetchAllIncomeInShop(shopId));
+        return ResponseEntity.ok(paginatedIncomeList(incomeServices.fetchAllIncomeInShop(shopId), search, page, size));
     }
 
     @PutMapping(path = "/approve/income")
@@ -187,6 +177,19 @@ public class IncomeController {
     public ResponseEntity<?> getAllUnApprovedIncomes(){
 
         return ResponseEntity.ok(incomeServices.fetchAllUnApprovedIncome());
+    }
+
+    private ListWrapper paginatedIncomeList(List<Income> incomeList, String search, int page, int size){
+
+        return prepareResponse(incomeList.stream()
+            .filter(income -> {
+                if (!StringUtils.hasText(search)) return true;
+                return income.getCreatedBy().contains(search.toLowerCase())
+                        || String.valueOf(income.getIncomeAmount()).contains(search)
+                        || String.valueOf(income.getIncomeType()).contains(search.toUpperCase());
+            }).sorted(Comparator.comparing(Income::getCreatedDate)
+                .thenComparing(Income::getCreatedTime).reversed())
+            .collect(Collectors.toList()), page, size);
     }
 
 }

@@ -1,11 +1,13 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Services.SellerServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -61,15 +63,17 @@ public class SellerController {
     }
 
     @GetMapping(path = "/all/warehouseAttendant/byWarehouse")
-    public ResponseEntity<?> fetchAllWarehouseAttendantByWarehouseId(@RequestParam Long warehouseId){
+    public ResponseEntity<?> fetchAllWarehouseAttendantByWarehouseId(@RequestParam Long warehouseId, @RequestParam int page, @RequestParam int size,
+                                                                     @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(sellerServices.fetchAllWarehouseAttendantByWarehouseId(warehouseId));
+        return ResponseEntity.ok(paginatedStaffList(sellerServices.fetchAllWarehouseAttendantByWarehouseId(warehouseId), search, page, size));
     }
 
     @GetMapping(path = "/all/shopSellers/byShop")
-    public ResponseEntity<?> fetchAllShopSellersByShopId(@RequestParam Long shopId){
+    public ResponseEntity<?> fetchAllShopSellersByShopId(@RequestParam Long shopId, @RequestParam int page, @RequestParam int size,
+                                                         @RequestParam(required = false, defaultValue = "") String search){
 
-        return ResponseEntity.ok(sellerServices.fetchAllShopSellersByShopId(shopId));
+        return ResponseEntity.ok(paginatedStaffList(sellerServices.fetchAllShopSellersByShopId(shopId), search, page, size));
     }
 
     @PutMapping(path = "/updateSeller")
@@ -102,38 +106,35 @@ public class SellerController {
     }
 
     @GetMapping(path = "/all/shopSellers")
-    public ResponseEntity<?> fetchAllShopSellers(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> fetchAllShopSellers(@RequestParam int page, @RequestParam int size,
+                                                 @RequestParam(required = false, defaultValue = "") String search){
 
-        List<Seller> sellerList = sellerServices.fetchShopSellersByLoggedInUser()
-                .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate)
-                    .thenComparing(Seller::getCreatedTime).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
+        return ResponseEntity.ok(paginatedStaffList(sellerServices.fetchShopSellersByLoggedInUser(), search, page, size));
     }
 
     @GetMapping(path = "/all/warehouseAttendants")
-    public ResponseEntity<?> fetchAllWarehouseAttendants(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> fetchAllWarehouseAttendants(@RequestParam int page, @RequestParam int size,
+                                                         @RequestParam(required = false, defaultValue = "") String search){
 
-        List<Seller> sellerList = sellerServices.fetchWarehouseAttendantsByLoggedInUser()
-                .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate)
-                    .thenComparing(Seller::getCreatedTime).reversed())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
+        return ResponseEntity.ok(paginatedStaffList(sellerServices.fetchWarehouseAttendantsByLoggedInUser(), search, page, size));
     }
 
     @GetMapping(path = "/all/sellers")
-    public ResponseEntity<?> fetchAllSellers(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> fetchAllSellers(@RequestParam int page, @RequestParam int size,
+                                             @RequestParam(required = false, defaultValue = "") String search){
 
-        List<Seller> sellerList = sellerServices.fetchSellers()
-                .stream()
-                .sorted(Comparator.comparing(Seller::getCreatedDate)
-                    .thenComparing(Seller::getCreatedTime).reversed())
-                .collect(Collectors.toList());
+        return ResponseEntity.ok(paginatedStaffList(sellerServices.fetchSellers(), search, page, size));
+    }
 
-        return ResponseEntity.ok(prepareResponse(sellerList, page, size));
+    private ListWrapper paginatedStaffList(List<Seller> sellerList, String search, int page, int size){
+
+        return prepareResponse(sellerList.stream()
+            .filter(seller -> {
+                if (!StringUtils.hasText(search)) return true;
+                return String.valueOf(seller.getSellerEmail()).contains(search)
+                        || String.valueOf(seller.getSellerFullName()).contains(search)
+                        || String.valueOf(seller.getSellerPhoneNumber()).contains(search.toUpperCase());
+            }).sorted(Comparator.comparing(Seller::getCreatedDate).thenComparing(Seller::getCreatedTime).reversed())
+            .collect(Collectors.toList()), page, size);
     }
 }

@@ -268,7 +268,15 @@ public class InvoicesServicesImpl implements InvoiceServices {
             throw new InventoryAPIOperationException("Operation not allowed",
                     "Logged in user is not allowed to perform this operation", null);
 
-        return invoiceRepository.findAllByShop_ShopId(shopId);
+        return shopRepository.findById(shopId).map(shop -> {
+
+            if (!shop.getCreatedBy().equalsIgnoreCase(AuthenticatedUserDetails.getBusinessId()))
+                throw new InventoryAPIOperationException("Not your resource",
+                        "Shop with id: " + shopId + " was not created by you", null);
+
+            return invoiceRepository.findAllByShop(shop);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
+                "Shop with id " + shopId + " was not found, review your input and try again", null));
     }
 
     @Override
@@ -354,6 +362,15 @@ public class InvoicesServicesImpl implements InvoiceServices {
         return generateLedgerReport
             (getEntityList().stream()
                 .filter(invoice -> is(invoice.getDebt()).isPositive())
+                .collect(Collectors.toList()), false);
+    }
+
+    @Override
+    public List<LedgerReport> fetchInvoicesWithDebtGroupByCustomersAndShop(Long shopId) {
+
+        return generateLedgerReport
+            (getEntityList().stream()
+                .filter(invoice -> is(invoice.getDebt()).isPositive() && invoice.getShop().getShopId().equals(shopId))
                 .collect(Collectors.toList()), false);
     }
 

@@ -3,6 +3,7 @@ package com.chrisworks.personal.inventorysystem.Backend.Repositories;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Customer;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Invoice;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Seller;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -31,5 +32,5 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     List<Invoice> findAllByCustomerIdAndDebtGreaterThan(Customer customer, BigDecimal debt);
 
-    List<Invoice> findAllByShop_ShopId(Long shopId);
+    List<Invoice> findAllByShop(Shop shop);
 }
