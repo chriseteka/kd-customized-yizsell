@@ -49,6 +49,12 @@ public class EndOfDayController {
         return ResponseEntity.ok(endOfDayServices.fetchStatistics());
     }
 
+    @GetMapping(path = "/stats/byShop", produces = "application/json")
+    public ResponseEntity<?> getStatistics(@RequestParam Long shopId){
+
+        return ResponseEntity.ok(endOfDayServices.fetchCashFlowStatByShop(shopId));
+    }
+
     private EOD_TYPE getEODTypeFromRequest(String eodFor) {
 
         String eod = eodFor.toUpperCase();

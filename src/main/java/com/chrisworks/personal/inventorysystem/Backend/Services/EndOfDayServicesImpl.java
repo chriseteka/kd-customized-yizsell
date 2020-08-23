@@ -6,6 +6,7 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.INCOME_TYPE
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.Stat;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
+import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
 import com.chrisworks.personal.inventorysystem.Backend.Repositories.*;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
 import lombok.AllArgsConstructor;
@@ -177,6 +178,39 @@ public class EndOfDayServicesImpl implements EndOfDayServices {
 
         return new Stat(noOfShops, noOfWarehouses, noOfStaff, noOfInvoices, noOfWaybillInvoices, noOfCustomer, noOfSuppliers,
                 noOfShopStock, noOfWarehouseStock, totalIncome, totalExpenses, totalDiscounts, totalDebts, profit);
+    }
+
+    @Override
+    public Stat fetchCashFlowStatByShop(Long shopId) {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user is not allowed to perform this operation", null);
+
+
+        return shopRepository.findById(shopId).map(shop -> {
+
+            String businessOwner = AuthenticatedUserDetails.getUserFullName();
+            if (!shop.getCreatedBy().equalsIgnoreCase(businessOwner))
+                throw new InventoryAPIOperationException("Operation not allowed",
+                        "You cannot view information from a shop not created by you", null);
+
+            BigDecimal totalIncome, totalExpenses, totalDebts;
+
+            List<String> sellers = sellerRepository.findAllByCreatedBy(businessOwner).stream().map(Seller::getSellerEmail)
+                    .collect(Collectors.toList());
+            sellers.add(businessOwner);
+
+            totalIncome = incomeRepository.findAllByShop(shop).stream().filter(income -> sellers.contains(income.getCreatedBy()))
+                    .map(Income::getIncomeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalExpenses = expenseRepository.findAllByShop(shop).stream().filter(expense -> sellers.contains(expense.getCreatedBy()))
+                    .map(Expense::getExpenseAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalDebts = invoiceRepository.findAllByShop(shop).stream().map(Invoice::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
+            return new Stat(totalIncome, totalExpenses, totalDebts);
+        }).orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found",
+            "Shop with id " + shopId + " was not found, review your inputs and try again", null));
     }
 
     private EndOfDayServicesImpl.EndOfDayReport computeEndOfDay(EOD_TYPE eod_type, Date from, Date to, List<String> staff){

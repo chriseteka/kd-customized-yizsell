@@ -14,4 +14,6 @@ public interface EndOfDayServices {
     EndOfDayServicesImpl.EndOfDayReport generateEndOfDayReportBetween(EOD_TYPE eod_type, Date from, Date to);
 
     Stat fetchStatistics();
+
+    Stat fetchCashFlowStatByShop(Long shopId);
 }

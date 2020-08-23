@@ -28,4 +28,10 @@ public class Stat {
     private BigDecimal totalDiscounts;
     private BigDecimal totalDebts;
     private BigDecimal profit;
+
+    public Stat(BigDecimal totalIncome, BigDecimal totalExpenses, BigDecimal totalDebts) {
+        this.totalIncome = totalIncome;
+        this.totalExpenses = totalExpenses;
+        this.totalDebts = totalDebts;
+    }
 }
