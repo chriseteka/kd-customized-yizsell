@@ -15,6 +15,8 @@ public interface BusinessOwnerServices{
 
     BusinessOwner updateAccount(Long businessOwnerId, BusinessOwner updates);
 
+    BusinessOwner fetchBusinessOwnerByAuthUser();
+
     Seller activateSeller(Long sellerId);
 
     Seller deactivateSeller(Long sellerId);

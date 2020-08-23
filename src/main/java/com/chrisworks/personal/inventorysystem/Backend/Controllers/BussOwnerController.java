@@ -53,6 +53,12 @@ public class BussOwnerController {
         return new ResponseEntity<>(updatedAccount, HttpStatus.OK);
     }
 
+    @GetMapping(path = "/details", produces = "application/json")
+    public ResponseEntity<?> fetchBusinessDetails(){
+
+        return ResponseEntity.ok(businessOwnerServices.fetchBusinessOwnerByAuthUser());
+    }
+
     @PutMapping(path = "/activate/deactivate/seller")
     public ResponseEntity<?> activateSeller(@RequestParam Long sellerId){
 

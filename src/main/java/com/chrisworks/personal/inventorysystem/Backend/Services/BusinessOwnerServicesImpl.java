@@ -307,4 +307,14 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
         return updatedDetails.get();
     }
+
+    @Override
+    public BusinessOwner fetchBusinessOwnerByAuthUser() {
+
+        if (!AuthenticatedUserDetails.getAccount_type().equals(ACCOUNT_TYPE.BUSINESS_OWNER))
+            throw new InventoryAPIOperationException("Operation not allowed",
+                    "Logged in user cannot perform this operation", null);
+
+        return businessOwnerRepository.findDistinctByBusinessOwnerEmail(AuthenticatedUserDetails.getUserFullName());
+    }
 }
