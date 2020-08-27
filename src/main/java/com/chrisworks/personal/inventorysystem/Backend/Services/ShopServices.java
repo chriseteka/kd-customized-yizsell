@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.DesktopPushObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.Services.CRUDServices;
 
@@ -23,4 +25,6 @@ public interface ShopServices {
     Shop deleteShop(Long shopId);
 
     List<Shop> deleteShops(Long... shopIds);
+
+    ResponseObject receiveDesktopPush(DesktopPushObject desktopPushObject);
 }

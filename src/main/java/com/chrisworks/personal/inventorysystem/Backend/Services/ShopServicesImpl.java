@@ -1,5 +1,7 @@
 package com.chrisworks.personal.inventorysystem.Backend.Services;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.ResponseObject;
+import com.chrisworks.personal.inventorysystem.Backend.Entities.DesktopPushObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.ENUM.ACCOUNT_TYPE;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.*;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -135,6 +137,13 @@ public class ShopServicesImpl implements ShopServices {
         if (!shopsToDelete.isEmpty()) shopRepository.deleteAll(shopsToDelete);
 
         return shopsToDelete;
+    }
+
+    @Override
+    public ResponseObject receiveDesktopPush(DesktopPushObject desktopPushObject) {
+
+        System.out.println("Received**** " + desktopPushObject.toString());
+        return new ResponseObject(true, "Push completed.");
     }
 
     private void verifyShopCreationLimitViolation(BusinessOwner businessOwner) {

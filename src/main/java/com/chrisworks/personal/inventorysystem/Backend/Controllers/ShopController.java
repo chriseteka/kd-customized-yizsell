@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.DesktopPushObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIResourceNotFoundException;
@@ -98,5 +99,11 @@ public class ShopController {
     public ResponseEntity<?> deleteShopByShopId(@RequestParam Long[] shopId){
 
         return ResponseEntity.ok(shopServices.deleteShops(shopId));
+    }
+
+    @PostMapping(path = "/receive/desktop/push", produces = "application/json")
+    public ResponseEntity<?> receiveDesktopPush(@RequestBody DesktopPushObject desktopPushObject){
+
+        return ResponseEntity.ok(shopServices.receiveDesktopPush(desktopPushObject));
     }
 }
