@@ -103,7 +103,7 @@ public class ShopController {
         return ResponseEntity.ok(shopServices.deleteShops(shopId));
     }
 
-    @PostMapping(path = "/receive/desktop/push", produces = "application/json")
+    @PostMapping(path = "/receive/desktop/push", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> receiveDesktopPush(@RequestBody RequestObject desktopPushObject){
 
         return ResponseEntity.ok(shopServices.receiveDesktopPush(getGSon()
