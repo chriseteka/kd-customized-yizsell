@@ -116,7 +116,7 @@ public class Utility {
 
     private static class DateDeserializer implements JsonDeserializer<Date> {
 
-        private final String[] DATE_FORMATS = new String[] {"KK:mm:ss a", "MMM dd, yyyy"};
+        private final String[] DATE_FORMATS = new String[] {"KK:mm:ss a", "MMM dd, yyyy", "hh:mm:ss a", "yyyy-MM-dd"};
 
         @Override
         public Date deserialize(JsonElement jsonElement, Type typeOF,

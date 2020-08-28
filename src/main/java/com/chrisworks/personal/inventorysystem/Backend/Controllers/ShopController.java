@@ -1,5 +1,6 @@
 package com.chrisworks.personal.inventorysystem.Backend.Controllers;
 
+import com.chrisworks.personal.inventorysystem.Backend.Controllers.AuthController.Model.RequestObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.DesktopPushObject;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.Shop;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapper.prepareResponse;
+import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 
 /**
  * @author Chris_Eteka
@@ -102,8 +104,9 @@ public class ShopController {
     }
 
     @PostMapping(path = "/receive/desktop/push", produces = "application/json")
-    public ResponseEntity<?> receiveDesktopPush(@RequestBody DesktopPushObject desktopPushObject){
+    public ResponseEntity<?> receiveDesktopPush(@RequestBody RequestObject desktopPushObject){
 
-        return ResponseEntity.ok(shopServices.receiveDesktopPush(desktopPushObject));
+        return ResponseEntity.ok(shopServices.receiveDesktopPush(getGSon()
+                .fromJson(desktopPushObject.getUsername(), DesktopPushObject.class)));
     }
 }
