@@ -189,6 +189,8 @@ public class ShopServicesImpl implements ShopServices {
         List<ShopStocks> shopStocks;
         boolean status;
 
+        desktopPushObject.getShop().setBusinessOwner(businessOwnerRepository.findDistinctByBusinessOwnerEmail(desktopPushObject.getShop().getCreatedBy()));
+
         List<Seller> sellerList = sellerRepository.findAllByCreatedBy(desktopPushObject.getShop().getCreatedBy());
         Seller authSeller = sellerList.stream().filter(seller -> seller.getSellerEmail()
                 .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())).collect(toSingleton());
