@@ -17,6 +17,8 @@ public interface ShopStocksRepository extends JpaRepository<ShopStocks, Long> {
 
     List<ShopStocks> findAllByShop(Shop shop);
 
+    List<ShopStocks> findAllByShop_ShopId(Long shopId);
+
     List<ShopStocks> findAllByCreatedByAndApprovedIsFalse(String createdBy);
 
     ShopStocks findDistinctByStockBarCodeId(String stockBarcodeId);

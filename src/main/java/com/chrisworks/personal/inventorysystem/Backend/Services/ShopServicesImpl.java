@@ -278,7 +278,7 @@ public class ShopServicesImpl implements ShopServices {
 
         List<ShopStocks> shopStocksToSave = new ArrayList<>();
 
-        List<ShopStocks> existingStock = shopStocksRepository.findAllByShop(shopInContext);
+        List<ShopStocks> existingStock = shopStocksRepository.findAllByShop_ShopId(shopInContext.getShopId());
         List<String> existingNames = existingStock.stream().map(ShopStocks::getStockName).collect(Collectors.toList());
 
         if (existingStock.isEmpty()) return Collections.emptyList();
