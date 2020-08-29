@@ -78,6 +78,11 @@ public class Procurement {
         this.createdBy = AuthenticatedUserDetails.getUserFullName();
     }
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
     public boolean procurementAmountInAccurate() {
         return is(this.stocks.stream().map(ProcuredStock::getStockTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)).notEq(this.amount);

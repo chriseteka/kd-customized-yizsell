@@ -129,6 +129,11 @@ public class Invoice {
         }
     }
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
     @PrePersist
     void fillPersistent() {
         if (paymentMode != null) {

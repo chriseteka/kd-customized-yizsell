@@ -56,6 +56,11 @@ public class RefreshToken {
         this.expirationDate = futureDate(REFRESH_TOKEN_EXPIRATION_DAYS);
     }
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
     private String generateUUID(){
         SecureRandom secureRandom = new SecureRandom();
         byte[] bytes = new byte[128];

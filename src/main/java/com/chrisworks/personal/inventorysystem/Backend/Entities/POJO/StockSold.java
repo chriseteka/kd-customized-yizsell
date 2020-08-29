@@ -77,4 +77,9 @@ public class StockSold {
 
     @PostLoad
     private void setTransients(){ this.promoApplied = this.soldOnPromo; }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

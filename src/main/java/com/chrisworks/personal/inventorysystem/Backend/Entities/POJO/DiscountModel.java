@@ -41,4 +41,9 @@ public class DiscountModel {
     private double discountPercentage = 0.0;
 
     private String createdBy;
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

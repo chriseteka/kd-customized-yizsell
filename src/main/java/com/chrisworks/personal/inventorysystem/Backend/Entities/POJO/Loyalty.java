@@ -62,4 +62,9 @@ public class Loyalty {
         this.loyaltyName = loyaltyName.toUpperCase();
         this.setCreatedBy(AuthenticatedUserDetails.getUserFullName());
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

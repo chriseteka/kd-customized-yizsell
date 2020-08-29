@@ -59,4 +59,9 @@ public class Promo {
     private void setTransients(){
         this.createdBy = AuthenticatedUserDetails.getUserFullName();
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

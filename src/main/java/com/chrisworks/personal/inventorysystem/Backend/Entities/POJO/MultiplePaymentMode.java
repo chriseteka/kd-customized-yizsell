@@ -78,4 +78,9 @@ public class MultiplePaymentMode {
             this.paymentMode = PAYMENT_MODE.of(paymentModeValue);
         }
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

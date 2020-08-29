@@ -97,6 +97,11 @@ public class Expense {
         }
     }
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
     public Expense(int expenseTypeValue, BigDecimal expenseAmount, String expenseDescription) {
 
         this.expenseTypeVal = String.valueOf(expenseTypeValue);

@@ -184,4 +184,9 @@ public class BusinessOwner implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

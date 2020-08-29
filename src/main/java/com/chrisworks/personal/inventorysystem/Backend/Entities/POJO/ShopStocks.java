@@ -130,4 +130,9 @@ public class ShopStocks {
     private Shop shop;
 
     private boolean hasPromo = false;
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

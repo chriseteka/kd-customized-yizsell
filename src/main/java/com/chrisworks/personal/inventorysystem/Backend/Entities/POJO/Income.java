@@ -96,6 +96,11 @@ public class Income {
         }
     }
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
     public Income(BigDecimal incomeAmount, int incomeTypeValue, String incomeDescription) {
 
         this.incomeTypeVal = String.valueOf(incomeTypeValue);

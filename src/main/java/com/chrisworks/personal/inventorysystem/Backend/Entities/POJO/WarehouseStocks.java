@@ -128,4 +128,9 @@ public class WarehouseStocks {
     @JoinTable(name = "stocksInWarehouse", joinColumns = @JoinColumn(name = "warehouseStockId"),
             inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

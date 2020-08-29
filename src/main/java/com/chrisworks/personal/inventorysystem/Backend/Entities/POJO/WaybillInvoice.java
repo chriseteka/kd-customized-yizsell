@@ -102,4 +102,9 @@ public class WaybillInvoice {
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(name = "toWarehouse", joinColumns = @JoinColumn(name = "waybillInvoiceId"), inverseJoinColumns = @JoinColumn(name = "warehouseId"))
     private Warehouse warehouse;
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

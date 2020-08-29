@@ -52,4 +52,9 @@ public class Supplier {
     @Column(name = "createdBy")
     private String createdBy;
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
 }

@@ -74,6 +74,11 @@ public class WaybilledStocks {
             inverseJoinColumns = @JoinColumn(name = "supplierId"))
     private Supplier stockSupplier;
 
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
+
 
     public WaybilledStocks(String stockName, String categoryName, int quantity, BigDecimal sellingPrice,
                            BigDecimal purchasePrice, Date expiryDate, String stockBarCodeId, Supplier stockSupplier) {

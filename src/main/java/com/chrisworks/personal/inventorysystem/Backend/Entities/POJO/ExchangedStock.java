@@ -67,4 +67,9 @@ public class ExchangedStock {
 
     @Column(name = "createdBy")
     private String createdBy;
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

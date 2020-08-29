@@ -62,4 +62,9 @@ public class SalesDiscount {
             throw new InventoryAPIOperationException("Reason for discount error",
                     "Please pass in a valid reason for this discount before you can proceed", null);
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

@@ -72,4 +72,9 @@ public class Customer {
     public void setDebt(BigDecimal debt){
         this.debt = debt;
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }

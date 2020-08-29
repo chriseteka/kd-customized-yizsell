@@ -99,4 +99,9 @@ public class Plan {
                 ", numberOfShops=" + numberOfShops +
                 '}';
     }
+
+    @PreUpdate
+    void changeUpdatedDate(){
+        this.setUpdateDate(new Date());
+    }
 }
