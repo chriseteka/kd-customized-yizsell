@@ -189,14 +189,15 @@ public class ShopServicesImpl implements ShopServices {
         List<ShopStocks> shopStocks;
         boolean status;
 
-        desktopPushObject.getShop().setBusinessOwner(businessOwnerRepository.findDistinctByBusinessOwnerEmail(desktopPushObject.getShop().getCreatedBy()));
+        Shop shop = shopRepository.findById(desktopPushObject.getShopId())
+                .orElseThrow(() -> new InventoryAPIResourceNotFoundException("Shop not found", "Shop not found", null));
 
-        List<Seller> sellerList = sellerRepository.findAllByCreatedBy(desktopPushObject.getShop().getCreatedBy());
+        List<Seller> sellerList = sellerRepository.findAllByCreatedBy(shop.getCreatedBy());
         Seller authSeller = sellerList.stream().filter(seller -> seller.getSellerEmail()
                 .equalsIgnoreCase(AuthenticatedUserDetails.getUserFullName())).collect(toSingleton());
         UserMiniProfile authUserMiniProfile = userMiniProfileRepository.findDistinctByEmail(authSeller.getSellerEmail());
         List<String> sellers = sellerList.stream().map(Seller::getSellerEmail).collect(Collectors.toList());
-        sellers.add(desktopPushObject.getShop().getCreatedBy());
+        sellers.add(shop.getCreatedBy());
         readyCustomerMap(sellers);
 
         //Settled
@@ -219,7 +220,7 @@ public class ShopServicesImpl implements ShopServices {
             expenses = expenseRepository.saveAll(desktopPushObject.getExpenses().stream()
                 .peek(e -> {
                     e.setExpenseId(null);
-                    e.setShop(desktopPushObject.getShop());
+                    e.setShop(shop);
                     e.setExpenseTypeVal(String.valueOf(e.getExpenseTypeValue()));
                 }).collect(Collectors.toList()));
 
@@ -228,7 +229,7 @@ public class ShopServicesImpl implements ShopServices {
             incomes = incomeRepository.saveAll(desktopPushObject.getIncomes().stream()
                 .peek(e -> {
                     e.setIncomeId(null);
-                    e.setShop(desktopPushObject.getShop());
+                    e.setShop(shop);
                     e.setIncomeTypeVal(String.valueOf(e.getIncomeTypeValue()));
                 }).collect(Collectors.toList()));
 
@@ -237,7 +238,7 @@ public class ShopServicesImpl implements ShopServices {
             returnedStocks = returnedStockRepository.saveAll(desktopPushObject.getReturnedStocks().stream()
                 .peek(e -> {
                     e.setReturnedStockId(null);
-                    e.setShop(desktopPushObject.getShop());
+                    e.setShop(shop);
                     if (e.getCustomerId() != null)
                         e.setCustomerId(customerMap.get(e.getCustomerId().getCustomerPhoneNumber()));
                 }).collect(Collectors.toList()));
@@ -250,7 +251,7 @@ public class ShopServicesImpl implements ShopServices {
                     e.setSeller(authSeller);
                     e.setSoldBy(authUserMiniProfile);
                     e.setStockSold(persistStockSold(e));
-                    e.setShop(desktopPushObject.getShop());
+                    e.setShop(shop);
                     if (!e.getMultiplePayment().isEmpty())
                         e.setMultiplePayment(persistMultiplePay(e));
                     if (e.getCustomerId() != null)
@@ -259,7 +260,7 @@ public class ShopServicesImpl implements ShopServices {
                 }).collect(Collectors.toList()));
 
         //Settled
-        shopStocks = syncShopStock(desktopPushObject.getShop(), desktopPushObject.getShopStocks(), sellers);
+        shopStocks = syncShopStock(shop, desktopPushObject.getShopStocks(), sellers);
 
         status = (customers.size() == desktopPushObject.getCustomers().size())
                 && (expenses.size() == desktopPushObject.getExpenses().size())

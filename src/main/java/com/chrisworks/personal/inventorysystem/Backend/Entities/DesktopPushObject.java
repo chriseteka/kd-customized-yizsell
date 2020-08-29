@@ -23,5 +23,5 @@ public class DesktopPushObject {
     private List<Income> incomes;
     private List<Invoice> invoices;
     private List<ReturnedStock> returnedStocks;
-    private Shop shop;
+    private Long shopId;
 }
