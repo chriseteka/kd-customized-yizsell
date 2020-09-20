@@ -234,6 +234,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
                 seller.setUpdateDate(new Date());
                 seller.setShop(null);
+                seller.setAccountTypeValue(ACCOUNT_TYPE.UNASSIGNED.getAccount_type_value());
                 seller.setAccountType(ACCOUNT_TYPE.UNASSIGNED);
                 return sellerRepository.save(seller);
 
@@ -266,6 +267,7 @@ public class BusinessOwnerServicesImpl implements BusinessOwnerServices {
 
                 seller.setUpdateDate(new Date());
                 seller.setWarehouse(null);
+                seller.setAccountTypeValue(ACCOUNT_TYPE.UNASSIGNED.getAccount_type_value());
                 seller.setAccountType(ACCOUNT_TYPE.UNASSIGNED);
                 return sellerRepository.save(seller);
 
