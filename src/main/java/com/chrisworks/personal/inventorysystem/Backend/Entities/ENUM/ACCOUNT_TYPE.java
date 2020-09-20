@@ -10,7 +10,9 @@ public enum ACCOUNT_TYPE {
 
     SHOP_SELLER(300),
 
-    STAFF(400);
+    STAFF(400),
+
+    UNASSIGNED(500);
 
     private int account_type_value;
 

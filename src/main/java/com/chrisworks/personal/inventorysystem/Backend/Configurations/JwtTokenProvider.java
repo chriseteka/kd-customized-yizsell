@@ -65,7 +65,8 @@ public class JwtTokenProvider {
 
     public String generateSellerToken(Seller userDetails) {
 
-        if (userDetails.getAccountType() == null) throw new InventoryAPIOperationException("Seller cannot login",
+        if (userDetails.getAccountType() == null || userDetails.getAccountType().equals(ACCOUNT_TYPE.UNASSIGNED))
+            throw new InventoryAPIOperationException("Seller cannot login",
                 "Seller may have not been assigned a warehouse or shop, hence cannot login", null);
 
         String userId = Long.toString(userDetails.getSellerId());
@@ -79,6 +80,7 @@ public class JwtTokenProvider {
             claims.put("businessName", businessOwner.getBusinessName());
             claims.put("businessPhone", businessPhones(businessOwner));
             claims.put("businessEmail", businessOwner.getBusinessOwnerEmail());
+            claims.put("hasWarehouse", businessOwner.getHasWarehouse());
         }
         claims.put("fullName", userDetails.getSellerFullName());
         claims.put("username", userDetails.getUsername());
