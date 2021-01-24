@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@PropertySource(value= {"classpath:.env"})
 public class InventorySystemBackendApplication {
 
     public static void main(String[] args) {

@@ -1,0 +1,42 @@
+version: '3.0'
+
+services:
+  yizsell-db:
+    container_name: yizsell-db
+    image: mysql:8.0.23
+    restart: always
+    env_file:
+      - ./config/yizsell-environment.properties
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/yizsell-mysql/data
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  yizsell-backend-service:
+    depends_on:
+      yizsell-db:
+        condition: service_healthy
+    links:
+      - yizsell-db
+    image: chriseteka/yizsell-backend:latest
+    container_name: yizsell-backend-service
+    expose:
+      - "80"
+    ports:
+      - "80:7000"
+    volumes:
+      - /var/opt/yizsell
+    restart: on-failure
+    env_file:
+      - ./config/yizsell-environment.properties
+
+volumes:
+  mysqldata:
+    driver: local

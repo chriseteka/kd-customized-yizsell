@@ -16,7 +16,6 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <APP_ACTIVE_PROFILE>${APP_ACTIVE_PROFILE}</APP_ACTIVE_PROFILE>
     </properties>
 
     <dependencies>

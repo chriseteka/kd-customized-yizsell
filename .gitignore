@@ -42,3 +42,6 @@ front-end/**
 ### DATA TO INIT DB ###
 /src/main/resources/db/data/**
 src/main/resources/db/data/**
+
+##### ENVIRONMENT FILE #####
+/config/yizsell-environment.properties
