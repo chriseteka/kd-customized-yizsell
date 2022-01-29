@@ -1,3 +1,12 @@
+FROM maven:3-openjdk-8 AS build
+
+WORKDIR /opt/app
+
+COPY . .
+
+RUN mvn clean package -DskipTests
+
+
 FROM openjdk:8-alpine
 
 WORKDIR /opt/app
@@ -13,6 +22,8 @@ ENV APP_ENVIRONMENT=$environ
 #### Verifying which build is currently being run
 RUN echo "Running a docker build for $APP_ACTIVE_PROFILE"
 
-ADD target/*.jar inventory-system-backend-1.0.0.RELEASE.jar
+COPY --from=build /opt/app/target/*.jar .
 
-CMD java -jar -DAPP_ACTIVE_PROFILE=$APP_ACTIVE_PROFILE -Dspring.config.additional-location=file:///opt/app/$APP_ENVIRONMENT inventory-system-backend-1.0.0.RELEASE.jar
+# ADD target/*.jar inventory-system-backend-1.0.0.RELEASE.jar
+
+CMD java -jar -DAPP_ACTIVE_PROFILE=$APP_ACTIVE_PROFILE -Dspring.config.additional-location=file:///opt/app/$APP_ENVIRONMENT inventory-system-backend-0.0.1-SNAPSHOT.jar
