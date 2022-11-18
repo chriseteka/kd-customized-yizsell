@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+  <changeSet id="1" author="Chris_Eteka">
+    <createTable tableName="customer_wallets">
+      <column name="wallet_id" type="BIGINT">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="created_date" type="date"/>
+      <column name="created_time" type="time"/>
+      <column name="update_date" type="date"/>
+      <column name="last_updated_by" type="VARCHAR(255)"/>
+      <column name="wallet_change_log" type="LONGTEXT"/>
+      <column name="balance" type="DECIMAL(19, 2)"/>
+      <column name="credit_limit" type="DECIMAL(19, 2)"/>
+      <column name="accumulated_credit" type="DECIMAL(19, 2)"/>
+    </createTable>
+  </changeSet>
+  <changeSet id="2" author="Chris_Eteka">
+    <addColumn tableName="customers">
+      <column name="customer_wallet"/>
+    </addColumn>
+    <addForeignKeyConstraint baseColumnNames="customer_wallet_id" baseTableName="customers" constraintName="FKs8wer5lgi124kwa1xjkidsgMMKr8Ok3" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="wallet_id" referencedTableName="customer_wallets" validate="true"/>
+  </changeSet>
+</databaseChangeLog>

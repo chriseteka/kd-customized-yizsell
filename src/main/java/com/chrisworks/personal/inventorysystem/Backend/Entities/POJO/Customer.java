@@ -66,6 +66,9 @@ public class Customer {
     @Column(name = "threshold")
     private BigDecimal threshold = BigDecimal.ZERO;
 
+    @OneToOne
+    private CustomerWallet customerWallet = new CustomerWallet();
+
     @Transient
     private BigDecimal debt = BigDecimal.ZERO;
 

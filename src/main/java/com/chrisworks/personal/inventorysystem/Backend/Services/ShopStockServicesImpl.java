@@ -63,6 +63,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
     private final IncomeServices incomeServices;
 
     private final ExpenseServices expenseServices;
+    private final CustomerWalletService customerWalletService;
 
     private final UserMiniProfileRepository userMiniProfileRepository;
 
@@ -74,7 +75,8 @@ public class ShopStockServicesImpl implements ShopStockServices {
                                  StockCategoryRepository stockCategoryRepository, LoyaltyRepository loyaltyRepository,
                                  CustomerRepository customerRepository, SalesDiscountServices salesDiscountServices,
                                  ExchangedStockRepository exchangedStockRepository, IncomeServices incomeServices,
-                                 ExpenseServices expenseServices, UserMiniProfileRepository userMiniProfileRepository) {
+                                 ExpenseServices expenseServices, UserMiniProfileRepository userMiniProfileRepository,
+                                 CustomerWalletService customerWalletService) {
         this.sellerRepository = sellerRepository;
         this.shopStocksRepository = shopStocksRepository;
         this.shopRepository = shopRepository;
@@ -90,6 +92,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
         this.exchangedStockRepository = exchangedStockRepository;
         this.incomeServices = incomeServices;
         this.expenseServices = expenseServices;
+        this.customerWalletService = customerWalletService;
         this.userMiniProfileRepository = userMiniProfileRepository;
     }
 
@@ -544,14 +547,25 @@ public class ShopStockServicesImpl implements ShopStockServices {
             customer.set(genericService.addCustomer(invoice.getCustomerId()));
 
         //Process the incoming invoice to take note of any promo that maybe attached
+        //Let's ignore the processing discount for now, and just assume it is fine, then charge the customer
         final Invoice preProcessedInvoice = genericService.processPromoIfExist(invoice);
 
-        BigDecimal totalToAmountPaidDiff = preProcessedInvoice.getInvoiceTotalAmount()
-                .subtract(preProcessedInvoice.getAmountPaid()
-                        .add(preProcessedInvoice.getDiscount())
-                        .add(preProcessedInvoice.getLoyaltyDiscount()));
-        if (is(totalToAmountPaidDiff).isPositive()) preProcessedInvoice.setDebt(totalToAmountPaidDiff.abs());
-        else preProcessedInvoice.setBalance(totalToAmountPaidDiff.abs());
+        final Customer cust = customer.updateAndGet(cus -> {
+            final boolean charged = customerWalletService.chargeWallet(cus.getCustomerWallet(),
+                preProcessedInvoice.getInvoiceTotalAmount());
+            return charged ? cus : null;
+        });
+
+        if (cust == null) {
+            throw new InventoryAPIOperationException("404", "Cannot not charge customer", null);
+        }
+
+//        BigDecimal totalToAmountPaidDiff = preProcessedInvoice.getInvoiceTotalAmount()
+//                .subtract(preProcessedInvoice.getAmountPaid()
+//                        .add(preProcessedInvoice.getDiscount())
+//                        .add(preProcessedInvoice.getLoyaltyDiscount()));
+//        if (is(totalToAmountPaidDiff).isPositive()) preProcessedInvoice.setDebt(totalToAmountPaidDiff.abs());
+//        else preProcessedInvoice.setBalance(totalToAmountPaidDiff.abs());
 
         preProcessedInvoice.setInvoiceNumber(UniqueIdentifier.invoiceUID());
         preProcessedInvoice.getStockSold().forEach(stockSold -> {
@@ -596,27 +610,21 @@ public class ShopStockServicesImpl implements ShopStockServices {
                     ("Stock not found", "Stock with name " + stockSold.getStockName() + ", was not found in any of your warehouse", null);
         });
 
-        if (is(preProcessedInvoice.getAmountPaid()).isPositive()) {
+        //Since we charged the customer the invoice total amount, then create an income of that exact amount
+        if (is(preProcessedInvoice.getInvoiceTotalAmount()).isPositive()) {
 
             String incomeDescription = "Income generated from sale of stock with invoice number: " + preProcessedInvoice.getInvoiceNumber();
-
-            if (preProcessedInvoice.getMultiplePayment().isEmpty())
-                incomeServices.createEntity(new Income(preProcessedInvoice.getAmountPaid(), 100, incomeDescription));
-            else {
-                preProcessedInvoice.setPaymentModeValue(400);
-                for (MultiplePaymentMode multiplePaymentMode : preProcessedInvoice.getMultiplePayment())
-                    incomeServices.createEntity(new Income(multiplePaymentMode.getAmountPaid(), 100, incomeDescription));
-            }
+            incomeServices.createEntity(new Income(preProcessedInvoice.getInvoiceTotalAmount(), 100, incomeDescription));
         }
 
         String invoiceGeneratedBy = AuthenticatedUserDetails.getUserFullName();
 
-        Customer cust = customer.get();
         preProcessedInvoice.getStockSold().clear();
         preProcessedInvoice.setStockSold(stockSoldSet);
         preProcessedInvoice.setShop(shop);
         preProcessedInvoice.setSoldBy(userMiniProfileRepository.findDistinctByEmail(invoiceGeneratedBy));
-        if (cust != null && cust.getIsLoyal()){
+        //Might need to go out
+        if (cust.getIsLoyal()) {
 
             Loyalty loyaltyPlan = loyaltyRepository.findDistinctByCustomers(cust);
             if (null != loyaltyPlan){
@@ -642,6 +650,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
             preProcessedInvoice.setCustomerId(customer.get());
 
         //Generate discount on invoice if it exists
+        //Might need to go out
         if (is(preProcessedInvoice.getDiscount()).isPositive())
             salesDiscountServices.generateDiscountOnInvoice(preProcessedInvoice);
         preProcessedInvoice.setCreatedBy(invoiceGeneratedBy);
@@ -691,7 +700,12 @@ public class ShopStockServicesImpl implements ShopStockServices {
             successfulReturns.add(this.processReturn(shopId, returnedStock));
         });
 
-        if (successfulReturns.size() == invoice.getStockSold().size() && revertCashFlowOnSaleReversal(invoiceNumber))
+        final boolean customerRefunded = customerWalletService.refundChargeBackToWallet(
+            invoice.getCustomerId().getCustomerWallet(), invoice.getInvoiceTotalAmount());
+
+        revertCashFlowOnSaleReversal(invoiceNumber);
+
+        if (successfulReturns.size() == invoice.getStockSold().size() && customerRefunded)
             return new ResponseObject(true, "Sales reversal completed successfully");
         else return new ResponseObject(false, "Sales reversal was not successful, try again later.");
     }
@@ -1382,7 +1396,7 @@ public class ShopStockServicesImpl implements ShopStockServices {
     given to an invoice during a sale. This function is only called when a sale is reversed.
     * @return Boolean (True if successful and false otherwise).
     */
-    private boolean revertCashFlowOnSaleReversal(String invoiceNumber){
+    private void revertCashFlowOnSaleReversal(String invoiceNumber){
 
         //Fetch the income, expense, and discounts generated by that invoice number
         List<Income> incomeList = incomeServices.fetchAllByDescriptionContains(invoiceNumber);
@@ -1395,7 +1409,5 @@ public class ShopStockServicesImpl implements ShopStockServices {
             expenseList.forEach(expense -> expenseServices.deleteEntity(expense.getExpenseId()));
         if (!salesDiscountList.isEmpty())
             salesDiscountList.forEach(salesDiscountServices::deleteSalesDiscount);
-
-        return true;
     }
 }
