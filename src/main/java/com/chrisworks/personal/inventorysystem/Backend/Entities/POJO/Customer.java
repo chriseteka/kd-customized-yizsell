@@ -66,7 +66,7 @@ public class Customer {
     @Column(name = "threshold")
     private BigDecimal threshold = BigDecimal.ZERO;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private CustomerWallet customerWallet = new CustomerWallet();
 
     @Transient

@@ -114,7 +114,7 @@ public class BusinessOwner implements UserDetails {
     private Plan plan;
 
     @Transient
-    private String subscription;
+    private String subscription = "THREE";
 
     @PostLoad
     void fillTransient() {

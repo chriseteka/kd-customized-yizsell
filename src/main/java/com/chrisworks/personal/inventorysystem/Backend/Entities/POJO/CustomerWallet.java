@@ -38,7 +38,7 @@ public class CustomerWallet {
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
-  private Long walletId;
+  private Long id;
 
   @Temporal(TemporalType.DATE)
   @Column(name = "createdDate")

@@ -7,7 +7,7 @@
 
   <changeSet id="1" author="Chris_Eteka">
     <createTable tableName="customer_wallets">
-      <column name="wallet_id" type="BIGINT">
+      <column name="id" type="BIGINT">
         <constraints nullable="false" unique="true"/>
       </column>
       <column name="created_date" type="date"/>
@@ -24,6 +24,11 @@
     <addColumn tableName="customers">
       <column name="customer_wallet_id" type="BIGINT"/>
     </addColumn>
-    <addForeignKeyConstraint baseColumnNames="customer_wallet_id" baseTableName="customers" constraintName="FKs8wer5lgi124kwa1xjkidsgMMKr8Ok3" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="wallet_id" referencedTableName="customer_wallets" validate="true"/>
+    <addForeignKeyConstraint baseColumnNames="customer_wallet_id" baseTableName="customers" constraintName="FKs8wer5lgi124kwa1xjkidsgMMKr8Ok3" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id" referencedTableName="customer_wallets" validate="true"/>
+  </changeSet>
+  <changeSet id="3" author="Chris_Eteka">
+    <insert tableName="hibernate_sequence">
+      <column name="next_val" value="1"/>
+    </insert>
   </changeSet>
 </databaseChangeLog>
