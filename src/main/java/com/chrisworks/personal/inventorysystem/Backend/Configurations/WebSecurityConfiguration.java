@@ -1,25 +1,22 @@
 package com.chrisworks.personal.inventorysystem.Backend.Configurations;
 
 import com.chrisworks.personal.inventorysystem.Backend.Services.AuthenticationService;
-import com.sendgrid.SendGrid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-//import org.springframework.mail.javamail.JavaMailSender;
-//import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-//import java.util.Properties;
 import static com.chrisworks.personal.inventorysystem.Backend.Configurations.SecurityConstants.*;
 
 
@@ -30,68 +27,56 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+@RequiredArgsConstructor
+@EnableGlobalMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true, proxyTargetClass = true)
+public class WebSecurityConfiguration {
 
-    @Value("${SEND_GRID_KEY}") private String SEND_GRID_KEY;
+    private final JwtAuthenticationEntryPoint unauthorizedHandler;
+    private final AuthenticationService authenticationService;
+    private final JwtAuthenticationFilter authenticationFilter;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JwtAuthenticationEntryPoint unauthorizedHandler;
-
-    @Autowired
-    private AuthenticationService authenticationService;
-
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(){ return new JwtAuthenticationFilter(); }
-
-    @Bean
-    BCryptPasswordEncoder bCryptPasswordEncoder(){
-
-        return new BCryptPasswordEncoder();
+    void configureGlobal(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder
+            .userDetailsService(authenticationService)
+            .passwordEncoder(passwordEncoder);
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
-        authenticationManagerBuilder.userDetailsService(authenticationService).passwordEncoder(bCryptPasswordEncoder());
-    }
-
-    @Override
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
-    protected AuthenticationManager authenticationManager() throws Exception {
-        return super.authenticationManager();
-    }
-
-    @Override
-    public void configure(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-                .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .headers().frameOptions().sameOrigin()
-                .and()
-                .authorizeRequests()
-                .antMatchers(
-                        "/",
-                        "/favicon.ico",
-                        "/**/*.png",
-                        "/**/*.gif",
-                        "/**/*.svg",
-                        "/**/*.jpg",
-                        "/**/*.html",
-                        "/**/*.css",
-                        "/**/*.js",
-                        CHAT_URL,
-                        SIGN_IN_URL + "/**", //Allow forgot password and password reset token urls
-                        SIGN_IN_URL, //Allow authentication (sign in) url
-                        SIGN_UP_URL //Allow Business Owner sign up url
-                ).permitAll()
-                .anyRequest().authenticated();
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+    public AuthenticationManager authenticationManager(
+        AuthenticationConfiguration authenticationConfiguration)
+        throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public SendGrid getSendGrid(){
-        return new SendGrid(SEND_GRID_KEY);
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.cors().and().csrf().disable()
+            .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .headers().frameOptions().sameOrigin()
+            .and()
+            .authorizeRequests()
+            .antMatchers(
+                "/",
+                "/favicon.ico",
+                "/**/*.png",
+                "/**/*.gif",
+                "/**/*.svg",
+                "/**/*.jpg",
+                "/**/*.html",
+                "/**/*.css",
+                "/**/*.js",
+                CHAT_URL,
+                SIGN_IN_URL + "/**", //Allow forgot password and password reset token urls
+                SIGN_IN_URL, //Allow authentication (sign in) url
+                SIGN_UP_URL //Allow Business Owner sign up url
+            ).permitAll()
+            .anyRequest().authenticated();
+        http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
     }
 }

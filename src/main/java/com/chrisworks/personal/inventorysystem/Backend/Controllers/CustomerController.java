@@ -21,7 +21,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.GeneratePD
 
 @RestController
 @RequestMapping("/customer")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class CustomerController {
 
     private final CustomerService customerService;

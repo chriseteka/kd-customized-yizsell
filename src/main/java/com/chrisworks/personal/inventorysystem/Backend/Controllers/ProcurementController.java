@@ -22,7 +22,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/procurement")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProcurementController {
 
     private final ProcurementServices procurementServices;

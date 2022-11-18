@@ -29,7 +29,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Configurations.Sec
  */
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;

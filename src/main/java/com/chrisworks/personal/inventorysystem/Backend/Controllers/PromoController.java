@@ -10,7 +10,6 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/promo")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RequiredArgsConstructor
 public class PromoController {
 

@@ -28,7 +28,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fo
 
 @RestController
 @RequestMapping("/income")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class IncomeController {
 
     private final IncomeServices incomeServices;

@@ -23,6 +23,8 @@ public class EmailObject {
     @Email(message = "Invalid body sender, please check sender's email address")
     private String messageSender;
 
+    private String messageSenderName;
+
     @Email(message = "Invalid body receiver, please check receiver's email address")
     private String messageReceiver;
 
@@ -39,5 +41,10 @@ public class EmailObject {
         this.messageReceiver = recipientAddress;
         this.messageTitle = subject;
         this.messageBody = body;
+    }
+
+    public EmailObject withMessageSenderName(String messageSenderName) {
+        this.messageSenderName = messageSenderName;
+        return this;
     }
 }

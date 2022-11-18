@@ -17,7 +17,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.to
 
 @RestController
 @RequestMapping("/BO")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class BussOwnerController {
 
     private final BusinessOwnerServices businessOwnerServices;

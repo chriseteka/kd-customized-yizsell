@@ -17,7 +17,6 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/mail")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class MailController {
 
     private final MailServices mailServices;

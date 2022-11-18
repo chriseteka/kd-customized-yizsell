@@ -26,7 +26,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.ge
  */
 @RestController
 @RequestMapping("/shop")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ShopController {
 
     private final ShopServices shopServices;

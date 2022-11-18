@@ -15,7 +15,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
 
 @RestController
 @RequestMapping("/sales/discount")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class SalesDiscountController {
 
     private final SalesDiscountServices salesDiscountServices;

@@ -22,7 +22,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
  */
 @RestController
 @RequestMapping("/loyalty")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class LoyaltyController {
 
     private final LoyaltyServices loyaltyServices;

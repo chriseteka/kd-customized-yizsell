@@ -31,7 +31,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fo
 
 @RestController
 @RequestMapping("/expense")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ExpenseController {
 
     private final ExpenseServices expenseServices;

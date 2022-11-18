@@ -22,7 +22,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
  */
 @RestController
 @RequestMapping("/supplier")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class SupplierController {
 
     private final SupplierServices supplierServices;

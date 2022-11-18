@@ -24,7 +24,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
  */
 @RestController
 @RequestMapping("/SC")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class SellerController {
 
     private SellerServices sellerServices;

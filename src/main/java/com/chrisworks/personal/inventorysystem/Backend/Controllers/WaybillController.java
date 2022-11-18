@@ -32,7 +32,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fo
  */
 @RestController
 @RequestMapping("/wareBill")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class WaybillController {
 
     private final WaybillServices waybillServices;

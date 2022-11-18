@@ -12,10 +12,9 @@ import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/endOfDay")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class EndOfDayController {
 
-    private EndOfDayServices endOfDayServices;
+    private final EndOfDayServices endOfDayServices;
 
     @Autowired
     public EndOfDayController(EndOfDayServices endOfDayServices) {

@@ -4,6 +4,10 @@ import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EmailAttach
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.EmailObject;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Attachments;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,11 +30,11 @@ public class MailServicesImpl implements MailServices {
     @Override
     public void sendAutomatedEmail(EmailObject emailObject) {
 
-        Response response = send(emailObject.getMessageSender(), emailObject.getMessageReceiver(),
-                emailObject.getMessageTitle(), new Content("text/plain", emailObject.getMessageBody()),
-                Collections.emptyList());
+        Response response = send(emailObject.getMessageSender(), emailObject.getMessageSenderName(), emailObject.getMessageReceiver(),
+            emailObject.getMessageTitle(), new Content("text/plain", emailObject.getMessageBody()),
+            Collections.emptyList());
         System.out.println("Status Code: " + response.getStatusCode() + ", Body: " + response.getBody() + ", Headers: "
-                + response.getHeaders());
+            + response.getHeaders());
     }
 
     @Override
@@ -55,19 +59,20 @@ public class MailServicesImpl implements MailServices {
                 attachmentsList.add(attachments);
             }
         }
-        Response response = send(emailObject.getMessageSender(), emailObject.getMessageReceiver(),
-                emailObject.getMessageTitle(), new Content("text/plain", emailObject.getMessageBody()),
-                attachmentsList);
+        Response response = send(emailObject.getMessageSender(), emailObject.getMessageSenderName(), emailObject.getMessageReceiver(),
+            emailObject.getMessageTitle(), new Content("text/plain", emailObject.getMessageBody()),
+            attachmentsList);
         System.out.println("Status Code: " + response.getStatusCode() + ", Body: " + response.getBody() + ", Headers: "
-                + response.getHeaders());
+            + response.getHeaders());
 
 
         return response;
     }
 
-    private Response send(String from, String to, String subject, Content content, List<Attachments> attachments) {
+    private Response send(String from, String fromName, String to, String subject, Content content, List<Attachments> attachments) {
 
-        Mail mail = new Mail(new Email(from), subject, new Email(to), content);
+        final Email fromEmail = fromName == null ? new Email(from) : new Email(from, fromName);
+        Mail mail = new Mail(fromEmail, subject, new Email(to), content);
         if (!attachments.isEmpty())
             attachments.forEach(mail::addAttachments);
         mail.setReplyTo(new Email(from));
@@ -81,7 +86,7 @@ public class MailServicesImpl implements MailServices {
         } catch (IOException ex) {
 
             throw new InventoryAPIOperationException("Network error",
-                    "Network error, please check your internet connection", null);
+                "Network error, please check your internet connection", null);
         }
 
         return response;
@@ -91,11 +96,11 @@ public class MailServicesImpl implements MailServices {
     @Override
     public Response sendHTMLEmail(EmailObject emailObject) {
 
-        Response response = send(emailObject.getMessageSender(), emailObject.getMessageReceiver(),
-                emailObject.getMessageTitle(), new Content("text/html", emailObject.getMessageBody()),
-                Collections.emptyList());
+        Response response = send(emailObject.getMessageSender(), emailObject.getMessageSenderName(), emailObject.getMessageReceiver(),
+            emailObject.getMessageTitle(), new Content("text/html", emailObject.getMessageBody()),
+            Collections.emptyList());
         System.out.println("Status Code: " + response.getStatusCode() + ", Body: " + response.getBody() + ", Headers: "
-                + response.getHeaders());
+            + response.getHeaders());
         return response;
     }
 }

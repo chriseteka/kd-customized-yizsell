@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,14 +43,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final MailServices mailServices;
 
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${email.sender}") private String emailSender;
+    @Value("${email.from.name}") private String emailFromName;
 
     @Autowired
     public AuthenticationServiceImpl(BusinessOwnerRepository businessOwnerRepository, SellerRepository sellerRepository,
-                                     VerificationTokenRepository tokenRepository, PasswordResetRepository passwordResetRepository,
-                                     MailServices mailServices, BCryptPasswordEncoder passwordEncoder)
+        VerificationTokenRepository tokenRepository, PasswordResetRepository passwordResetRepository,
+        MailServices mailServices, PasswordEncoder passwordEncoder)
     {
         this.businessOwnerRepository = businessOwnerRepository;
         this.sellerRepository = sellerRepository;
@@ -98,25 +99,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public Boolean resendVerificationToken(Long businessOwnerId) {
 
         return businessOwnerRepository.findById(businessOwnerId)
-                .map(businessOwner -> {
+            .map(businessOwner -> {
 
-                    VerificationToken verificationToken = tokenRepository.findDistinctByBusinessOwner(businessOwner);
+                VerificationToken verificationToken = tokenRepository.findDistinctByBusinessOwner(businessOwner);
 
-                    if (null == verificationToken)
-                        throw new InventoryAPIOperationException("Could not get verification token",
-                                    "Could not get a verification token for the business owner id passed, try again", null);
+                if (null == verificationToken)
+                    throw new InventoryAPIOperationException("Could not get verification token",
+                        "Could not get a verification token for the business owner id passed, try again", null);
 
-                    String recipientAddress = businessOwner.getBusinessOwnerEmail();
-                    String subject = "Registration Confirmation";
-                    String message = "Confirm your registration by copying the following token and pasting where required: ";
-                    String body = message + verificationToken.getToken();
+                String recipientAddress = businessOwner.getBusinessOwnerEmail();
+                String subject = "Registration Confirmation";
+                String message = "Confirm your registration by copying the following token and pasting where required: ";
+                String body = message + verificationToken.getToken();
 
-                    EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
+                EmailObject emailObject = new EmailObject(emailSender, emailFromName, recipientAddress, subject, body, Collections.emptyList());
 
-                    mailServices.sendAutomatedEmail(emailObject);
+                mailServices.sendAutomatedEmail(emailObject);
 
-                    return true;
-                }).orElse(null);
+                return true;
+            }).orElse(null);
     }
 
     @Override
@@ -135,16 +136,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         VerificationToken verificationToken = this.getVerificationToken(token);
 
         if (verificationToken == null) throw new InventoryAPIOperationException
-                ("No verification token found", "No verification token found for verification id: " + token, null);
+            ("No verification token found", "No verification token found for verification id: " + token, null);
 
         Calendar cal = Calendar.getInstance();
         if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0)throw new
-                InventoryAPIOperationException("Verification token expired", "Verification token expired", null);
+            InventoryAPIOperationException("Verification token expired", "Verification token expired", null);
 
         BusinessOwner businessOwner = verificationToken.getBusinessOwner();
 
         if(businessOwner.getVerified())throw new InventoryAPIDuplicateEntryException("Account already verified",
-                "Your account is already verified, please log in to view your dashboard", null);
+            "Your account is already verified, please log in to view your dashboard", null);
 
 //        businessOwner.isEnabled()
         businessOwner.setIsActive(true);
@@ -159,7 +160,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         BusinessOwner businessOwner = businessOwnerRepository.findDistinctByBusinessOwnerEmail(email);
 
         if (null == businessOwner) throw new InventoryAPIResourceNotFoundException
-                ("Business Owner not found", "No business owner with email: " + email + " was found in the system", null);
+            ("Business Owner not found", "No business owner with email: " + email + " was found in the system", null);
 
         PasswordResetToken token = passwordResetRepository.findDistinctByBusinessOwner(businessOwner);
 
@@ -170,14 +171,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         PasswordResetToken resetToken = passwordResetRepository.save(new PasswordResetToken(businessOwner, passwordResetToken));
 
         if (null == resetToken) throw new InventoryAPIOperationException
-                ("Could not generate a reset token", "Could not generate a reset token at the moment, try later", null);
+            ("Could not generate a reset token", "Could not generate a reset token at the moment, try later", null);
 
         String recipientAddress = businessOwner.getBusinessOwnerEmail();
         String subject = "Password Reset Notification";
         String message = "Reset your password by copying the following token and pasting where required: ";
         String body = message + passwordResetToken;
 
-        EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
+        EmailObject emailObject = new EmailObject(emailSender, emailFromName, recipientAddress, subject, body, Collections.emptyList());
 
         mailServices.sendAutomatedEmail(emailObject);
 
@@ -188,25 +189,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public Boolean resendPasswordResetToken(Long businessOwnerId) {
 
         return businessOwnerRepository.findById(businessOwnerId)
-                .map(businessOwner -> {
+            .map(businessOwner -> {
 
-                    PasswordResetToken resetToken = passwordResetRepository.findDistinctByBusinessOwner(businessOwner);
+                PasswordResetToken resetToken = passwordResetRepository.findDistinctByBusinessOwner(businessOwner);
 
-                    if (null == resetToken)
-                        throw new InventoryAPIOperationException("Could not get password reset token",
-                                "Could not get a password reset token for the business owner id passed, try again", null);
+                if (null == resetToken)
+                    throw new InventoryAPIOperationException("Could not get password reset token",
+                        "Could not get a password reset token for the business owner id passed, try again", null);
 
-                    String recipientAddress = businessOwner.getBusinessOwnerEmail();
-                    String subject = "Password Reset Notification";
-                    String message = "Reset your password by copying the following token and pasting where required: ";
-                    String body = message + resetToken.getToken();
+                String recipientAddress = businessOwner.getBusinessOwnerEmail();
+                String subject = "Password Reset Notification";
+                String message = "Reset your password by copying the following token and pasting where required: ";
+                String body = message + resetToken.getToken();
 
-                    EmailObject emailObject = new EmailObject(emailSender, recipientAddress, subject, body, Collections.emptyList());
+                EmailObject emailObject = new EmailObject(emailSender, emailFromName, recipientAddress, subject, body, Collections.emptyList());
 
-                    mailServices.sendAutomatedEmail(emailObject);
+                mailServices.sendAutomatedEmail(emailObject);
 
-                    return true;
-                }).orElse(null);
+                return true;
+            }).orElse(null);
     }
 
     @Override
@@ -215,11 +216,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         PasswordResetToken resetTokenFound = passwordResetRepository.findDistinctByToken(resetToken);
 
         if (resetTokenFound == null) throw new InventoryAPIOperationException
-                ("No password reset token found", "No password reset token found with token id: " + resetToken, null);
+            ("No password reset token found", "No password reset token found with token id: " + resetToken, null);
 
         Calendar cal = Calendar.getInstance();
         if ((resetTokenFound.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0)throw new
-                InventoryAPIOperationException("Password reset token expired", "Password reset token expired", null);
+            InventoryAPIOperationException("Password reset token expired", "Password reset token expired", null);
 
         return resetTokenFound.getBusinessOwner();
     }
@@ -230,12 +231,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         PasswordResetToken token = passwordResetRepository.findDistinctByToken(resetToken);
 
         if (null == token) throw new InventoryAPIResourceNotFoundException("Password reset token not found",
-                "Could not find password reset token with token id: " + resetToken, null);
+            "Could not find password reset token with token id: " + resetToken, null);
 
         BusinessOwner businessOwner = token.getBusinessOwner();
 
         if (null == businessOwner) throw new InventoryAPIResourceNotFoundException
-                ("Business Owner not found", "Business Owner not found", null);
+            ("Business Owner not found", "Business Owner not found", null);
 
         businessOwner.setUpdateDate(new Date());
         businessOwner.setBusinessOwnerPassword(passwordEncoder.encode(newPassword));

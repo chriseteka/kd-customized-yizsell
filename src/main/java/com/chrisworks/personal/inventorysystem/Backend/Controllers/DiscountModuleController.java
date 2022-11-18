@@ -12,7 +12,6 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/discount/model")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class DiscountModuleController {
 
     private final DiscountModelServices discountModelServices;

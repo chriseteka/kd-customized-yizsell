@@ -16,7 +16,6 @@ import java.util.List;
 
 
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 public class WebsocketController {
 

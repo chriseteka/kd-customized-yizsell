@@ -28,7 +28,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fo
 
 @RestController
 @RequestMapping("/invoice")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class InvoiceController {
 
     private final InvoiceServices invoiceServices;

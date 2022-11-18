@@ -22,7 +22,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Entities.ListWrapp
  */
 @RestController
 @RequestMapping("/returnedStock")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ReturnedStockController {
 
     private final ReturnedStockServices returnedStockServices;

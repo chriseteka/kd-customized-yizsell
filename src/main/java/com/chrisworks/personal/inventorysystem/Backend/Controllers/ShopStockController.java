@@ -33,7 +33,6 @@ import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.fu
 
 @RestController
 @RequestMapping("/shopStock")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ShopStockController {
 
     private final ShopStockServices shopStockServices;
