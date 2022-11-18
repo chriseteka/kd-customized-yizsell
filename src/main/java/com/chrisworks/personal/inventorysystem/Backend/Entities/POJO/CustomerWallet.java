@@ -6,6 +6,7 @@ import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.CustomerWallet.History.WalletAction;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -69,6 +70,7 @@ public class CustomerWallet {
   private BigDecimal accumulatedCredit = BigDecimal.ZERO;
 
   @Transient
+  @JsonProperty
   private History history = new History();
 
   public synchronized boolean addMoney(final BigDecimal amount) {
