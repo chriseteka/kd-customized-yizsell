@@ -1,0 +1,24 @@
+version: '3.0'
+
+services:
+  inventory-db:
+    container_name: inventory-db
+    image: mysql:8.0.31
+    restart: always
+    env_file:
+      - .env
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    volumes:
+      - my-sql-data:/var/lib/inventory-db/data
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_ROOT_USER --password=$$MYSQL_ROOT_PASSWORD
+      interval: 10s
+      timeout: 10s
+      retries: 1
+
+volumes:
+  my-sql-data:
+    driver: local
