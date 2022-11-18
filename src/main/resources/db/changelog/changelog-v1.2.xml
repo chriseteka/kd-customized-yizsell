@@ -22,7 +22,7 @@
   </changeSet>
   <changeSet id="2" author="Chris_Eteka">
     <addColumn tableName="customers">
-      <column name="customer_wallet"/>
+      <column name="customer_wallet_id" type="BIGINT"/>
     </addColumn>
     <addForeignKeyConstraint baseColumnNames="customer_wallet_id" baseTableName="customers" constraintName="FKs8wer5lgi124kwa1xjkidsgMMKr8Ok3" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="wallet_id" referencedTableName="customer_wallets" validate="true"/>
   </changeSet>
