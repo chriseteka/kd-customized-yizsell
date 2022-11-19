@@ -49,7 +49,7 @@ public class CustomerWalletServiceImpl implements CustomerWalletService {
     return execActionOnWallet(
         customerId,
         wallet -> {
-          wallet.setCreditLimit(amount);
+          wallet.changeCreditLimitTo(amount);
           final CustomerWallet updatedWallet = customerWalletRepository.save(wallet);
           return updatedWallet.getCreditLimit().compareTo(amount) == 0;
         });

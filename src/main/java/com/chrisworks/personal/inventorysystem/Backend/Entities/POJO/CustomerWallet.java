@@ -3,16 +3,19 @@ package com.chrisworks.personal.inventorysystem.Backend.Entities.POJO;
 import static com.chrisworks.personal.inventorysystem.Backend.Utility.Utility.getGSon;
 import static ir.cafebabe.math.utils.BigDecimalUtils.is;
 
+import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.CustomerWallet.History.ChangeDoneOn;
 import com.chrisworks.personal.inventorysystem.Backend.Entities.POJO.CustomerWallet.History.WalletAction;
 import com.chrisworks.personal.inventorysystem.Backend.ExceptionManagement.InventoryAPIExceptions.InventoryAPIOperationException;
 import com.chrisworks.personal.inventorysystem.Backend.Utility.AuthenticatedUserDetails;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -57,6 +60,7 @@ public class CustomerWallet {
   private String lastUpdatedBy;
 
   @Lob
+  @JsonIgnore
   @Column(name = "walletChangeLog")
   private String walletChangeLog;
 
@@ -70,7 +74,7 @@ public class CustomerWallet {
   private BigDecimal accumulatedCredit = BigDecimal.ZERO;
 
   @Transient
-  @JsonProperty
+  @JsonIgnore
   private History history = new History();
 
   public synchronized boolean addMoney(final BigDecimal amount) {
@@ -78,7 +82,7 @@ public class CustomerWallet {
     if (is(amount).lte(0))
       throw new InventoryAPIOperationException("404", "Adding zero or negative amount is not allowed", null);
 
-    buildOldState(WalletAction.ADD);
+    buildOldState(WalletAction.ADD, ChangeDoneOn.BALANCE);
 
     //Try to clear up the credit if there is any
     if (is(accumulatedCredit).gt(0)) {
@@ -103,7 +107,7 @@ public class CustomerWallet {
       throw new InventoryAPIOperationException
           ("404", "Cannot charge customer because they are low on balance, and their credit limit is exceeded", null);
 
-    buildOldState(WalletAction.REMOVE);
+    buildOldState(WalletAction.REMOVE, ChangeDoneOn.BALANCE);
 
     if (is(balance).gte(amount)) {
       this.balance = balance.subtract(amount);
@@ -115,19 +119,31 @@ public class CustomerWallet {
     return is(balance).isNonNegative() && is(accumulatedCredit).isNonNegative();
   }
 
-  private void buildOldState(History.WalletAction action) {
+  public synchronized void changeCreditLimitTo(BigDecimal amount) {
+    if (is(amount).lt(0))
+      throw new InventoryAPIOperationException("404", "Cannot set credit limit to a negative value", null);
+
+    buildOldState(WalletAction.CHANGE, ChangeDoneOn.CREDIT_LIMIT);
+    setCreditLimit(amount);
+  }
+
+  private void buildOldState(History.WalletAction action, History.ChangeDoneOn changeDoneOn) {
     this.getHistory().setDate(new Date());
     this.getHistory().setWalletAction(action);
-    this.getHistory().setOldAmount(this.getBalance());
+    this.getHistory().setChangeDoneOn(changeDoneOn);
     this.getHistory().setActionPerformedBy(AuthenticatedUserDetails.getUserFullName());
+    this.getHistory().setOldAmount(changeDoneOn == ChangeDoneOn.BALANCE ? this.getBalance() : this.getCreditLimit());
   }
 
   //Add lifecycle to monitor every action
   @PreUpdate
   public void beforeUpdate() {
+    boolean changeOnBalance = this.getHistory().getChangeDoneOn() == ChangeDoneOn.BALANCE;
+    final BigDecimal totalAmount = changeOnBalance ? this.getBalance() : this.getCreditLimit();
     this.setUpdateDate(new Date());
-    this.getHistory().setCurrentAmount(this.getBalance());
+    this.getHistory().setTotalAmount(totalAmount);
     this.setLastUpdatedBy(AuthenticatedUserDetails.getUserFullName());
+    this.getHistory().setAmountDifference(totalAmount.subtract(this.getHistory().getOldAmount()));
     addHistoryToWalletChanges();
   }
 
@@ -138,6 +154,7 @@ public class CustomerWallet {
     this.setWalletChangeLog(getGSon().toJson(changeLogs, historyListType));
   }
 
+  //Maybe claim that you have a retention period of 5 months
   public List<History> getChangeLogs() {
 
     List<History> changeLogs = new ArrayList<>();
@@ -145,18 +162,24 @@ public class CustomerWallet {
       changeLogs = getGSon().fromJson(getWalletChangeLog(), historyListType);
     }
 
-    return changeLogs;
+    return changeLogs.stream()
+        .sorted(Comparator.comparing(History::getDate).reversed()) //Sort by date, most recent
+        .limit(100) //First one hundred are the ones of interest
+        .collect(Collectors.toList());
   }
 
   @Setter
   @Getter
   public static class History {
-    enum WalletAction {ADD, REMOVE}
+    enum WalletAction {ADD, REMOVE, CHANGE}
+    enum ChangeDoneOn {BALANCE, CREDIT_LIMIT}
 
     private Date date;
     private BigDecimal oldAmount;
-    private BigDecimal currentAmount;
+    private BigDecimal totalAmount;
+    private BigDecimal amountDifference; //This could be what was added or removed
     private WalletAction walletAction;
+    private ChangeDoneOn changeDoneOn;
     private String actionPerformedBy;
   }
 
